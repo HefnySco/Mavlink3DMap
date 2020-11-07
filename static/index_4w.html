@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <meta charset="utf-8">
+        <meta http-equiv="Pragma" content="no-cache">
+		<title>Mavlink 3D Map</title>
+		<style>
+			body { margin: 0; }
+			canvas { display: block; }
+        </style>
+        
+        <link rel="stylesheet" href="./css/styles.css">
+	    <script language="JavaScript" type="text/javascript" src="./js/jquery/jquery-3.4.1.min.js"></script>
+		<script language="JavaScript" type="text/javascript" src="./js/jquery/jquery-ui.min.js"></script>
+        
+        <script language="JavaScript" type="text/javascript" src="js/three.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/ammo.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/objects/Water.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/OrbitControls.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/ConvexHull.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/ConvexGeometry.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/ConvexObjectBreaker.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_globals.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_utilities.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_websocket.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_triggerObject.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_object.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_physicsObject.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_vehicle.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_arduVehicles.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_camera.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_world.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/scenes/js_greenScene.js"></script>
+	</head>
+	<body>
+        
+   
+        <script type="module">
+            import Stats from './js/stats.module.js';
+            
+            var c_world;
+            var v_selected = null;
+            
+
+            function fn_on_ready()
+            {
+
+                //Ammojs Initialization
+                Ammo().then(start)
+
+                function start ()
+                {
+                
+
+                
+                c_world = new C_World(0,-0);
+                c_world.fn_addCanvas(document.getElementById( 'map3D_1' ))
+                c_world.fn_addCanvas(document.getElementById( 'map3D_2' ))
+                c_world.fn_addCanvas(document.getElementById( 'map3D_3' ))
+                c_world.fn_addCanvas(document.getElementById( 'map3D_4' ))
+                c_world.fn_initTHREE();
+                c_world.fn_initPhysics();
+                c_world.fn_initWorld = fn_initDesertWorld;
+                c_world.fn_initWorld(0,0);
+
+                // Sample add a plane here
+                // var v_vehicle = new c_ArduVehicles();
+                // v_vehicle.fn_createVehicle(1, true, null, function ()
+                //                 {v_vehicle.fn_setPosition (0,0,3);
+                                    
+                //                     v_vehicle.fn_castShadow(false);
+                                        
+                //                     c_world.v_scene.add(v_vehicle.fn_getMesh());
+                //                     c_world.v_drone['x'] = v_vehicle;
+                //                     c_world.fn_registerCamerasOfObject (v_vehicle);
+
+                                    
+                //                     v_vehicle.fn_switchTriggerOn = function ()
+                //                                {
+                //                                 v_vehicle.m_trigger.fn_trigger(null, function (v_threeObj, v_physicsObj)
+                //                                 {
+                //                                     c_world.v_physicsWorld.addRigidBody( v_physicsObj );
+                //                                     c_world.v_scene.add(v_threeObj);
+                //                                     c_world.v_rigidBodies.push( v_threeObj);
+                //                                 });
+                //                             };
+                //                 });
+                
+
+                setTimeout (function () {
+                    c_world.fn_animate();
+                },1000);
+
+                // initialize websocket and command parser.
+                c_WebSocketComm = new c_CommandParser();
+                c_WebSocketComm.fn_initWebsocket(c_world);
+            }
+
+            };
+
+            $(document).ready(fn_on_ready);
+
+        </script>
+        
+    <div>
+        <div class="row">
+            <div class="column4" style="background-color:#aaa;">
+                <canvas id='map3D_1'></canvas>
+            </div>
+            <div class="column4" style="background-color:#bbb;">
+                <canvas id='map3D_2'></canvas>
+            </div>
+            <div class="column4" style="background-color:#ccc;">
+                <canvas id='map3D_3'></canvas>
+            </div>
+            <div class="column4" style="background-color:#ddd;">
+                <canvas id='map3D_4'></canvas>
+            </div>
+          </div>
+
+            
+    </div>
+	</body>
+</html>

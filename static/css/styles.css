@@ -1,0 +1,42 @@
+
+body {
+	margin: 0;
+	background-color: #000;
+	color: #fff;
+	font-family: Monospace;
+	font-size: 13px;
+	line-height: 24px;
+	overscroll-behavior: none;
+}
+
+/* Create four equal columns that floats next to each other */
+.column4 {
+    float: left;
+    width: 640px !important;
+    padding: 1px;
+    height: 480px !important; /* Should be removed. Only for demonstration */
+  }
+ 
+.column {
+    float: left;
+    
+    width: 100% !important;
+    padding: 1px;
+    height: 100% !important; /* Should be removed. Only for demonstration */
+  }
+
+  /* Clear floats after the columns */
+  .row:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+canvas
+{
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+
+    outline: 1px solid red;
+}

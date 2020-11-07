@@ -1,0 +1,10 @@
+node_modules/
+*.stl
+scene*.json
+*.bin
+*.tlog
+*.tlog.*
+logs/
+terrain/
+
+

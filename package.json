@@ -1,0 +1,28 @@
+{
+  "name": "mavlink3dmap",
+  "version": "0.9",
+  "description": "This tool receives navigation information via MAVLINK, and display vehicles in 3D environment using [three.js ](https://threejs.org/ \"three.js \").",
+  "main": "udp2websocket.js",
+  "scripts": {
+    "udp": "node udp2websocket.js",
+    "ffmpeg": "node ffmpegServer.js"
+  },
+  "keywords": [
+    "websocket",
+    "udp",
+    "mavlink",
+    "three.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HefnySco/Mavlink3DMap.git"
+  },
+  "dependencies": {
+    "commander": "^6.1.0",
+    "jspack": "0.0.4",
+    "underscore": "^1.11.0",
+    "ws": "^7.3.1"
+  },
+  "author": "Mohammad Said Hefny <mohammad.hefny@gmail.com>",
+  "license": "MIT"
+}
