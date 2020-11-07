@@ -120,7 +120,9 @@ class c_ArduVehicles extends c_Vehicle {
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
                 var v_cam1 = new c_Camera(Me, true);
-                v_cam1.fn_setRotationIndependence (false, false, false, 6, null);
+                // 6 & 7 are servo channels that is used by gimbal... you can use them to get real feedback
+                //v_cam1.fn_setRotationIndependence (false, false, false, 6, 7);
+                v_cam1.fn_setRotationIndependence (false, false, false, null, null);
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(0.4,  0.0 ,0.0,
                     0.0, 0.0 ,0.0);
