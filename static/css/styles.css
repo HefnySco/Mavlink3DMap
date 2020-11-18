@@ -10,21 +10,20 @@ body {
 }
 
 /* Create four equal columns that floats next to each other */
-.column4 {
+.column {
     float: left;
     width: 640px !important;
     padding: 1px;
     height: 480px !important; /* Should be removed. Only for demonstration */
   }
- 
-.column {
+  
+  .column4 {
     float: left;
-    
-    width: 100% !important;
+    width: 640px !important;
     padding: 1px;
-    height: 100% !important; /* Should be removed. Only for demonstration */
+    height: 480px !important; /* Should be removed. Only for demonstration */
   }
-
+  
   /* Clear floats after the columns */
   .row:after {
     content: "";
@@ -39,4 +38,13 @@ canvas
     display: block !important;
 
     outline: 1px solid red;
+}
+
+
+#help_dlg {
+  position: absolute;
+  top: 3em;
+  margin: 10px !important;
+  width: 40em;
+  height: 20em;
 }

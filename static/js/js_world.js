@@ -52,6 +52,10 @@ var C_World = function (p_XZero, p_YZero) {
 
     var v_numObjectsToRemove = 0;
 
+    $('#mav3dmap').append("<div id='help_dlg'> <ul> <li>F1: Help Toggle</li> <li>'P , O' Switch Cameras</li> <li>'W A S D Q E' Change Camera View for Vehicles</li> <li>'R' Reset Camera View</li> </ul> </div>");
+        
+    $('#help_dlg').hide();
+
     /*
     // Add cameras of a vehicle to all avilable views.
     */
@@ -135,7 +139,7 @@ var C_World = function (p_XZero, p_YZero) {
         var v_camera = new THREE.PerspectiveCamera(75, // FOV
         p_canvas.width / p_canvas.height, // window.innerWidth / window.innerHeight,     // Aspect Ratio
                 0.1, // Near Clipping Pane
-                1000 // Far Clipping Pane
+                5000 // Far Clipping Pane
         );
 
         v_localActiveCamera = v_camera;
@@ -200,34 +204,18 @@ var C_World = function (p_XZero, p_YZero) {
 
             switch (event.keyCode) {
 
-                case 70: /*F*/
-                    mouseCoords.set(
-                        ( v_eventMouseClick.clientX / window.innerWidth ) * 2 - 1,
-                        - ( v_eventMouseClick.clientY / window.innerHeight ) * 2 + 1
-                    );
-
-                    raycaster.setFromCamera( mouseCoords, v_localActiveCamera );
-                    //pos.copy( raycaster.ray.direction );
-                    //pos.add( raycaster.ray.origin );
-                    quat.set( 0, 0, 0, 1 );
-
-                    pos.copy( raycaster.ray.origin  );
-                    //quat.setFromAxisAngle( new THREE.Vector3( 0, 1, 0 ), Math.PI / 2 );
-
-
-                    if ((v_localActiveCamera.userData) && (v_localActiveCamera.userData.m_ownerObject))
+                case 112: /*F1*/
+                    if ($('#help_dlg').is (':visible') === true)
                     {
-                        const c_object = v_localActiveCamera.userData.m_ownerObject.m_ownerObject;
-                        if (c_object)
-                        {
-                            c_object.fn_switchTriggerOn();
-                            
-                            
-                        }
+                        $('#help_dlg').hide();
                     }
-
-                    break;
-
+                    else
+                    {
+                        $('#help_dlg').show();
+                    }
+                    event.preventDefault();
+                break;
+                
                 case 79: /*O*/
 
                     v_droneIndex += 1;
@@ -394,6 +382,8 @@ var C_World = function (p_XZero, p_YZero) {
         
         //create clock for timing
         v_clock = new THREE.Clock();
+        // used mainly by 3D Geo
+        Me.v_height3D=0;
 
         Me.v_scene = new THREE.Scene();
 
