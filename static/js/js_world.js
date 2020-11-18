@@ -139,7 +139,7 @@ var C_World = function (p_XZero, p_YZero) {
         var v_camera = new THREE.PerspectiveCamera(75, // FOV
         p_canvas.width / p_canvas.height, // window.innerWidth / window.innerHeight,     // Aspect Ratio
                 0.1, // Near Clipping Pane
-                1000 // Far Clipping Pane
+                5000 // Far Clipping Pane
         );
 
         v_localActiveCamera = v_camera;
