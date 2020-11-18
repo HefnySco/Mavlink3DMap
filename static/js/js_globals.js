@@ -11,9 +11,12 @@ const SERVO_NO_10                       = 1;
 //https://ardupilot.org/copter/docs/parameters.html#frame-class
 
 
-
 const PI_div_2 = Math.PI /2.0;
 const DEG_2_RAD = Math.PI / 180.0;
+const MILE_TO_METER = 1609.34;
+const MILE_TO_KM = 1.60934;
+
+
 var gravityConstant = 9.8;
 
 

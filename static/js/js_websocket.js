@@ -130,6 +130,7 @@ class c_CommandParser extends (c_WebSocketComm)
                         {
                             v_vehicle.fn_setPosition (0,0,0);
                             v_vehicle.fn_castShadow(false);
+                            
                             c_world.v_scene.add(v_vehicle.fn_getMesh());
                             c_world.v_drone[msg.src] = v_vehicle;
                             c_world.fn_registerCamerasOfObject (v_vehicle);
@@ -156,7 +157,6 @@ class c_CommandParser extends (c_WebSocketComm)
                     const v_vehicle = c_world.v_drone[msg.src];
                     if (v_vehicle == null) return ;
                     v_vehicle.fn_setRCChannels (msg.startIndex, msg.channels);
-                                    
                 }
                 break;
                                 
@@ -165,8 +165,6 @@ class c_CommandParser extends (c_WebSocketComm)
                     const v_vehicle = c_world.v_drone[msg.src];
                     if (v_vehicle == null) return ;
                     v_vehicle.fn_setServosOutputs (msg.startIndex, msg.servos);
-                                    
-                                    
                 }
                 break;
                                 
@@ -174,8 +172,7 @@ class c_CommandParser extends (c_WebSocketComm)
                 {
                     const v_vehicle = c_world.v_drone[msg.src];
                     if (v_vehicle == null) return ;
-                                    
-                    v_vehicle.fn_setPosition (msg.x / 10.0,msg.y / 10.0, -msg.z / 10.0 );
+                    v_vehicle.fn_setPosition (msg.x , msg.y ,  c_world.v_height3D  - msg.z );
                 }
                 break;
 
