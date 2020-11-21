@@ -92,7 +92,13 @@
                 },1000);
 
                 // initialize websocket and command parser.
-                c_WebSocketComm = new c_CommandParser();
+                var v_searchParams = new URLSearchParams(window.location.search);
+                var v_server = v_searchParams.get('server')
+                if (v_server == null)
+                {
+                    v_server = 'ws://192.168.1.144:8811';
+                }
+                c_WebSocketComm = new c_CommandParser(v_server);
                 c_WebSocketComm.fn_initWebsocket(c_world);
             }
 
