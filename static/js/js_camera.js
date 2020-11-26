@@ -201,7 +201,7 @@ class c_Camera
             this.v_q1.setFromAxisAngle(_yAxis,this.m_yawCamera + c_yawCaneller);
             this.v_q2.setFromAxisAngle(_zAxis,this.m_pitchCamera + c_rollCaneller);
             this.v_q3.setFromAxisAngle(_xAxis,this.m_rollCamera + c_picthCaneller );
-            v_vehicleOrientationQT.multiply(this.v_q1).multiply(this.v_q3).multiply(this.v_q2);
+            v_vehicleOrientationQT.multiply(this.v_q1).multiply(this.v_q2).multiply(this.v_q3);
 
             c_camera.setRotationFromQuaternion (v_vehicleOrientationQT);
 
