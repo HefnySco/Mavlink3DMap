@@ -1,6 +1,6 @@
 
 
-var fn_init3DWorld = function fn_init3DWorld(p_XZero, p_YZero) {
+var fn_initWorld = function fn_initWorld(p_XZero, p_YZero) {
     var Me = this;
     
 

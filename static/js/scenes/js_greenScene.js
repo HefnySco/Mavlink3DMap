@@ -1,4 +1,4 @@
-var fn_initDesertWorld = function fn_initDesertWorld(p_XZero, p_YZero) {
+var fn_initWorld = function fn_initWorld(p_XZero, p_YZero) {
     var Me = this;
 
     /**
