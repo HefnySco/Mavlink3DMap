@@ -177,8 +177,8 @@ var fn_init3DWorld = function fn_init3DWorld(p_XZero, p_YZero) {
             window.terrain = terrain;
             Me.v_scene.add(terrain);
             terrain.setRotationFromEuler(new THREE.Euler(-1.57,0,-1.57,"XYZ"))
-            terrain.scale.x = c_RADIUS * MILE_TO_METER ;
-            terrain.scale.y = c_RADIUS * MILE_TO_METER ;
+            terrain.scale.x = c_RADIUS * MAP_SCALE ;
+            terrain.scale.y = c_RADIUS * MAP_SCALE ;
             terrain.scale.z = 1;
 
             
