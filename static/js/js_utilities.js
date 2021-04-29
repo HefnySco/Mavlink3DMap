@@ -19,10 +19,24 @@ function uuidv4() {
 
 
 
-  function getAngleOfPWM (p_angleRange, p_minAngle, p_PWM)
-  {
-    return ((p_PWM - 1000) / 1000) * p_angleRange + p_minAngle;
-  }
+/**
+ * 
+ * @param {*} p_angleRange 
+ * @param {*} p_minAngle 
+ * @param {*} p_PWM 
+ * @param {*} p_minPWM ex: 1100 or 1000
+ * @param {*} p_PWMRange difference between max & min pwm
+ * @returns 
+ */
+ function getAngleOfPWM (p_angleRange, p_minAngle, p_PWM, p_minPWM, p_PWMRange)
+ {
+   if (p_minPWM==null)
+   {
+     p_minPWM = 1000;
+     p_PWMRange = 1000;
+   }
+   return ((p_PWM - p_minPWM) / p_PWMRange) * p_angleRange + p_minAngle;
+ }
 
 
   function addNoise(geometry, noiseX, noiseY, noiseZ) {

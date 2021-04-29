@@ -19,6 +19,9 @@ class c_ArduVehicles extends c_Vehicle {
     constructor (p_name)
     {
         super(p_name);
+
+        const v = new URLSearchParams(window.location.search);
+        this.m_vtol = (v.get("vtol") != null);
     }
 
 
@@ -33,7 +36,14 @@ class c_ArduVehicles extends c_Vehicle {
                 break;
 
             case FRAME_TYPE_PLANE: this.m_type = FRAME_TYPE_PLANE;
-                this.fn_createDronePlane(p_attachCamera, p_callbackfunc);
+                if (this.m_vtol !== true)
+                {
+                    this.fn_createDronePlane(p_attachCamera, p_callbackfunc);
+                }
+                else
+                {
+                    this.fn_createDroneVTOLPlane(p_attachCamera, p_callbackfunc);
+                }
                 break;
 
             case FRAME_TYPE_PLANE: this.m_type = FRAME_TYPE_CUSTOM;
@@ -134,6 +144,66 @@ class c_ArduVehicles extends c_Vehicle {
                 Me.m_cameras.push(v_cam1); 
                 Me.m_cameras.push(v_cam2);
             }
+
+            Me.fn_createCustom (p_obj ,p_callbackfunc);
+        });
+    }
+
+
+    fn_createDroneVTOLPlane (p_attachCamera, p_callbackfunc) {
+        const c_loader = new THREE.ObjectLoader();
+        var Me = this;
+        c_loader.load('./models/vehicles/vtol/vtol_model.json', function (p_obj) {
+            
+            /*
+            Adjust relative object position & orientation here if needed.
+            obj.rotateOnAxis(_xAxis,90);
+            */
+            
+            const c_ServoChannels = [10,11];
+            const c_MotorNumber = [1,2];
+            const c_MotorOffset = [[-40,-45,0], [40,-45,0]];
+            
+            for (var x=0; x<c_MotorNumber.length;++x)
+            {
+               var label = "M" + (x+1).toString();
+               var M = p_obj.getObjectByName(label);
+               if (M != null)
+               {
+                    Me.m_children.push(
+                    {
+                       "motor": M,
+                       "channel" : c_ServoChannels[x]-9,  // servoes are from number 9
+                       "offset" : c_MotorOffset[x]
+                    });
+                }
+                //M.rotateY(x+0.2);
+            }
+
+            if (p_attachCamera === true) {
+                //this.fn_attachedCamera(false,false,false);
+                var v_cam1 = new c_Camera(Me, true);
+                // channel 6 Servo
+                v_cam1.fn_setRotationIndependence (false, false, false, 6, null);
+                // facing down with stabilizer
+                v_cam1.fn_setCameraRelativePosition(1.0,  0.0 ,0.0,
+                    0.0, 0.0 ,0.0);
+                var v_cam2 = new c_Camera(Me, false, true);
+                v_cam2.fn_setRotationIndependence (true);
+                v_cam2.fn_setCameraRelativePosition(-1.5, 0.0 , 1.5
+                    ,0.0 ,-0.5 ,0.0);
+
+                Me.m_cameras.push(v_cam1); 
+                Me.m_cameras.push(v_cam2);
+            }
+
+
+            // THREE.Group.apply(this, arguments);
+    
+            //     let p1 = fn_drawDronePropeller(0xf80008, 0.0, 0.0, 0.0, 0.3);
+            //     p1.m_tag = this;
+            //     this.add(p1);
+            
 
             Me.fn_createCustom (p_obj ,p_callbackfunc);
         });

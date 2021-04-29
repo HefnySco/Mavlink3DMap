@@ -18,6 +18,8 @@
 class c_Object {
 
     m_cameras = [];
+    m_children = [];
+
     m_positionZero_X = 0;
     m_positionZero_Y = 0;
     m_positionZero_Z = 0;
@@ -139,6 +141,35 @@ class c_Object {
         if (p_callbackfunc!= null) p_callbackfunc(this.m_Mesh);
     }
 
+
+    
+    fn_apply_attached_units(p_position,v_vehicleOrientationQT) 
+    {
+
+        const len = this.m_children.length;
+        if (len <0) return ;
+
+        for (var i=0; i<len; ++i)
+        {
+            v_vehicleOrientationQT = new THREE.Quaternion();
+            let obj = this.m_children[i];
+            const motor = obj.motor;
+            const offset = obj.offset;
+            const ch = obj.channel;
+            
+            motor.geometry.center();
+            this.v_q1.setFromAxisAngle(_yAxis,0);
+            this.v_q2.setFromAxisAngle(_zAxis,0);
+            this.v_q3.setFromAxisAngle(_xAxis, getAngleOfPWM (90*DEG_2_RAD,0*DEG_2_RAD,parseInt(this.m_servoValues[parseInt(ch)]), 1100, 800));
+            this.v_q1.multiply(this.v_q2).multiply(this.v_q3);
+            
+            motor.setRotationFromQuaternion(this.v_q1);
+            motor.position.set(p_position.x + offset[0], p_position.y + offset[1], p_position.z + + offset[2]);
+        }
+
+    }
+
+
     /**
      * apply location changes
      */
@@ -168,6 +199,7 @@ class c_Object {
             this.m_cameras[i].fn_applyCameraIMU(this.m_Mesh.position, v_qt.clone());
         }
 
+        if (this.m_children.length>0)  this.fn_apply_attached_units(this.m_Mesh.position, v_qt.clone());
         
     };
 
