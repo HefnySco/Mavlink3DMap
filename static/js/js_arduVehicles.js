@@ -163,7 +163,6 @@ class c_ArduVehicles extends c_Vehicle {
             const c_ServoChannels = [10,11];
             const c_MotorNumber = [1,2];
             const c_MotorOffset = [[-40,-45,0], [40,-45,0]];
-            
             for (var x=0; x<c_MotorNumber.length;++x)
             {
                var label = "M" + (x+1).toString();

@@ -81,6 +81,17 @@ Run Website
 > cd static
 http-server -c0
 
+http://127.0.0.1:9080/index_4w.html
+or 
+http://127.0.0.1:9080/index_4wRealMap.html 
+
+for VTOL you can add 
+http://127.0.0.1:9080/index_4w.html?vtol
+
+
+
+http://127.0.0.1:9080/index_4w.html?vtol
+
 That is all ... you should be able to see vehicles.
 
 You can define your own extra environment robots and objects.

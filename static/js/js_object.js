@@ -157,14 +157,15 @@ class c_Object {
             const offset = obj.offset;
             const ch = obj.channel;
             
-            motor.geometry.center();
+            //motor.geometry.center();
+            motor.position.set(p_position.x , p_position.y , p_position.z );
             this.v_q1.setFromAxisAngle(_yAxis,0);
             this.v_q2.setFromAxisAngle(_zAxis,0);
             this.v_q3.setFromAxisAngle(_xAxis, getAngleOfPWM (90*DEG_2_RAD,0*DEG_2_RAD,parseInt(this.m_servoValues[parseInt(ch)]), 1100, 800));
             this.v_q1.multiply(this.v_q2).multiply(this.v_q3);
             
             motor.setRotationFromQuaternion(this.v_q1);
-            motor.position.set(p_position.x + offset[0], p_position.y + offset[1], p_position.z + + offset[2]);
+            motor.position.set( offset[0],  offset[1],  offset[2]);
         }
 
     }
