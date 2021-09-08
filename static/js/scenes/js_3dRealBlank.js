@@ -90,62 +90,7 @@ var fn_init3DWorld = function fn_init3DWorld(p_XZero, p_YZero) {
 
         
 
-        // const c_buildings = [
-        //     [
-        //         -16, -8
-        //     ],
-        //     [
-        //         -16, -12
-        //     ],
-        //     [
-        //         -16, -16
-        //     ],
-        //     [
-        //         16, 20
-        //     ],
-        //     [
-        //         16, 24
-        //     ],
-        //     [
-        //         16, 28
-        //     ]
-        // ];
-
-        // for (var i = 0; i < c_buildings.length; ++ i) {
-        //     const c_location = c_buildings[i];
-        //     var loader = new THREE.ObjectLoader();
-        //     loader.load('./models/building1.json', function (p_obj) {
-        //         p_obj.position.set(p_XZero + c_location[0], 0.01, p_YZero + c_location[1]);
-        //         p_obj.rotateZ(0);
-    
-        //         createObject2(10, p_obj, new THREE.Vector3( 2.2, 0.8, 2 ));
-        //         Me.v_scene.add(p_obj);
-                
-        //     });
-        // }
-    
-    
-        // var loader = new THREE.ObjectLoader();
-        // loader.load('./models/building2.json', function (p_obj) {
-        //     p_obj.position.set(p_XZero + 22, 0.0, p_YZero + 0);
-        //     p_obj.rotateZ(0);
-    
-            
-        //     createObject2(10, p_obj, new THREE.Vector3( 2.2, 1.5, 2.4 ));
-        //     Me.v_scene.add(p_obj);
-        // });
-    
-    
-        // loader.load('./models/oiltankcomplex.json', function (p_obj) {
-        //     p_obj.position.set(p_XZero + 40, 0.0, p_YZero + 0);
-        //     p_obj.rotateZ(0);
-            
-        //     Me.v_scene.add(p_obj);
-    
-        // });
-    
-    
-        //fn_createWater ('water', 40, 40, 10, 10);
+        
         var ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         Me.v_scene.add(ambientLight);
     
@@ -154,6 +99,8 @@ var fn_init3DWorld = function fn_init3DWorld(p_XZero, p_YZero) {
     };
 
 
+    if (get_UrlParameter("lng") != false) _map_lng = get_UrlParameter("lng");
+    if (get_UrlParameter("lat") != false) _map_lat = get_UrlParameter("lat");
     
     (async () => { // main
         const tgeo = new ThreeGeo({
@@ -170,8 +117,9 @@ var fn_init3DWorld = function fn_init3DWorld(p_XZero, p_YZero) {
         const terrain = await tgeo.getTerrainRgb(
             //[46.5763, 7.9904], // [lat, lng]
             //[29.9763167, 31.1340986], // [lat, lng] Pyramids
-            [-35.3632621, 149.1652374], // [lat, lng] // AUS
+            //[-35.3632621, 149.1652374], // [lat, lng] // AUS
             //[46.5763, 7.9904], // ALP
+            [_map_lat, _map_lng],
             c_RADIUS,               // radius of bounding circle (km)
             14);               // zoom resolution
             window.terrain = terrain;

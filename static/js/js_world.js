@@ -54,8 +54,6 @@ var C_World = function (p_XZero, p_YZero) {
 
     $('#mav3dmap').append("<div id='help_dlg'> <ul> <li>F1: Help Toggle</li> <li>'P , O' Switch Cameras</li> <li>'W A S D Q E' Change Camera View for Vehicles</li> <li>'R' Reset Camera View</li> </ul> </div>");
         
-    $('#help_dlg').hide();
-
     /*
     // Add cameras of a vehicle to all avilable views.
     */
@@ -103,9 +101,6 @@ var C_World = function (p_XZero, p_YZero) {
             c_body.setActivationState( STATE.DISABLE_DEACTIVATION );
         }
         
-        //Me.fn_registerCamerasOfObject(c_robot);
-        //c_robot.fn_setRotation(0, 0.0, 0.0);
-        //Me.v_robots[p_id] = c_robot;
         Me.v_scene.add(ball);
     };
 
@@ -115,7 +110,7 @@ var C_World = function (p_XZero, p_YZero) {
 
 
     /*
-    // Send event to selected view to handle keydown logic.
+    * Send event to selected view to handle keydown logic.
     */
     var onKeyDown = function onKeyDown(event) {
 

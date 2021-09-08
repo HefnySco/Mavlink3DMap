@@ -22,15 +22,12 @@
         <script language="JavaScript" type="text/javascript" src="js/ConvexGeometry.js"></script>
         <script language="JavaScript" type="text/javascript" src="js/ConvexObjectBreaker.js"></script>
         <script language="JavaScript" type="text/javascript" src="js/js_globals.js"></script>
+        <script language="JavaScript" type="text/javascript" src="js/js_helpers.js"></script>
         <script language="JavaScript" type="text/javascript" src="js/js_utilities.js"></script>
         <script language="JavaScript" type="text/javascript" src="js/js_websocket.js"></script>
         <script language="JavaScript" type="text/javascript" src="js/js_triggerObject.js"></script>
         <script language="JavaScript" type="text/javascript" src="js/js_object.js"></script>
         <script language="JavaScript" type="text/javascript" src="js/js_physicsObject.js"></script>
-<<<<<<< HEAD
-        <script language="JavaScript" type="text/javascript" src="js/js_bullet.js"></script>
-=======
->>>>>>> master
         <script language="JavaScript" type="text/javascript" src="js/js_vehicle.js"></script>
         <script language="JavaScript" type="text/javascript" src="js/js_arduVehicles.js"></script>
         <script language="JavaScript" type="text/javascript" src="js/js_camera.js"></script>
@@ -63,34 +60,10 @@
                 c_world.fn_addCanvas(document.getElementById( 'map3D_2' ))
                 c_world.fn_addCanvas(document.getElementById( 'map3D_3' ))
                 c_world.fn_addCanvas(document.getElementById( 'map3D_4' ))
-                c_world.fn_initTHREE();
+                c_world.fn_initTHREE(document.documentElement.clientWidth, document.documentElement.clientHeight);
                 c_world.fn_initPhysics();
                 c_world.fn_initWorld = fn_init3DWorld;
                 c_world.fn_initWorld(0,0);
-
-                // Sample add a plane here
-                // var v_vehicle = new c_ArduVehicles();
-                // v_vehicle.fn_createVehicle(1, true, null, function ()
-                //                 {v_vehicle.fn_setPosition (0,0,3);
-                                    
-                //                     v_vehicle.fn_castShadow(false);
-                                        
-                //                     c_world.v_scene.add(v_vehicle.fn_getMesh());
-                //                     c_world.v_drone['x'] = v_vehicle;
-                //                     c_world.fn_registerCamerasOfObject (v_vehicle);
-
-                                    
-                //                     v_vehicle.fn_switchTriggerOn = function ()
-                //                                {
-                //                                 v_vehicle.m_trigger.fn_trigger(null, function (v_threeObj, v_physicsObj)
-                //                                 {
-                //                                     c_world.v_physicsWorld.addRigidBody( v_physicsObj );
-                //                                     c_world.v_scene.add(v_threeObj);
-                //                                     c_world.v_rigidBodies.push( v_threeObj);
-                //                                 });
-                //                             };
-                //                 });
-                
 
                 setTimeout (function () {
                     c_world.fn_animate();

@@ -52,11 +52,11 @@ The application has three parts:
 Running two vehicles "Quad & Plane"
 
 ####Plane
-> python3  ~/TDisk/out_gits/ardupilot/Tools/autotest/sim_vehicle.py  -j4 -v ArduPlane  -M --map --console --instance 80 --out=udpout:127.0.0.1:14550 --out=udpout:192.168.1.139:16450
+> python3  ~/TDisk/out_gits/ardupilot/Tools/autotest/sim_vehicle.py  -j4 -v ArduPlane  -M --map --console --instance 80 --out=udpout:127.0.0.1:14550 --out=udpout:127.0.0.1:16450
 
 ####Quad
 
-> python3  ~/TDisk/out_gits/ardupilot/Tools/autotest/sim_vehicle.py -j4 -v ArduCopter    -M --map --console --instance 70 --out=udpout:127.0.0.1:16450  --out=udpout:192.168.1.139:14450  --add-param-file=./quadPlus_2.parm
+> python3  ~/TDisk/out_gits/ardupilot/Tools/autotest/sim_vehicle.py -j4 -v ArduCopter    -M --map --console --instance 70 --out=udpout:127.0.0.1:16450  --out=udpout:127.0.0.1:14450  --add-param-file=./quadPlus_2.parm
 
 
 quadPlaus_2.param is a parameter file that specifies ID of the vehicle so that the system knows it is another vehicle.
@@ -95,5 +95,11 @@ http://127.0.0.1:9080/index_4w.html?vtol
 That is all ... you should be able to see vehicles.
 
 You can define your own extra environment robots and objects.
+
+
+
+You can also fly in different places by adding location for example:
+http://127.0.0.1:9080/index_4w3dReal.html?lng=31.1339&lat=29.9764
+
 
 Have fun !

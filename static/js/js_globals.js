@@ -25,3 +25,5 @@ var _xAxis = new THREE.Vector3( 1, 0, 0 );
 var _yAxis = new THREE.Vector3( 0, 1, 0 );
 var _zAxis = new THREE.Vector3( 0, 0, 1 );
     
+var _map_lng = 149.1652374;
+var _map_lat = -35.3632621;

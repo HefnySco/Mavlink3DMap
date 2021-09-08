@@ -12,16 +12,16 @@ body {
 /* Create four equal columns that floats next to each other */
 .column {
     float: left;
-    width: 640px !important;
+    width: 800px !important;
     padding: 1px;
-    height: 480px !important; /* Should be removed. Only for demonstration */
+    height: 600px !important; /* Should be removed. Only for demonstration */
   }
   
   .column4 {
     float: left;
-    width: 640px !important;
+    width: 800px !important;
     padding: 1px;
-    height: 480px !important; /* Should be removed. Only for demonstration */
+    height: 600px !important; /* Should be removed. Only for demonstration */
   }
   
   /* Clear floats after the columns */
