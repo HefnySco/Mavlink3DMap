@@ -72,7 +72,7 @@ FRAME_TYPE       0.000000
 
 Drone:
 
-[![Drone](./images/screen6.png "Drone)](./images/screen6.png "Drone")
+[![Drone](./images/screen6.png "Drone")](./images/screen6.png "Drone")
 
 Now run websocket:
 > node udp2websocket.js
