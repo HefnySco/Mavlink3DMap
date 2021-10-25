@@ -65,9 +65,8 @@
                 c_world.fn_initWorld = fn_init3DWorld;
                 c_world.fn_initWorld(0,0);
 
-                setTimeout (function () {
-                    c_world.fn_animate();
-                },1000);
+                c_world.fn_animate();
+                
 
                 // initialize websocket and command parser.
                 c_WebSocketComm = new c_CommandParser();

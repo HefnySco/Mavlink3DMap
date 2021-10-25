@@ -80,7 +80,6 @@ class c_Object {
     {
         this.m_startServoIndex = p_startServoIndex;
         this.m_servoValues = p_servosValues;
-
     }
     
     fn_setRCChannels (p_startRCChannelIndex, p_rcChannelsValues)
@@ -89,16 +88,44 @@ class c_Object {
         this.m_rcChannelsValues = p_rcChannelsValues;
     }
 
-    fn_castShadow (p_enable) {
+    fn_castShadow (p_enable) 
+    {
         this.m_Mesh.castShadow = p_enable;
     }
 
-    fn_getMesh () {
+    fn_getMesh () 
+    {
         return this.m_Mesh;
     }
 
-    fn_getCamera () {
+    fn_getCamera () 
+    {
         return this.m_cameras;
+    }
+
+
+    // obj - your object (THREE.Object3D or derived)
+    // point - the point of rotation (THREE.Vector3)
+    // axis - the axis of rotation (normalized THREE.Vector3)
+    // theta - radian value of rotation
+    // pointIsWorld - boolean indicating the point is in world coordinates (default = false)
+    fn_rotateAboutPoint(obj, point, axis, theta, pointIsWorld)
+    {
+        pointIsWorld = (pointIsWorld === undefined)? false : pointIsWorld;
+
+        if(pointIsWorld){
+            obj.parent.localToWorld(obj.position); // compensate for world coordinate
+        }
+
+        obj.position.sub(point); // remove the offset
+        obj.position.applyAxisAngle(axis, theta); // rotate the POSITION
+        obj.position.add(point); // re-add the offset
+
+        if(pointIsWorld){
+            obj.parent.worldToLocal(obj.position); // undo world coordinates compensation
+        }
+
+        obj.rotateOnAxis(axis, theta); // rotate the OBJECT
     }
 
     /**
@@ -123,19 +150,15 @@ class c_Object {
     }
 
 
+    fn_addMesh (p_customObject) {
+
+        this.m_Mesh = p_customObject;
+    }
+
     fn_createCustom (p_customObject, p_callbackfunc) {
-
-        // Create a group object helps to control object initial orientation easily.
-        // without going into details of the object structure and layout.
-        var v_Object = function () { // Run the Group constructor with the given arguments
-            THREE.Group.apply(this, arguments);
-
-            this.add(p_customObject);
-        };
-
-        v_Object.prototype = Object.create(THREE.Group.prototype);
-        v_Object.prototype.constructor = v_Object;
-        this.m_Mesh = new v_Object();
+    
+        this.m_Mesh = new THREE.Group;
+        this.m_Mesh.add(p_customObject);
         
 
         if (p_callbackfunc!= null) p_callbackfunc(this.m_Mesh);
@@ -146,26 +169,30 @@ class c_Object {
     fn_apply_attached_units(p_position,v_vehicleOrientationQT) 
     {
 
+        
         const len = this.m_children.length;
         if (len <0) return ;
 
         for (var i=0; i<len; ++i)
         {
-            v_vehicleOrientationQT = new THREE.Quaternion();
+            //v_vehicleOrientationQT = new THREE.Quaternion();
             let obj = this.m_children[i];
             const motor = obj.motor;
             const offset = obj.offset;
             const ch = obj.channel;
             
-            //motor.geometry.center();
-            motor.position.set(p_position.x , p_position.y , p_position.z );
-            this.v_q1.setFromAxisAngle(_yAxis,0);
-            this.v_q2.setFromAxisAngle(_zAxis,0);
-            this.v_q3.setFromAxisAngle(_xAxis, getAngleOfPWM (90*DEG_2_RAD,0*DEG_2_RAD,parseInt(this.m_servoValues[parseInt(ch)]), 1100, 800));
-            this.v_q1.multiply(this.v_q2).multiply(this.v_q3);
+            // motor.setRotationFromQuaternion(v_vehicleOrientationQT);
+            // //var c = motor.geometry.boundingSphere.center.clone();
             
-            motor.setRotationFromQuaternion(this.v_q1);
-            motor.position.set( offset[0],  offset[1],  offset[2]);
+            var angle = getAngleOfPWM (90*DEG_2_RAD,0*DEG_2_RAD,parseInt(this.m_servoValues[parseInt(ch)]), 1100, 800);
+
+            this.v_q1.setFromAxisAngle(_yAxis,0);
+            this.v_q2.setFromAxisAngle(_zAxis, 0 );
+            this.v_q3.setFromAxisAngle(_xAxis, angle);
+            var v_qt = new THREE.Quaternion();
+            v_qt.multiply(this.v_q1).multiply(this.v_q2).multiply(this.v_q3);
+            motor.setRotationFromQuaternion(v_qt);
+            
         }
 
     }
@@ -190,7 +217,7 @@ class c_Object {
 
         this.m_Mesh.setRotationFromQuaternion(v_qt);
 
-
+        
         this.m_Mesh.position.set(this.m_position_X, this.m_position_Y, this.m_position_Z);
 
 

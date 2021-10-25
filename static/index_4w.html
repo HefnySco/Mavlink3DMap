@@ -44,6 +44,9 @@
 
             function fn_on_ready()
             {
+                var canvas = $('canvas')[0];
+                canvas.width = document.documentElement.clientWidth;
+                canvas.height = document.documentElement.clientHeight;
 
                 //Ammojs Initialization
                 Ammo().then(start)
@@ -58,7 +61,7 @@
                 c_world.fn_addCanvas(document.getElementById( 'map3D_2' ))
                 c_world.fn_addCanvas(document.getElementById( 'map3D_3' ))
                 c_world.fn_addCanvas(document.getElementById( 'map3D_4' ))
-                c_world.fn_initTHREE();
+                c_world.fn_initTHREE(document.documentElement.clientWidth/2.1, document.documentElement.clientHeight/2.1);
                 c_world.fn_initPhysics();
                 c_world.fn_initWorld = fn_initDesertWorld;
                 c_world.fn_initWorld(0,0);
@@ -87,9 +90,8 @@
                 //                 });
                 
 
-                setTimeout (function () {
-                    c_world.fn_animate();
-                },1000);
+                c_world.fn_animate();
+                
 
                 // initialize websocket and command parser.
                 c_WebSocketComm = new c_CommandParser();
@@ -102,7 +104,7 @@
 
         </script>
         
-    <div>
+    <div id='mav3dmap'>
         <div class="row">
             <div class="column4" style="background-color:#aaa;">
                 <canvas id='map3D_1'></canvas>

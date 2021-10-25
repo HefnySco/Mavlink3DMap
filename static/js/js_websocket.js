@@ -146,7 +146,12 @@ class c_CommandParser extends (c_WebSocketComm)
                                         c_world.v_rigidBodies.push( v_threeObj);
                                     });
                             };
-                        });
+                        }, 
+                        function(p_friendObject)
+                        {
+                            c_world.v_scene.add(p_friendObject);   
+                        }
+                        );
                                     
                                     
                 }

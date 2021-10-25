@@ -9,6 +9,11 @@ var fn_initDesertWorld = function fn_initDesertWorld(p_XZero, p_YZero) {
      * @param {*} p_radius radius of rotation ... moving in circles
      */
     var fn_createCar = function (p_id, p_x, p_y, p_radius) {
+
+
+
+
+
         const loader = new THREE.ObjectLoader();
         loader.load('./models/vehicles/car1.json', function (obj) {
             obj.rotateZ(0);

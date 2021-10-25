@@ -88,9 +88,8 @@
                 //                 });
                 
 
-                setTimeout (function () {
-                    c_world.fn_animate();
-                },1000);
+                c_world.fn_animate();
+                
 
                 // initialize websocket and command parser.
                 c_WebSocketComm = new c_CommandParser();
@@ -103,6 +102,8 @@
 
         </script>
         
-        <canvas id='map3D_1'></canvas>
+        <div id='mav3dmap'>
+            <canvas id='map3D_1'></canvas>
+        </div>
 	</body>
 </html>

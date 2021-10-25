@@ -1,68 +1,68 @@
 
-// ConvexGeometry
+// // ConvexGeometry
 
-var ConvexGeometry = function ( points ) {
+// var ConvexGeometry = function ( points ) {
 
-	Geometry.call( this );
+// 	Geometry.call( this );
 
-	this.fromBufferGeometry( new ConvexBufferGeometry( points ) );
-	this.mergeVertices();
+// 	this.fromBufferGeometry( new ConvexBufferGeometry( points ) );
+// 	this.mergeVertices();
 
-};
+// };
 
-ConvexGeometry.prototype = Object.create( THREE.Geometry.prototype );
-ConvexGeometry.prototype.constructor = ConvexGeometry;
+// ConvexGeometry.prototype = Object.create( THREE.Geometry.prototype );
+// ConvexGeometry.prototype.constructor = ConvexGeometry;
 
-// ConvexBufferGeometry
+// // ConvexBufferGeometry
 
-var ConvexBufferGeometry = function ( points ) {
+// var ConvexBufferGeometry = function ( points ) {
 
-	THREE.BufferGeometry.call( this );
+// 	THREE.BufferGeometry.call( this );
 
-	// buffers
+// 	// buffers
 
-	var vertices = [];
-	var normals = [];
+// 	var vertices = [];
+// 	var normals = [];
 
-	if ( ConvexHull === undefined ) {
+// 	if ( ConvexHull === undefined ) {
 
-		console.error( 'THREE.ConvexBufferGeometry: ConvexBufferGeometry relies on ConvexHull' );
+// 		console.error( 'THREE.ConvexBufferGeometry: ConvexBufferGeometry relies on ConvexHull' );
 
-	}
+// 	}
 
-	var convexHull = new ConvexHull().setFromPoints( points );
+// 	var convexHull = new ConvexHull().setFromPoints( points );
 
-	// generate vertices and normals
+// 	// generate vertices and normals
 
-	var faces = convexHull.faces;
+// 	var faces = convexHull.faces;
 
-	for ( var i = 0; i < faces.length; i ++ ) {
+// 	for ( var i = 0; i < faces.length; i ++ ) {
 
-		var face = faces[ i ];
-		var edge = face.edge;
+// 		var face = faces[ i ];
+// 		var edge = face.edge;
 
-		// we move along a doubly-connected edge list to access all face points (see HalfEdge docs)
+// 		// we move along a doubly-connected edge list to access all face points (see HalfEdge docs)
 
-		do {
+// 		do {
 
-			var point = edge.head().point;
+// 			var point = edge.head().point;
 
-			vertices.push( point.x, point.y, point.z );
-			normals.push( face.normal.x, face.normal.y, face.normal.z );
+// 			vertices.push( point.x, point.y, point.z );
+// 			normals.push( face.normal.x, face.normal.y, face.normal.z );
 
-			edge = edge.next;
+// 			edge = edge.next;
 
-		} while ( edge !== face.edge );
+// 		} while ( edge !== face.edge );
 
-	}
+// 	}
 
-	// build geometry
+// 	// build geometry
 
-	this.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
-	this.setAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+// 	this.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+// 	this.setAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
 
-};
+// };
 
-ConvexBufferGeometry.prototype = Object.create( THREE.BufferGeometry.prototype );
-ConvexBufferGeometry.prototype.constructor = ConvexBufferGeometry;
+// ConvexBufferGeometry.prototype = Object.create( THREE.BufferGeometry.prototype );
+// ConvexBufferGeometry.prototype.constructor = ConvexBufferGeometry;
 
