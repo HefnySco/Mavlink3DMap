@@ -6,5 +6,4 @@ scene*.json
 *.tlog.*
 logs/
 terrain/
-
-
+package-lock.json
