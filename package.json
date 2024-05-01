@@ -18,10 +18,10 @@
     "url": "git+https://github.com/HefnySco/Mavlink3DMap.git"
   },
   "dependencies": {
-    "commander": "^6.1.0",
+    "commander": "6.1.0",
     "jspack": "0.0.4",
-    "underscore": "^1.11.0",
-    "ws": "^7.3.1"
+    "underscore": "1.11.0",
+    "ws": "7.3.1"
   },
   "author": "Mohammad Said Hefny <mohammad.hefny@gmail.com>",
   "license": "MIT"
