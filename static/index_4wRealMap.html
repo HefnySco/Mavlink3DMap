@@ -39,67 +39,91 @@
    
         <script type="module">
             import Stats from './js/stats.module.js';
-            
-            var c_world;
-            var v_selected = null;
-            
-
-            function fn_on_ready()
-            {
-
-                //Ammojs Initialization
-                Ammo().then(start)
-
-                function start ()
-                {
-                
-
-                
-                c_world = new C_World(0,-0);
-                c_world.fn_addCanvas(document.getElementById( 'map3D_1' ))
-                c_world.fn_addCanvas(document.getElementById( 'map3D_2' ))
-                c_world.fn_addCanvas(document.getElementById( 'map3D_3' ))
-                c_world.fn_addCanvas(document.getElementById( 'map3D_4' ))
-                c_world.fn_initTHREE(document.getElementById( 'map3D_1' ).clientWidth, document.getElementById( 'map3D_1' ).clientHeight);
+        
+            let c_world;
+            let v_selected = null;
+        
+            // Constants for configuration
+            const CONFIG = {
+                worldZero: { x: 0, y: 0 },
+                canvasIds: ['map3D_1', 'map3D_2', 'map3D_3', 'map3D_4'],
+            };
+        
+            // Initialize the 3D world
+            function initWorld() {
+                c_world = new C_World(CONFIG.worldZero.x, CONFIG.worldZero.y);
+        
+                // Add canvases to the world
+                CONFIG.canvasIds.forEach((id) => {
+                    const canvas = document.getElementById(id);
+                    if (canvas) {
+                        c_world.fn_addCanvas(canvas);
+                    } else {
+                        console.error(`Canvas element with ID ${id} not found.`);
+                    }
+                });
+        
+                // Initialize THREE.js and physics
+                const canvas = document.getElementById(CONFIG.canvasIds[0]);
+                if (canvas) {
+                    c_world.fn_initTHREE(canvas.clientWidth, canvas.clientHeight);
+                } else {
+                    console.error("Primary canvas not found for initialization.");
+                }
+        
                 c_world.fn_initPhysics();
                 c_world.fn_initWorld = fn_init3DWorld;
-                c_world.fn_initWorld(0,0);
-
+                c_world.fn_initWorld(CONFIG.worldZero.x, CONFIG.worldZero.y);
+            }
+        
+            // Initialize a sample vehicle (commented out for now)
+            function initVehicle() {
                 // Sample add a plane here
-                // var v_vehicle = new c_ArduVehicles();
-                // v_vehicle.fn_createVehicle(1, true, null, function ()
-                //                 {v_vehicle.fn_setPosition (0,0,3);
-                                    
-                //                     v_vehicle.fn_castShadow(false);
-                                        
-                //                     c_world.v_scene.add(v_vehicle.fn_getMesh());
-                //                     c_world.v_drone['x'] = v_vehicle;
-                //                     c_world.fn_registerCamerasOfObject (v_vehicle);
-
-                                    
-                //                     v_vehicle.fn_switchTriggerOn = function ()
-                //                                {
-                //                                 v_vehicle.m_trigger.fn_trigger(null, function (v_threeObj, v_physicsObj)
-                //                                 {
-                //                                     c_world.v_physicsWorld.addRigidBody( v_physicsObj );
-                //                                     c_world.v_scene.add(v_threeObj);
-                //                                     c_world.v_rigidBodies.push( v_threeObj);
-                //                                 });
-                //                             };
-                //                 });
-                
-
+                // const v_vehicle = new c_ArduVehicles();
+                // v_vehicle.fn_createVehicle(1, true, null, () => {
+                //     v_vehicle.fn_setPosition(0, 0, 3);
+                //     v_vehicle.fn_castShadow(false);
+                //     c_world.v_scene.add(v_vehicle.fn_getMesh());
+                //     c_world.v_drone['x'] = v_vehicle;
+                //     c_world.fn_registerCamerasOfObject(v_vehicle);
+                //
+                //     v_vehicle.fn_switchTriggerOn = () => {
+                //         v_vehicle.m_trigger.fn_trigger(null, (v_threeObj, v_physicsObj) => {
+                //             c_world.v_physicsWorld.addRigidBody(v_physicsObj);
+                //             c_world.v_scene.add(v_threeObj);
+                //             c_world.v_rigidBodies.push(v_threeObj);
+                //         });
+                //     };
+                // });
+            }
+        
+            // Start the simulation
+            function startSimulation() {
                 c_world.fn_animate();
-                
-                // initialize websocket and command parser.
-                c_WebSocketComm = new c_CommandParser();
+        
+                // Initialize WebSocket and command parser
+                const c_WebSocketComm = new c_CommandParser();
                 c_WebSocketComm.fn_initWebsocket(c_world);
             }
-
-            };
-
+        
+            // Main initialization function
+            function fn_on_ready() {
+                // Initialize Ammo.js
+                Ammo().then(() => {
+                    try {
+                        initWorld();
+                        initVehicle();
+                        startSimulation();
+                    } catch (error) {
+                        console.error("Error during simulation initialization:", error);
+                    }
+                }).catch((error) => {
+                    console.error("Failed to initialize Ammo.js:", error);
+                });
+            }
+        
+            // Start the process when the document is ready
             $(document).ready(fn_on_ready);
-
         </script>
         
     <div id='mav3dmap'>

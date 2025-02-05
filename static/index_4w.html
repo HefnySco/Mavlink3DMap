@@ -42,63 +42,55 @@
             var v_selected = null;
             
 
-            function fn_on_ready()
-            {
-                var canvas = $('canvas')[0];
-                canvas.width = document.documentElement.clientWidth;
-                canvas.height = document.documentElement.clientHeight;
-
-                //Ammojs Initialization
-                Ammo().then(start)
-
-                function start ()
-                {
-                
-
-                
-                c_world = new C_World(0,-0);
-                c_world.fn_addCanvas(document.getElementById( 'map3D_1' ))
-                c_world.fn_addCanvas(document.getElementById( 'map3D_2' ))
-                c_world.fn_addCanvas(document.getElementById( 'map3D_3' ))
-                c_world.fn_addCanvas(document.getElementById( 'map3D_4' ))
-                c_world.fn_initTHREE(document.documentElement.clientWidth/2.1, document.documentElement.clientHeight/2.1);
+            function initWorld() {
+                c_world = new C_World(0, 0);
+                c_world.fn_addCanvas(document.getElementById('map3D_1'));
+                c_world.fn_addCanvas(document.getElementById('map3D_2'));
+                c_world.fn_addCanvas(document.getElementById('map3D_3'));
+                c_world.fn_addCanvas(document.getElementById('map3D_4'));
+                c_world.fn_initTHREE(document.documentElement.clientWidth / 2.1, document.documentElement.clientHeight / 2.1);
                 c_world.fn_initPhysics();
                 c_world.fn_initWorld = fn_initDesertWorld;
-                c_world.fn_initWorld(0,0);
+                c_world.fn_initWorld(0, 0);
+            }
 
+            function initVehicle() {
                 // Sample add a plane here
                 // var v_vehicle = new c_ArduVehicles();
-                // v_vehicle.fn_createVehicle(1, true, null, function ()
-                //                 {v_vehicle.fn_setPosition (0,0,3);
-                                    
-                //                     v_vehicle.fn_castShadow(false);
-                                        
-                //                     c_world.v_scene.add(v_vehicle.fn_getMesh());
-                //                     c_world.v_drone['x'] = v_vehicle;
-                //                     c_world.fn_registerCamerasOfObject (v_vehicle);
+                // v_vehicle.fn_createVehicle(1, true, null, function () {
+                //     v_vehicle.fn_setPosition(0, 0, 3);
+                //     v_vehicle.fn_castShadow(false);
+                //     c_world.v_scene.add(v_vehicle.fn_getMesh());
+                //     c_world.v_drone['x'] = v_vehicle;
+                //     c_world.fn_registerCamerasOfObject(v_vehicle);
+                //     v_vehicle.fn_switchTriggerOn = function () {
+                //         v_vehicle.m_trigger.fn_trigger(null, function (v_threeObj, v_physicsObj) {
+                //             c_world.v_physicsWorld.addRigidBody(v_physicsObj);
+                //             c_world.v_scene.add(v_threeObj);
+                //             c_world.v_rigidBodies.push(v_threeObj);
+                //         });
+                //     };
+                // });
+            }
 
-                                    
-                //                     v_vehicle.fn_switchTriggerOn = function ()
-                //                                {
-                //                                 v_vehicle.m_trigger.fn_trigger(null, function (v_threeObj, v_physicsObj)
-                //                                 {
-                //                                     c_world.v_physicsWorld.addRigidBody( v_physicsObj );
-                //                                     c_world.v_scene.add(v_threeObj);
-                //                                     c_world.v_rigidBodies.push( v_threeObj);
-                //                                 });
-                //                             };
-                //                 });
-                
-
+            function startSimulation() {
                 c_world.fn_animate();
-                
-
-                // initialize websocket and command parser.
                 c_WebSocketComm = new c_CommandParser();
                 c_WebSocketComm.fn_initWebsocket(c_world);
             }
 
-            };
+            function fn_on_ready() {
+                var canvas = $('canvas')[0];
+                canvas.width = document.documentElement.clientWidth;
+                canvas.height = document.documentElement.clientHeight;
+
+                // Ammo.js Initialization
+                Ammo().then(() => {
+                    initWorld();
+                    initVehicle();
+                    startSimulation();
+                });
+            }
 
             $(document).ready(fn_on_ready);
 
@@ -106,21 +98,19 @@
         
     <div id='mav3dmap'>
         <div class="row">
-            <div class="column4" style="background-color:#aaa;">
+            <div class="column4" >
                 <canvas id='map3D_1'></canvas>
             </div>
-            <div class="column4" style="background-color:#bbb;">
+            <div class="column4" >
                 <canvas id='map3D_2'></canvas>
             </div>
-            <div class="column4" style="background-color:#ccc;">
+            <div class="column4" >
                 <canvas id='map3D_3'></canvas>
             </div>
-            <div class="column4" style="background-color:#ddd;">
+            <div class="column4" >
                 <canvas id='map3D_4'></canvas>
             </div>
           </div>
-
-            
     </div>
 	</body>
 </html>
