@@ -1,0 +1,22 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.1.2"
+  },
+  "dependencies": {
+    "ammo": "^3.0.3",
+    "jquery": "^3.7.1",
+    "jspack": "^0.0.4",
+    "three": "^0.133.0",
+    "underscore": "^1.13.7",
+    "uuidv4": "^6.2.13"
+  }
+}

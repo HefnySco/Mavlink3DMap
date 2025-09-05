@@ -1,0 +1,62 @@
+
+body {
+	margin: 0;
+	background-color: #000;
+	color: #fff;
+	font-family: Monospace;
+	font-size: 13px;
+	line-height: 24px;
+	overscroll-behavior: none;
+}
+
+/* Create four equal columns that floats next to each other */
+.column {
+    float: left;
+    width: 800px !important;
+    padding: 1px;
+    height: 600px !important; /* Should be removed. Only for demonstration */
+  }
+  
+  .column4 {
+    float: left;
+    width: 800px !important;
+    padding: 1px;
+    height: 600px !important; /* Should be removed. Only for demonstration */
+  }
+  
+  .column4 {
+    background-color: #aaa; /* Default color */
+  }
+  .column4:nth-child(2) {
+      background-color: #bbb;
+  }
+  .column4:nth-child(3) {
+      background-color: #ccc;
+  }
+  .column4:nth-child(4) {
+      background-color: #ddd;
+  }
+  /* Clear floats after the columns */
+  .row:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+canvas
+{
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+
+    outline: 1px solid red;
+}
+
+
+#help_dlg {
+  position: absolute;
+  top: 3em;
+  margin: 10px !important;
+  width: 40em;
+  height: 20em;
+}
