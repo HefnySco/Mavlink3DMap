@@ -20,6 +20,25 @@ exports.connect = function (host,port)
 
 
 exports.onMessageReceived = undefined;
+
+
+exports.sendMessageBinary = function (message)
+{
+    if (Me.ws != null)
+    {
+        try
+        {
+            
+            Me.ws.send (message , {binary: true});
+        }
+        catch (e)
+        {
+            Me.ws = undefined;
+        }
+    }
+
+}
+
 exports.sendMessage = function (message)
 {
     if (Me.ws != null)
@@ -44,6 +63,7 @@ function onConnect_Handler(ws)
      console.log("WebSocket Listener Active"); 
      function onWsMessage(message, flags)
      {
+            
            //console.log(message);
 
            if (Me.onMessageReceived!= undefined)
