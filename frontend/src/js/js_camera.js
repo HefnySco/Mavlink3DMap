@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { PI_div_2, _xAxis, _yAxis, _zAxis, DEG_2_RAD, getAngleOfPWM } from './js_globals.js';
 
-class c_Camera {
+class CameraController {
     // Camera Relative Rotation & Position
     m_positionCamera_X = 0;
     m_positionCamera_Y = 0;
@@ -203,4 +203,4 @@ class c_Camera {
     }
 }
 
-export { c_Camera };
+export { CameraController };

@@ -7,8 +7,8 @@
 *********************************************************************************** */
 
 import * as THREE from 'three';
-import { c_Camera } from './js_camera.js';
-import { c_Trigger } from './js_triggerObject.js';
+import { CameraController } from './js_camera.js';
+import { Trigger } from './js_triggerObject.js';
 import { FRAME_TYPE_UNKNOWN, _xAxis, _yAxis, _zAxis, DEG_2_RAD } from './js_globals.js'; // Assumes js_globals.js provides these
 
 // Stub for getAngleOfPWM (used in fn_apply_attached_units)
@@ -21,7 +21,7 @@ function getAngleOfPWM(maxAngle, minAngle, pwmValue, maxPWM, minPWM) {
  * Represent core simulation object.
  * This is not a physics object.
  */
-class c_Object {
+class SimObject {
     m_cameras = [];
     m_children = [];
 
@@ -45,13 +45,14 @@ class c_Object {
     m_type = FRAME_TYPE_UNKNOWN;
     m_animateFunction = null;
 
-    m_trigger = new c_Trigger();
+    m_trigger = new Trigger();
 
     constructor(p_name) {
         this.m_name = p_name;
         this.v_q1 = new THREE.Quaternion();
         this.v_q2 = new THREE.Quaternion();
         this.v_q3 = new THREE.Quaternion();
+        this.v_qt = new THREE.Quaternion();
         this.fn_setZeroPosition(0, 0, 0);
     }
 
@@ -139,22 +140,21 @@ class c_Object {
 
     fn_apply_attached_units(p_position, v_vehicleOrientationQT) {
         const len = this.m_children.length;
-        if (len < 0) return;
+        if (len === 0) return;
 
-        for (var i = 0; i < len; ++i) {
+        for (let i = 0; i < len; ++i) {
             let obj = this.m_children[i];
             const motor = obj.motor;
             const offset = obj.offset;
             const ch = obj.channel;
 
-            var angle = getAngleOfPWM(90 * DEG_2_RAD, 0 * DEG_2_RAD, parseInt(this.m_servoValues[parseInt(ch)]), 1100, 800);
+            const angle = getAngleOfPWM(90 * DEG_2_RAD, 0 * DEG_2_RAD, parseInt(this.m_servoValues[parseInt(ch)]), 1100, 800);
 
             this.v_q1.setFromAxisAngle(_yAxis, 0);
             this.v_q2.setFromAxisAngle(_zAxis, 0);
             this.v_q3.setFromAxisAngle(_xAxis, angle);
-            var v_qt = new THREE.Quaternion();
-            v_qt.multiply(this.v_q1).multiply(this.v_q2).multiply(this.v_q3);
-            motor.setRotationFromQuaternion(v_qt);
+            this.v_qt.multiplyQuaternions(this.v_q1, this.v_q2).multiply(this.v_q3);
+            motor.setRotationFromQuaternion(this.v_qt);
         }
     }
 
@@ -165,20 +165,19 @@ class c_Object {
         this.v_q2.setFromAxisAngle(_zAxis, this.m_pitch);
         this.v_q3.setFromAxisAngle(_xAxis, this.m_roll);
 
-        var v_qt = new THREE.Quaternion();
-        v_qt.multiply(this.v_q1).multiply(this.v_q2).multiply(this.v_q3);
+        this.v_qt.multiplyQuaternions(this.v_q1, this.v_q2).multiply(this.v_q3);
 
-        this.m_Mesh.setRotationFromQuaternion(v_qt);
+        this.m_Mesh.setRotationFromQuaternion(this.v_qt);
 
         this.m_Mesh.position.set(this.m_position_X, this.m_position_Y, this.m_position_Z);
 
-        let v_len = this.m_cameras.length;
+        const v_len = this.m_cameras.length;
 
-        for (var i = 0; i < v_len; ++i) {
-            this.m_cameras[i].fn_applyCameraIMU(this.m_Mesh.position, v_qt.clone());
+        for (let i = 0; i < v_len; ++i) {
+            this.m_cameras[i].fn_applyCameraIMU(this.m_Mesh.position, this.v_qt.clone());
         }
 
-        if (this.m_children.length > 0) this.fn_apply_attached_units(this.m_Mesh.position, v_qt.clone());
+        if (this.m_children.length > 0) this.fn_apply_attached_units(this.m_Mesh.position, this.v_qt.clone());
     }
 
     fn_setAnimate(p_animate) {
@@ -193,4 +192,4 @@ class c_Object {
     }
 }
 
-export default c_Object;
+export default SimObject;

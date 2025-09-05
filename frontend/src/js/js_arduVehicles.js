@@ -11,8 +11,8 @@
 /*jshint esversion: 6 */
 
 import * as THREE from 'three';
-import { c_Camera } from './js_camera.js'; 
-import c_Vehicle from './js_vehicle.js'
+import { CameraController } from './js_camera.js'; 
+import Vehicle from './js_vehicle.js'
 
 const FRAME_TYPE_PLUS = 0;
 const FRAME_TYPE_PLANE = 1;
@@ -21,7 +21,7 @@ const FRAME_TYPE_CUSTOM = 998;
 const FRAME_TYPE_UNKNOWN = 999;
 
 
-class c_ArduVehicles extends c_Vehicle {
+class c_ArduVehicles extends Vehicle {
 
 
     constructor (p_name)
@@ -77,12 +77,12 @@ class c_ArduVehicles extends c_Vehicle {
            
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                var v_cam1 = new c_Camera(Me, true);
+                var v_cam1 = new CameraController(Me, true);
                 v_cam1.fn_setRotationIndependence (false, true, true);
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(0.0,  -0.1 ,0.0,
                     0.0, -1.57 ,0.0);
-                var v_cam2 = new c_Camera(Me, false, true);
+                var v_cam2 = new CameraController(Me, false, true);
                 v_cam2.fn_setRotationIndependence (true);
                 v_cam2.fn_setCameraRelativePosition(-1.5, 0.0 , 1.5
                     ,0.0 ,-0.5 ,0.0);
@@ -111,12 +111,12 @@ class c_ArduVehicles extends c_Vehicle {
            
            if (p_attachCamera === true) {
             //this.fn_attachedCamera(false,false,false);
-            var v_cam1 = new c_Camera(Me, true);
+            var v_cam1 = new CameraController(Me, true);
             v_cam1.fn_setRotationIndependence (false, false, false);
             // facing down with stabilizer
             v_cam1.fn_setCameraRelativePosition(0.0,  -0.1 ,0.0,
                 0.0, -1.57 ,0.0);
-            var v_cam2 = new c_Camera(Me, false, true);
+            var v_cam2 = new CameraController(Me, false, true);
             v_cam2.fn_setRotationIndependence (true);
             v_cam2.fn_setCameraRelativePosition(- 1.5, 0.0 , 1.5
                 ,0.0 ,-0.5 ,0.0);
@@ -140,14 +140,14 @@ class c_ArduVehicles extends c_Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                var v_cam1 = new c_Camera(Me, true);
+                var v_cam1 = new CameraController(Me, true);
                 // 6 & 7 are servo channels that is used by gimbal... you can use them to get real feedback
                 //v_cam1.fn_setRotationIndependence (false, false, false, 6, 7);
                 v_cam1.fn_setRotationIndependence (false, false, false, null, null);
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(0.4,  0.0 ,0.0,
                     0.0, 0.0 ,0.0);
-                var v_cam2 = new c_Camera(Me, false, true);
+                var v_cam2 = new CameraController(Me, false, true);
                 v_cam2.fn_setRotationIndependence (true);
                 v_cam2.fn_setCameraRelativePosition(-1.5, 0.0 , 1.5
                     ,0.0 ,-0.5 ,0.0);
@@ -208,7 +208,7 @@ class c_ArduVehicles extends c_Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                var v_cam1 = new c_Camera(Me, true);
+                var v_cam1 = new CameraController(Me, true);
                 // channel 6 Servo
                 //v_cam1.fn_setRotationIndependence (false, false, false, null, null);
                 //v_cam1.m_cameraThree.setRotationFromQuaternion(p_obj.quaternion);
@@ -216,7 +216,7 @@ class c_ArduVehicles extends c_Vehicle {
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(1.0,  0.0 ,0.0,
                    0.0, 0.0, 0.0);
-                var v_cam2 = new c_Camera(Me, false, true);
+                var v_cam2 = new CameraController(Me, false, true);
                 v_cam2.fn_setRotationIndependence (true);
                 v_cam2.fn_setCameraRelativePosition(-1.5, 0.0 , 1.5
                     ,0.0 ,-0.5 ,0.0);

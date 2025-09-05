@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
-import c_Object from '../js_object.js'; // The path to your c_Object module
+import SimObject from '../js_object.js'; // The path to your SimObject module
 
 const PI_div_2 = Math.PI / 2;
 
@@ -24,7 +24,7 @@ export class DesertWorld {
         const loader = new THREE.ObjectLoader();
         loader.load('../../models/vehicles/car1.json', (obj) => {
             obj.rotateZ(0);
-            const c_robot = new c_Object(p_id);
+            const c_robot = new SimObject(p_id);
             c_robot.fn_createCustom(obj);
             c_robot.fn_setPosition(p_x, p_y, 0);
             c_robot.fn_castShadow(false);

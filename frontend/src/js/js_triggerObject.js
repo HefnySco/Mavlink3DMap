@@ -10,7 +10,7 @@
 
 /*jshint esversion: 6 */
 
-class c_Trigger {
+class Trigger {
 
     /**
      * relative (0,0,0) to parent object
@@ -35,4 +35,4 @@ class c_Trigger {
 }
 
 
-export {c_Trigger};
+export {Trigger};

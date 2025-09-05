@@ -9,9 +9,9 @@
 
 
 /*jshint esversion: 6 */
-import c_Object from './js_object.js';
+import SimObject from './js_object.js';
 
-class c_PhysicsObject extends c_Object {
+class c_PhysicsObject extends SimObject {
 
 
 

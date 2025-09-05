@@ -1,19 +1,16 @@
-/* ********************************************************************************
-*   M A V L I N K 3 D - M A P        JAVASCRIPT  LIB
-*   
-*   Author: Mohammad S. Hefny
-*
-*   Date:   09 Sep 2020
-*
-*********************************************************************************** */
-
-import c_Object from './js_object.js';
+import SimObject from './js_object.js';
 import { FRAME_TYPE_UNKNOWN } from './js_globals.js';
 
-class c_Vehicle extends c_Object {
-    constructor(p_name) {
-        super(p_name);
+/**
+ * Represents a vehicle, extending the base SimObject.
+ * This class can be further extended to create specific vehicle types
+ * like Copter, Plane, or Rover with specialized logic.
+ */
+class Vehicle extends SimObject {
+    constructor(name) {
+        super(name);
+        this.type = FRAME_TYPE_UNKNOWN; // Can be set properly later
     }
 }
 
-export default c_Vehicle;
+export  default Vehicle ;
