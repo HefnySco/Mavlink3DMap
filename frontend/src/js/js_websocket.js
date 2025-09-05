@@ -103,9 +103,9 @@ class c_CommandParser extends c_WebSocketComm {
 
                 switch (c_mavlinkMessage.header.msgId) {
                     case mavlink20.MAVLINK_MSG_ID_HEARTBEAT:
-                        if (v_vehicle || v_droneInProgress.has(src)) return;
+                        if (v_vehicle || v_droneInProgress.has(srcSystem)) return;
 
-                        this.handleHeartbeat(srcSystem, v_droneInProgress, c_world, v_vehicle, c_mavlinkMessage);
+                        this.handleHeartbeat(srcSystem, v_droneInProgress, c_world, c_mavlinkMessage);
                         break;
                     case mavlink20.MAVLINK_MSG_ID_RC_CHANNELS:
                         if (v_vehicle) this.handleRCChannels(v_vehicle, c_mavlinkMessage);
@@ -124,7 +124,7 @@ class c_CommandParser extends c_WebSocketComm {
         };
     }
 
-    handleHeartbeat(src, v_droneInProgress, c_world, v_vehicle, c_mavlinkMessage) {
+    handleHeartbeat(src, v_droneInProgress, c_world, c_mavlinkMessage) {
 
         v_droneInProgress.add(src);
 
