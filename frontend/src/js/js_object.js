@@ -70,6 +70,11 @@ class SimObject {
         this.m_position_Z = p_lng - this.m_positionZero_Y;
     }
 
+
+    fn_getPosition() {
+        return [this.m_position_X, this.m_position_Y, this.m_position_Z];
+    }
+
     fn_setRotation(p_roll, p_pitch, p_yaw) {
         this.m_roll = p_roll;
         this.m_pitch = p_pitch;

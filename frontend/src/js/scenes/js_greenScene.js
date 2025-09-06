@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import SimObject from '../js_object.js';
 
+import {EVENTS as js_event} from '../js_eventList.js';
+import { js_eventEmitter } from '../js_eventEmitter.js';
+
 const PI_div_2 = Math.PI / 2;
 
 export class DesertWorld {
@@ -11,6 +14,11 @@ export class DesertWorld {
         this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
         this.tiles = new Map(); // Map to store active tiles by their grid coordinates
         this.droneId = null; // To store the ID of the drone
+
+        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
+            const location_array = vehicle.fn_getPosition();
+            p_me.updateTiles(location_array[0], - location_array[2]); // Update tiles based on drone position
+        });
     }
 
     init(p_XZero, p_YZero) {
@@ -23,9 +31,12 @@ export class DesertWorld {
 
     // Update tiles based on drone's position
     updateTiles(droneX, droneY) {
-        // Calculate the grid coordinates of the tile under the drone
+        // Calculate grid coordinates (use -droneY to align with 3D Z-axis)
         const gridX = Math.floor(droneX / this.tileSize);
-        const gridY = Math.floor(droneY / this.tileSize);
+        const gridY = Math.floor(-droneY / this.tileSize);
+
+        // Debug: Log grid coordinates to verify changes
+        console.log(`Updating tiles: droneX=${droneX}, droneY=${droneY}, gridX=${gridX}, gridY=${gridY}`);
 
         // Create a set of required tile coordinates
         const requiredTiles = new Set();
@@ -41,6 +52,7 @@ export class DesertWorld {
                 const tile = this.tiles.get(key);
                 this.world.v_scene.remove(tile);
                 this.tiles.delete(key);
+                console.log(`Removed tile: ${key}`);
             }
         }
 
@@ -49,11 +61,12 @@ export class DesertWorld {
             if (!this.tiles.has(key)) {
                 const [x, y] = key.split(',').map(Number);
                 this._addGrassPlane(x * this.tileSize, y * this.tileSize);
+                console.log(`Added tile: ${key}`);
             }
         }
     }
 
-    // Private method to create and add a car (drone) to the scene
+    // Private method to create and add a drone to the scene
     _addCar(p_id, p_x, p_y, p_radius) {
         const loader = new THREE.ObjectLoader();
         loader.load('../../models/vehicles/car1.json', (obj) => {
@@ -82,8 +95,7 @@ export class DesertWorld {
                 c_deg = (c_deg + 0.01) % (2 * Math.PI);
                 c_robot.fn_setRotation(0, 0, -c_deg - PI_div_2);
 
-                // Update tiles based on the drone's new position
-                this.updateTiles(newX, newY);
+                
             });
 
             this.world.fn_registerCamerasOfObject(c_robot);
