@@ -51,11 +51,11 @@ class c_ArduVehicles extends Vehicle {
                 }
                 break;
 
-            case FRAME_TYPE_PLANE: 
-            {
-                this.m_type = FRAME_TYPE_CUSTOM;
-                this.fn_createCustom(p_customObject, p_callbackfunc);
-            }
+            case FRAME_TYPE_PLANE:
+                {
+                    this.m_type = FRAME_TYPE_CUSTOM;
+                    this.fn_createCustom(p_customObject, p_callbackfunc);
+                }
                 break;
 
             default: this.m_type = FRAME_TYPE_UNKNOWN;
