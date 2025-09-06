@@ -1,23 +1,30 @@
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import SimObject from '../js_object.js';
-
 import {EVENTS as js_event} from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
+import { _map_lat, _map_lng } from '../js_globals.js'; // Import _map_lat and _map_lng
 
 const PI_div_2 = Math.PI / 2;
 
-export class DesertWorld {
+// Approximate meters per degree longitude at given latitude
+const metersPerDegreeLat = 111319.9; // Meters per degree latitude (approximate, WGS84)
+const getMetersPerDegreeLng = (lat) => metersPerDegreeLat * Math.cos(lat * Math.PI / 180);
+
+export class MapboxWorld {
     constructor(worldInstance) {
         this.world = worldInstance;
-        this.tileSize = 50; // Size of each square tile (width and height)
+        this.tileSize = 500; // Size of each square tile in meters (width and height)
         this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
         this.tiles = new Map(); // Map to store active tiles by their grid coordinates
         this.droneId = null; // To store the ID of the drone
+        this.textureLoader = new THREE.TextureLoader();
+        this.mapboxAccessToken = 'pk.eyJ1IjoiaHNhYWQiLCJhIjoiY2tqZnIwNXRuMndvdTJ4cnV0ODQ4djZ3NiJ9.LKojA3YMrG34L93jRThEGQ'; // Replace with your Mapbox access token
+        this.zoomLevel = 16; // Mapbox zoom level (adjust as needed)
 
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
             const location_array = vehicle.fn_getPosition();
-            p_me.updateTiles(location_array[0], - location_array[2]); // Update tiles based on drone position
+            p_me.updateTiles(location_array[0], -location_array[2]); // Update tiles based on drone position
         });
     }
 
@@ -31,28 +38,30 @@ export class DesertWorld {
 
     // Update tiles based on drone's position
     updateTiles(droneX, droneY) {
-        // Calculate grid coordinates (use -droneY to align with 3D Z-axis)
+        // Calculate grid coordinates
         const gridX = Math.floor(droneX / this.tileSize);
-        const gridY = Math.floor(-droneY / this.tileSize);
+        const gridY = Math.floor(droneY / this.tileSize);
 
-        // Debug: Log grid coordinates to verify changes
-        console.log(`Updating tiles: droneX=${droneX}, droneY=${droneY}, gridX=${gridX}, gridY=${gridY}`);
-
-        // Create a set of required tile coordinates
+        // Create a set of required tile coordinates, including preload range
         const requiredTiles = new Set();
-        for (let x = gridX - this.tileRange; x <= gridX + this.tileRange; x++) {
-            for (let y = gridY - this.tileRange; y <= gridY + this.tileRange; y++) {
+        const preloadRange = this.tileRange + 1; // Preload one extra tile in each direction
+        for (let x = gridX - preloadRange; x <= gridX + preloadRange; x++) {
+            for (let y = gridY - preloadRange; y <= gridY + preloadRange; y++) {
                 requiredTiles.add(`${x},${y}`);
             }
         }
 
-        // Remove tiles that are no longer needed
+        // Remove tiles that are outside the extended range (tileRange + 2) to avoid excessive memory usage
+        const maxRange = this.tileRange + 2;
         for (const key of this.tiles.keys()) {
-            if (!requiredTiles.has(key)) {
+            const [x, y] = key.split(',').map(Number);
+            if (Math.abs(x - gridX) > maxRange || Math.abs(y - gridY) > maxRange) {
                 const tile = this.tiles.get(key);
                 this.world.v_scene.remove(tile);
+                if (tile.material.map) tile.material.map.dispose(); // Dispose texture to free memory
+                tile.material.dispose();
+                tile.geometry.dispose();
                 this.tiles.delete(key);
-                console.log(`Removed tile: ${key}`);
             }
         }
 
@@ -60,8 +69,7 @@ export class DesertWorld {
         for (const key of requiredTiles) {
             if (!this.tiles.has(key)) {
                 const [x, y] = key.split(',').map(Number);
-                this._addGrassPlane(x * this.tileSize, y * this.tileSize);
-                console.log(`Added tile: ${key}`);
+                this._addMapboxTile(x * this.tileSize, y * this.tileSize);
             }
         }
     }
@@ -94,8 +102,6 @@ export class DesertWorld {
                 c_robot.fn_setPosition(newX, newY, 0);
                 c_deg = (c_deg + 0.01) % (2 * Math.PI);
                 c_robot.fn_setRotation(0, 0, -c_deg - PI_div_2);
-
-                
             });
 
             this.world.fn_registerCamerasOfObject(c_robot);
@@ -105,16 +111,31 @@ export class DesertWorld {
         });
     }
 
-    // Private method to add a single grass plane tile
-    _addGrassPlane(p_XZero, p_YZero) {
-        const loader = new THREE.ObjectLoader();
-        loader.load('/public/models/grass_plan.json', (obj) => {
-            obj.position.set(p_XZero, -0.01, p_YZero);
-            obj.rotateZ(0);
-            const tileKey = `${Math.floor(p_XZero / this.tileSize)},${Math.floor(p_YZero / this.tileSize)}`;
-            this.tiles.set(tileKey, obj);
-            this.world.v_scene.add(obj);
-        });
+    // Private method to add a single Mapbox satellite tile
+    _addMapboxTile(p_XZero, p_YZero) {
+        // Convert world coordinates to geographic coordinates
+        const centerLat = _map_lat + (p_XZero / metersPerDegreeLat);
+        const metersPerDegreeLng = getMetersPerDegreeLng(centerLat);
+        const centerLng = _map_lng + (p_YZero / metersPerDegreeLng);
+
+        // Calculate tile coordinates for Mapbox
+        const tileX = Math.floor((centerLng + 180) / 360 * Math.pow(2, this.zoomLevel));
+        const tileY = Math.floor((1 - Math.log(Math.tan(centerLat * Math.PI / 180) + 1 / Math.cos(centerLat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, this.zoomLevel));
+
+        // Construct Mapbox Static Tiles API URL
+        const tileUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/${this.zoomLevel}/${tileX}/${tileY}?access_token=${this.mapboxAccessToken}`;
+
+        // Create plane geometry for the tile
+        const geometry = new THREE.PlaneGeometry(this.tileSize, this.tileSize);
+        const material = new THREE.MeshBasicMaterial({ map: this.textureLoader.load(tileUrl), side: THREE.DoubleSide });
+
+        const tile = new THREE.Mesh(geometry, material);
+        tile.position.set(p_XZero, -0.01, p_YZero); // Slightly below ground to avoid z-fighting
+        tile.rotation.x = -PI_div_2; // Rotate to lie flat on the ground
+        tile.rotation.z = -PI_div_2; // Rotate to lie flat on the ground
+        const tileKey = `${Math.floor(p_XZero / this.tileSize)},${Math.floor(p_YZero / this.tileSize)}`;
+        this.tiles.set(tileKey, tile);
+        this.world.v_scene.add(tile);
     }
 
     // Private method to add buildings

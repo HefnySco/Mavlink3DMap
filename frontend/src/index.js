@@ -5,14 +5,13 @@ import { C_World } from './js/js_world.js';
 import { c_ArduVehicles } from './js/js_arduVehicles.js'; // Placeholder: Ensure this file exists
 import { c_CommandParser } from './js/js_websocket.js'; // Placeholder: Ensure this file exists
 import './js/js_globals.js';
-import './js/js_helpers.js'; // Placeholder: Ensure this file exists
 import './js/js_utilities.js'; // Placeholder: Ensure this file exists
 import './js/js_triggerObject.js'; // Placeholder: Ensure this file exists
 import './js/js_object.js';
 import './js/js_physicsObject.js'; // Placeholder: Ensure this file exists
 import './js/js_vehicle.js';
 import './js/js_camera.js';
-import { DesertWorld } from './js/scenes/js_greenScene.js'; // Placeholder: Ensure this file exists
+import { CGrassWorld } from './js/scenes/js_green_scene.js'; // Placeholder: Ensure this file exists
 //import './js/objects/Water.js'; // Placeholder: Ensure this file exists
 import './js/ConvexHull.js'; // Placeholder: Ensure this file exists
 import './js/ConvexGeometry.js'; // Placeholder: Ensure this file exists
@@ -41,7 +40,7 @@ function initWorld() {
 
     // Initialize physics and world
     c_world.fn_initPhysics();
-    c_world.fn_initWorld = new DesertWorld(c_world); 
+    c_world.fn_initWorld = new CGrassWorld(c_world); 
     c_world.fn_initWorld.init(CONFIG.worldZero.x, CONFIG.worldZero.y);
 
     return c_world;

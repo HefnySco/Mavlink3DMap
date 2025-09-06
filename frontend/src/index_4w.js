@@ -1,26 +1,25 @@
 import $ from 'jquery';
-import * as THREE from 'three';
-import Stats from './js/stats.module.js'; // Placeholder: Ensure this file exists or use npm stats.js
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { C_World } from './js/js_world.js';
-import { c_ArduVehicles } from './js/js_arduVehicles.js'; // Placeholder: Ensure this file exists
-import { c_CommandParser } from './js/js_websocket.js'; // Placeholder: Ensure this file exists
+import { c_CommandParser } from './js/js_websocket.js'; 
 import './js/js_globals.js';
-import './js/js_helpers.js'; // Placeholder: Ensure this file exists
-import './js/js_utilities.js'; // Placeholder: Ensure this file exists
-import './js/js_triggerObject.js'; // Placeholder: Ensure this file exists
+import './js/js_helpers.js'; 
+import './js/js_utilities.js'; 
+import './js/js_triggerObject.js'; 
 import './js/js_object.js';
-import './js/js_physicsObject.js'; // Placeholder: Ensure this file exists
+import './js/js_physicsObject.js'; 
 import './js/js_vehicle.js';
 import './js/js_camera.js';
-import { DesertWorld } from './js/scenes/js_greenScene.js'; // Placeholder: Ensure this file exists
-//import './js/objects/Water.js'; // Placeholder: Ensure this file exists
-import './js/ConvexHull.js'; // Placeholder: Ensure this file exists
-import './js/ConvexGeometry.js'; // Placeholder: Ensure this file exists
-import './js/ConvexObjectBreaker.js'; // Placeholder: Ensure this file exists
+import { CGrassWorld } from './js/scenes/js_green_scene.js'; 
+//import { RealMapWorld } from './js/scenes/js_real_map.js';
+import {MapboxWorld} from './js/scenes/js_map_box_scene.js';
+//import './js/objects/Water.js'; 
+import './js/ConvexHull.js'; 
+import './js/ConvexGeometry.js'; 
+import './js/ConvexObjectBreaker.js'; 
 
 
 function initWorld() {
+    const sceneType = window.sceneType;
     const c_world = new C_World(0, 0);
     c_world.fn_addCanvas(document.getElementById('map3D_1'));
     c_world.fn_addCanvas(document.getElementById('map3D_2'));
@@ -28,9 +27,22 @@ function initWorld() {
     c_world.fn_addCanvas(document.getElementById('map3D_4'));
     c_world.fn_initTHREE(document.documentElement.clientWidth / 2.1, document.documentElement.clientHeight / 2.1);
     
+    let scene;
+    // Select scene based on sceneType
+    if (sceneType === 'realmap') {
+        //scene = new RealMapWorld(c_world);
+    } else if (sceneType === 'greengrass') {
+        scene = new CGrassWorld(c_world);
+    } else if (sceneType === 'map_box') {
+        scene = new MapboxWorld(c_world);
+    } else {
+        console.warn(`Unknown scene type: ${sceneType}. Defaulting to CGrassWorld.`);
+        scene = new CGrassWorld(c_world);
+    }
+
     // Initialize physics and world
     c_world.fn_initPhysics();
-    c_world.fn_initWorld = new DesertWorld(c_world); 
+    c_world.fn_initWorld = scene; 
     c_world.fn_initWorld.init(0, 0);
 
     return c_world;

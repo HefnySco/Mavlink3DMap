@@ -4,7 +4,7 @@
  * get distance between two ponts
  * see: https://www.movable-type.co.uk/scripts/latlong.html
 */
-var get_distance = function  (lat1, lat2, lon1, lon2) 
+export function get_distance  (lat1, lat2, lon1, lon2) 
 {
     const R = 6371e3; // metres
     const φ1 = lat1 * Math.PI/180; // φ, λ in radians
@@ -23,7 +23,7 @@ var get_distance = function  (lat1, lat2, lon1, lon2)
 }
 
 
-var get_bearing = function (lat1, lat2, lon1, lon2)
+export function get_bearing (lat1, lat2, lon1, lon2)
 {
     const λ1 = lon1 * Math.PI/180; // φ, λ in radians
     const λ2 = lon2 * Math.PI/180;
@@ -41,7 +41,7 @@ var get_bearing = function (lat1, lat2, lon1, lon2)
 }
 
 
-var get_UrlParameter = function get_UrlParameter (sParam) {
+export function get_UrlParameter (sParam) {
     var sPageURL = window.location.search.substring(1),
         sURLVariables = sPageURL.split('&'),
         sParameterName,

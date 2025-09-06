@@ -67,7 +67,7 @@ class c_ArduVehicles extends Vehicle {
     #fn_createDroneX(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
         var Me = this;
-        c_loader.load('/public/models/vehicles/quadX.json', function (p_obj) {
+        c_loader.load('/models/vehicles/quadX.json', function (p_obj) {
             /*
             Adjust relative object position & orientation here if needed.
             obj.rotateOnAxis(_xAxis,90);
