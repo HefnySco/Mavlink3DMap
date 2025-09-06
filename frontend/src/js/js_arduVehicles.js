@@ -35,7 +35,7 @@ class c_ArduVehicles extends Vehicle {
     fn_createVehicle(p_classType, p_attachCamera, p_customObject, p_callbackfunc, p_addtoscene) {
         switch (p_classType) {
             case FRAME_TYPE_X: this.m_type = FRAME_TYPE_X;
-                this.fn_createDroneX(p_attachCamera, p_callbackfunc, p_addtoscene);
+                this.#fn_createDroneX(p_attachCamera, p_callbackfunc, p_addtoscene);
                 break;
 
             case FRAME_TYPE_PLUS: this.m_type = FRAME_TYPE_PLUS;
