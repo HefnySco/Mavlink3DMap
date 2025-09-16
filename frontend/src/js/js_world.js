@@ -168,7 +168,7 @@ class C_World {
 
     fn_initTHREE(p_width, p_height) {
         if (p_width == null) p_width = 640;
-        if (p_height == null) p_height = 480;
+        if (p_height == null) p_height = 640;
 
         this.v_clock = new THREE.Clock();
         this.v_height3D = 0;

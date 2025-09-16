@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { CameraController } from './js_camera.js';
 import { Trigger } from './js_triggerObject.js';
 import { FRAME_TYPE_UNKNOWN, _xAxis, _yAxis, _zAxis, DEG_2_RAD } from './js_globals.js'; // Assumes js_globals.js provides these
+import { getInitialDisplacement } from './js_globals.js';
 
 // Stub for getAngleOfPWM (used in fn_apply_attached_units)
 function getAngleOfPWM(maxAngle, minAngle, pwmValue, maxPWM, minPWM) {
@@ -53,7 +54,8 @@ class SimObject {
         this.v_q2 = new THREE.Quaternion();
         this.v_q3 = new THREE.Quaternion();
         this.v_qt = new THREE.Quaternion();
-        this.fn_setZeroPosition(0, 0, 0);
+        const displacement = getInitialDisplacement();
+        this.fn_setZeroPosition(displacement.X, displacement.Y, displacement.Alt);
     }
 
     fn_setZeroPosition(p_lat, p_lng, p_alt) {

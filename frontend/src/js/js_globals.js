@@ -36,3 +36,11 @@ export function getAngleOfPWM(maxAngle, minAngle, pwmValue, maxPWM = 1900, minPW
     console.warn('getAngleOfPWM: using placeholder implementation');
     return (pwmValue - minPWM) / (maxPWM - minPWM) * (maxAngle - minAngle) + minAngle;
 }
+
+// Placeholder for getInitialDisplacement
+export function getInitialDisplacement() {
+    // Return X, Y offsets in meters
+    // Example: Adjust based on specific requirements (e.g., from config or URL parameters)
+    //return { X: -140, Y: 110,  Alt: 0}; // Default: no offset
+    return { X: 0, Y: 0,  Alt: 0}; // Default: no offset
+}
