@@ -7,7 +7,7 @@
 *********************************************************************************** */
 import { mavlink20, MAVLink20Processor } from './js_mavlink_v2.js';
 import { c_ArduVehicles } from './js_arduVehicles.js';
-import {EVENTS as js_event}  from './js_eventList.js'
+import { EVENTS as js_event } from './js_eventList.js'
 import { js_eventEmitter } from './js_eventEmitter.js';
 
 
@@ -121,6 +121,9 @@ class c_CommandParser extends c_WebSocketComm {
                     case mavlink20.MAVLINK_MSG_ID_ATTITUDE:
                         if (v_vehicle) this.handleAttitude(v_vehicle, c_mavlinkMessage);
                         break;
+                    case mavlink20.MAVLINK_MSG_ID_HOME_POSITION:
+                        if (v_vehicle) this.handleHomePosition(v_vehicle, c_mavlinkMessage);
+                        break;
                 }
             }
         };
@@ -182,7 +185,7 @@ class c_CommandParser extends c_WebSocketComm {
             c_world.v_height3D - c_mavlinkMessage.z
         );
 
-        js_eventEmitter.fn_dispatch(js_event.EVT_VEHICLE_POS_CHANGED,v_vehicle);
+        js_eventEmitter.fn_dispatch(js_event.EVT_VEHICLE_POS_CHANGED, v_vehicle);
     }
 
     handleAttitude(v_vehicle, c_mavlinkMessage) {
@@ -191,6 +194,14 @@ class c_CommandParser extends c_WebSocketComm {
             c_mavlinkMessage.pitch,
             -c_mavlinkMessage.yaw
         );
+    }
+
+    handleHomePosition(v_vehicle, c_mavlinkMessage) {
+        js_eventEmitter.fn_dispatch(js_event.EVT_VEHICLE_HOME_CHANGED,
+            {
+                lat: c_mavlinkMessage.latitude,
+                lng: c_mavlinkMessage.longitude
+            });
     }
 }
 

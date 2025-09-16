@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import SimObject from '../js_object.js';
 import {EVENTS as js_event} from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
-import { getInitialDisplacement ,_map_lat , _map_lng} from '../js_globals.js';
+import { getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
 
 const PI_div_2 = Math.PI / 2;
 
@@ -30,6 +30,57 @@ export class MapboxWorld {
             const location_array = vehicle.fn_getPosition();
             p_me.updateTiles(location_array[0], -location_array[2]);
         });
+
+        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, {lat,lng}) => {
+            p_me.loadMapFromHome(lat, lng);
+        });
+    }
+
+    // Load map with new home coordinates and center on vehicle position
+    loadMapFromHome(lat, lng, vehicleX = 0, vehicleY = 0) {
+        // Update home coordinates
+        this.homeLat = lat * 1E-7;
+        this.homeLng = lng * 1E-7;
+
+        // Update displacement
+        const displacement = getInitialDisplacement();
+        this.displacementX = displacement.X;
+        this.displacementY = displacement.Y;
+
+        // Clear existing tiles
+        for (const tile of this.tiles.values()) {
+            this.world.v_scene.remove(tile);
+            if (tile.material.map) tile.material.map.dispose();
+            tile.material.dispose();
+            tile.geometry.dispose();
+        }
+        this.tiles.clear();
+
+        // Remove existing car (if any) to avoid duplicates
+        if (this.droneId && this.world.v_robots[this.droneId]) {
+            const robot = this.world.v_robots[this.droneId];
+            this.world.v_scene.remove(robot.fn_getMesh());
+            delete this.world.v_robots[this.droneId];
+            this.droneId = null;
+        }
+
+        // Remove existing buildings and lights
+        this.world.v_scene.children = this.world.v_scene.children.filter(child => 
+            !(child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry) && // Keep non-tile meshes temporarily
+            !(child instanceof THREE.AmbientLight || child instanceof THREE.DirectionalLight) // Remove lights
+        );
+
+        // Reinitialize scene with new car, buildings, and lights
+        this.droneId = 'car' + uuidv4();
+        this._addCar(this.droneId, vehicleX, vehicleY, 7);
+        this._addBuildings(vehicleX, vehicleY);
+        this._addLights();
+
+        // Update tiles around the vehicle's position
+        this.updateTiles(vehicleX, -vehicleY);
+
+        // Adjust cameras to focus on the vehicle's new position
+        this._adjustCameras(vehicleX, vehicleY);
     }
 
     init(p_XZero, p_YZero) {
@@ -92,7 +143,23 @@ export class MapboxWorld {
         }
     }
 
-    
+    _adjustCameras(p_XZero, p_YZero) {
+        for (let i = 0; i < this.world.v_views.length; ++i) {
+            for (let j = 0; j < this.world.v_views[i].v_localCameras.length; ++j) {
+                const cam = this.world.v_views[i].v_localCameras[j];
+                if (cam instanceof THREE.PerspectiveCamera) {
+                    // Position camera above the vehicle with an offset
+                    cam.position.set(p_XZero + 5, 5, p_YZero);
+                    cam.lookAt(new THREE.Vector3(p_XZero, 0, p_YZero));
+                    // Update OrbitControls if present
+                    if (cam.m_controls) {
+                        cam.m_controls.target.set(p_XZero, 0, p_YZero);
+                        cam.m_controls.update();
+                    }
+                }
+            }
+        }
+    }
 
     _addCar(p_id, p_x, p_y, p_radius) {
         const loader = new THREE.ObjectLoader();
@@ -166,7 +233,6 @@ export class MapboxWorld {
         this.world.v_scene.add(tile);
     }
 
-    // Private method to add buildings
     _addBuildings(p_XZero, p_YZero) {
         const c_buildings = [
             [-16, -8], [-16, -12], [-16, -16],
