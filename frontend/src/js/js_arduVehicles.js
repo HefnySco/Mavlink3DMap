@@ -66,7 +66,7 @@ class c_ArduVehicles extends Vehicle {
 
     #fn_createDroneX(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
-        var Me = this;
+        let Me = this;
         c_loader.load('/models/vehicles/quadX.json', function (p_obj) {
             /*
             Adjust relative object position & orientation here if needed.
@@ -76,24 +76,25 @@ class c_ArduVehicles extends Vehicle {
             // extract object from Group
 
             if (p_attachCamera === true) {
-                //this.fn_attachedCamera(false,false,false);
-                var v_cam1 = new CameraController(Me, true);
+                let v_cam1 = new CameraController(Me, true);
                 v_cam1.fn_setRotationIndependence(false, true, true);
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(0.0, -0.1, 0.0,
                     0.0, -1.57, 0.0);
-                var v_cam2 = new CameraController(Me, false, true);
+
+                let v_cam2 = new CameraController(Me, false, true);
                 v_cam2.fn_setRotationIndependence(true);
+                v_cam2.fn_setOrbitMode(true);
                 v_cam2.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
 
-                var v_cam3 = new CameraController(Me, true);
+                let v_cam3 = new CameraController(Me, true);
                 v_cam3.fn_setCameraRelativePosition(1.0, 0.0, 0.0,
                     0.0, 0.0, 0.0);
 
                 Me.m_cameras.push(v_cam1);  // drone cam
-                Me.m_cameras.push(v_cam2);  // monitor
-                Me.m_cameras.push(v_cam3);  // monitor
+                Me.m_cameras.push(v_cam2);  // follow-me
+                Me.m_cameras.push(v_cam3);  // drone cam front
             }
 
             Me.fn_createCustom(p_obj, function (p_mesh) {
@@ -104,7 +105,7 @@ class c_ArduVehicles extends Vehicle {
 
     #fn_createDronePlus(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
-        var Me = this;
+        let Me = this;
         c_loader.load('./models/vehicles/quadplus.json', function (p_obj) {
             /*
             Adjust relative object position & orientation here if needed.
@@ -115,12 +116,12 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                var v_cam1 = new CameraController(Me, true);
+                let v_cam1 = new CameraController(Me, true);
                 v_cam1.fn_setRotationIndependence(false, false, false);
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(0.0, -0.1, 0.0,
                     0.0, -1.57, 0.0);
-                var v_cam2 = new CameraController(Me, false, true);
+                let v_cam2 = new CameraController(Me, false, true);
                 v_cam2.fn_setRotationIndependence(true);
                 v_cam2.fn_setCameraRelativePosition(- 1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
@@ -136,7 +137,7 @@ class c_ArduVehicles extends Vehicle {
 
      #fn_createDrone4(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
-        var Me = this;
+        let Me = this;
         c_loader.load('./models/vehicles/drone4/drone-4.json', function (p_obj) {
             /*
             Adjust relative object position & orientation here if needed.
@@ -147,12 +148,12 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                var v_cam1 = new CameraController(Me, true);
+                let v_cam1 = new CameraController(Me, true);
                 v_cam1.fn_setRotationIndependence(false, true, true);
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(-0.1, -0.3, 0.8,
                     0.0, 1.57, 0.0);
-                var v_cam2 = new CameraController(Me, false, true);
+                let v_cam2 = new CameraController(Me, false, true);
                 v_cam2.fn_setRotationIndependence(true);
                 v_cam2.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
@@ -174,7 +175,7 @@ class c_ArduVehicles extends Vehicle {
 
     #fn_createDronePlane(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
-        var Me = this;
+        let Me = this;
         c_loader.load('./models/vehicles/plane_model1.json', function (p_obj) {
             /*
             Adjust relative object position & orientation here if needed.
@@ -183,14 +184,14 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                var v_cam1 = new CameraController(Me, true);
+                let v_cam1 = new CameraController(Me, true);
                 // 6 & 7 are servo channels that is used by gimbal... you can use them to get real feedback
                 //v_cam1.fn_setRotationIndependence (false, false, false, 6, 7);
                 v_cam1.fn_setRotationIndependence(false, false, false, null, null);
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(0.4, 0.0, 0.0,
                     0.0, 0.0, 0.0);
-                var v_cam2 = new CameraController(Me, false, true);
+                let v_cam2 = new CameraController(Me, false, true);
                 v_cam2.fn_setRotationIndependence(true);
                 v_cam2.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
@@ -206,7 +207,7 @@ class c_ArduVehicles extends Vehicle {
 
     #fn_createDroneVTOLPlane(p_attachCamera, p_callbackfunc, p_addtoscene) {
         const c_loader = new THREE.ObjectLoader();
-        var Me = this;
+        let Me = this;
         c_loader.load('./models/vehicles/vtol3Motor/model.json', function (p_obj) {
 
             /*
@@ -217,18 +218,18 @@ class c_ArduVehicles extends Vehicle {
             const c_ServoChannels = [10, 11, 12];
             const c_MotorNumber = [1, 2, 3];
             //const c_MotorOffset = [[-40,-45,0], [40,-45,0], [0,100,0]];
-            for (var x = 0; x < c_MotorNumber.length; ++x) {
-                var label = "M" + (x + 1).toString();
-                var M = p_obj.getObjectByName(label);
+            for (let x = 0; x < c_MotorNumber.length; ++x) {
+                let label = "M" + (x + 1).toString();
+                let M = p_obj.getObjectByName(label);
                 if (M != null) {
-                    var pivot = new THREE.Group();
+                    let pivot = new THREE.Group();
                     pivot.add(M);
                     p_addtoscene(pivot);
                     p_obj.add(pivot);
 
-                    var _offset = new THREE.Vector3();
+                    let _offset = new THREE.Vector3();
                     M.geometry.computeBoundingBox();
-                    var center_motor = M.geometry.boundingBox.getCenter(_offset).clone();
+                    let center_motor = M.geometry.boundingBox.getCenter(_offset).clone();
                     // //.geometry.center()
                     M.geometry.center();
                     M.parent.translateX(center_motor.x * M.scale.x);
@@ -249,7 +250,7 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                var v_cam1 = new CameraController(Me, true);
+                let v_cam1 = new CameraController(Me, true);
                 // channel 6 Servo
                 //v_cam1.fn_setRotationIndependence (false, false, false, null, null);
                 //v_cam1.m_cameraThree.setRotationFromQuaternion(p_obj.quaternion);
@@ -257,7 +258,7 @@ class c_ArduVehicles extends Vehicle {
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(1.0, 0.0, 0.0,
                     0.0, 0.0, 0.0);
-                var v_cam2 = new CameraController(Me, false, true);
+                let v_cam2 = new CameraController(Me, false, true);
                 v_cam2.fn_setRotationIndependence(true);
                 v_cam2.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
