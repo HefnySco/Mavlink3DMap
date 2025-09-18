@@ -133,6 +133,45 @@ class c_ArduVehicles extends Vehicle {
         });
     }
 
+
+     #fn_createDrone4(p_attachCamera, p_callbackfunc) {
+        const c_loader = new THREE.ObjectLoader();
+        var Me = this;
+        c_loader.load('./models/vehicles/drone4/drone-4.json', function (p_obj) {
+            /*
+            Adjust relative object position & orientation here if needed.
+            obj.rotateOnAxis(_xAxis,90);
+            */
+
+            // extract object from Group
+
+            if (p_attachCamera === true) {
+                //this.fn_attachedCamera(false,false,false);
+                var v_cam1 = new CameraController(Me, true);
+                v_cam1.fn_setRotationIndependence(false, true, true);
+                // facing down with stabilizer
+                v_cam1.fn_setCameraRelativePosition(-0.1, -0.3, 0.8,
+                    0.0, 1.57, 0.0);
+                var v_cam2 = new CameraController(Me, false, true);
+                v_cam2.fn_setRotationIndependence(true);
+                v_cam2.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
+                    , 0.0, -0.5, 0.0);
+
+                // var v_cam3 = new CameraController(Me, true);
+                // v_cam3.fn_setCameraRelativePosition(1.0, 0.0, 0.0,
+                //     0.0, 0.0, 0.0);
+
+                Me.m_cameras.push(v_cam1);  // drone cam
+                Me.m_cameras.push(v_cam2);  // monitor
+                //Me.m_cameras.push(v_cam3);  // monitor
+            }
+
+            Me.fn_createCustom(p_obj, function (p_mesh) {
+                p_callbackfunc(p_mesh);
+            });
+        });
+    }
+
     #fn_createDronePlane(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
         var Me = this;
