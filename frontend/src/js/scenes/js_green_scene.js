@@ -100,7 +100,7 @@ export class CGrassWorld {
 
             this.world.fn_registerCamerasOfObject(c_robot);
             c_robot.fn_setRotation(0, 0.0, 0.0);
-            this.world.v_robots[p_id] = c_robot;
+            this.world.fn_addRobot(p_id,c_robot);
             this.world.v_scene.add(c_robot.fn_getMesh());
         });
     }

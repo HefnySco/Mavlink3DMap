@@ -10,12 +10,14 @@ const FLAGS = { CF_KINEMATIC_OBJECT: 2 };
 
 
 class C_World {
+    #m_robots = {};
+        
     constructor(p_XZero, p_YZero) {
 
         if (p_XZero == null) p_XZero = 0;
         if (p_YZero == null) p_YZero = 0;
 
-        this.v_scene = [];
+        this.v_scene = null
 
         this.v_clock;
         this.v_water = null;
@@ -32,7 +34,7 @@ class C_World {
         this.v_height3D = 0;
 
         this.v_drone = {};
-        this.v_robots = {};
+        this.#m_robots = {};
         this.v_cameras = [];
         this.v_views = [];
 
@@ -49,7 +51,6 @@ class C_World {
         this.pos = new THREE.Vector3();
         this.quat = new THREE.Quaternion();
 
-        var v_eventMouseClick;
         this.v_convexBreaker;
         this.fractureImpulse = 15; // force to break object.
 
@@ -81,14 +82,30 @@ class C_World {
         this.fn_animate = this.fn_animate.bind(this);
     }
 
+    fn_addRobot(key, value)
+    {
+        if (!key) return ;
+        this.#m_robots[key] = value;
+    }
+
+    fn_getRobot(key)
+    {
+        return this.#m_robots[key];
+    }
+
+    fn_deleteRobot(key)
+    {
+        delete this.#m_robots[key];
+    }
+
     /*
      * Add cameras of a vehicle to all available views.
      */
     fn_registerCamerasOfObject(p_vehicle) {
-        var cameras = p_vehicle.fn_getCamera();
-        for (var i = 0; i < cameras.length; ++i) {
+        let cameras = p_vehicle.fn_getCamera();
+        for (let i = 0; i < cameras.length; ++i) {
             let v_camera = cameras[i];
-            for (var j = 0; j < this.v_views.length; ++j) {
+            for (let j = 0; j < this.v_views.length; ++j) {
                 this.v_views[j].v_localCameras.push(v_camera);
             }
             this.v_scene.add(v_camera.m_cameraThree);
@@ -216,11 +233,11 @@ class C_World {
             this.v_drone[c_keys[i]].fn_updateSimulationStep();
         }
 
-        c_keys = Object.keys(this.v_robots);
+        c_keys = Object.keys(this.#m_robots);
         c_key_length = c_keys.length;
 
         for (let i = 0; i < c_key_length; ++i) {
-            this.v_robots[c_keys[i]].fn_updateSimulationStep();
+            this.#m_robots[c_keys[i]].fn_updateSimulationStep();
         }
 
         for (let i = 0; i < this.v_views.length; ++i) {

@@ -5,37 +5,36 @@ class C_View {
     constructor(p_world, p_canvas, p_XZero, p_YZero) {
 
         this.p_world = p_world;
-        this.p_canvas = p_canvas;
-        var v_myView = this;
+        this.m_canvas = p_canvas;
         this.v_droneIndex = 0;
         this.v_localCameras = [];
         this.v_localActiveCamera = null;
-        this.p_canvas.width = p_canvas.clientWidth * window.devicePixelRatio;
-        this.p_canvas.height = p_canvas.clientHeight * window.devicePixelRatio;
+        this.m_canvas.width = p_canvas.clientWidth * window.devicePixelRatio;
+        this.m_canvas.height = p_canvas.clientHeight * window.devicePixelRatio;
 
         this.v_context = p_canvas.getContext('2d');
 
-        const v_camera = new THREE.PerspectiveCamera(
+        this.m_main_camera = new THREE.PerspectiveCamera(
             75, // FOV
             p_canvas.width / p_canvas.height, // Aspect Ratio
             0.1, // Near Clipping Plane
             5000 // Far Clipping Plane
         );
 
-        this.v_localActiveCamera = v_camera;
-        this.v_localCameras.push(v_camera);
+        this.v_localActiveCamera = this.m_main_camera ;
+        this.v_localCameras.push(this.m_main_camera );
 
-        v_camera.position.set(5, 5, 0);
-        v_camera.lookAt(new THREE.Vector3(p_XZero + 0, 0, p_YZero + 0));
+        this.m_main_camera.position.set(5, 5, 0);
+        this.m_main_camera.lookAt(new THREE.Vector3(p_XZero + 0, 0, p_YZero + 0));
 
-        v_camera.m_controls = new OrbitControls(v_camera, p_canvas);
+        this.m_main_camera.m_controls = new OrbitControls(this.m_main_camera , p_canvas);
 
 
         this.fn_onMouseDown = this.fn_onMouseDown.bind(this);
         this.fn_onMouseDoubleClick = this.fn_onMouseDoubleClick.bind(this);
 
-        this.p_canvas.addEventListener('click', this.fn_onMouseDown, false);
-        this.p_canvas.addEventListener('dblclick', this.fn_onMouseDoubleClick, false);
+        this.m_canvas.addEventListener('click', this.fn_onMouseDown, false);
+        this.m_canvas.addEventListener('dblclick', this.fn_onMouseDoubleClick, false);
 
 
     }
@@ -75,11 +74,6 @@ class C_View {
         }
         return needResize;
     };
-
-    fn_setActiveCamera(p_activeCamera) {
-        this.v_localActiveCamera = p_activeCamera;
-    };
-
 
     fn_handleCameraSwitch(event) {
         const c_keyLength = this.v_localCameras.length;
@@ -140,6 +134,11 @@ class C_View {
             case 65: /*A*/
                 if (this.v_localActiveCamera.userData.m_ownerObject == null) break;
                 this.v_localActiveCamera.userData.m_ownerObject.fn_setCameraDeltaOrientation(0.0, 0, 0.1);
+                break;
+
+            case 72: /*H*/
+                if (this.m_main_camera == null) break;
+                this.m_main_camera.lookAt(0.0, 0, 0.1);
                 break;
 
             case 82: /*R*/

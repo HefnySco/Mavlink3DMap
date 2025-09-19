@@ -58,10 +58,10 @@ class SimObject {
         this.fn_setZeroPosition(displacement.X, displacement.Y, displacement.Alt);
     }
 
-    fn_setZeroPosition(p_lat, p_lng, p_alt) {
-        this.m_positionZero_X = p_lat;
-        this.m_positionZero_Y = p_lng;
-        this.m_positionZero_Z = p_alt;
+    fn_setZeroPosition(x, y, z) {
+        this.m_positionZero_X = x;
+        this.m_positionZero_Y = y; // Altitude in three.js
+        this.m_positionZero_Z = z; 
     }
 
     fn_setPosition(p_lat, p_lng, p_alt) {

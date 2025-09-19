@@ -57,10 +57,10 @@ export class MapboxWorld {
         this.tiles.clear();
 
         // Remove existing car (if any) to avoid duplicates
-        if (this.droneId && this.world.v_robots[this.droneId]) {
-            const robot = this.world.v_robots[this.droneId];
+        if (this.droneId && this.world.fn_getRobot(this.droneId)) {
+            const robot = this.world.fn_getRobot(this.droneId);
             this.world.v_scene.remove(robot.fn_getMesh());
-            delete this.world.v_robots[this.droneId];
+            this.world.fn_deleteRobot(this.droneId);
             this.droneId = null;
         }
 
@@ -192,7 +192,7 @@ export class MapboxWorld {
 
             this.world.fn_registerCamerasOfObject(c_robot);
             c_robot.fn_setRotation(0, 0.0, 0.0);
-            this.world.v_robots[p_id] = c_robot;
+            this.world.fn_addRobot(p_id, c_robot);
             this.world.v_scene.add(c_robot.fn_getMesh());
         });
     }

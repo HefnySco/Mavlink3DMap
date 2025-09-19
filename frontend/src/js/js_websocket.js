@@ -118,6 +118,9 @@ class c_CommandParser extends c_WebSocketComm {
                     case mavlink20.MAVLINK_MSG_ID_LOCAL_POSITION_NED:
                         if (v_vehicle) this.handleLocalPosition(v_vehicle, c_world, c_mavlinkMessage);
                         break;
+                    case mavlink20.MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
+                        if (v_vehicle) this.handleGlobalPosition(v_vehicle, c_world, c_mavlinkMessage);
+                        break;
                     case mavlink20.MAVLINK_MSG_ID_ATTITUDE:
                         if (v_vehicle) this.handleAttitude(v_vehicle, c_mavlinkMessage);
                         break;
@@ -178,11 +181,22 @@ class c_CommandParser extends c_WebSocketComm {
         v_vehicle.fn_setServosOutputs(9, servos);
     }
 
+    handleGlobalPosition (v_vehicle, c_world, c_mavlinkMessage) {
+        v_vehicle.fn_setLatLngAlt(
+            c_mavlinkMessage.lat,
+            c_mavlinkMessage.lon,
+            c_mavlinkMessage.alt
+        );
+
+    }
+
     handleLocalPosition(v_vehicle, c_world, c_mavlinkMessage) {
-        v_vehicle.fn_setPosition(
+
+        
+        v_vehicle.fn_setVehicleLocalPosition(
             c_mavlinkMessage.x,
-            c_mavlinkMessage.y,
-            c_world.v_height3D - c_mavlinkMessage.z
+            c_world.v_height3D - c_mavlinkMessage.z,
+            c_mavlinkMessage.y
         );
 
         js_eventEmitter.fn_dispatch(js_event.EVT_VEHICLE_POS_CHANGED, v_vehicle);
@@ -200,7 +214,8 @@ class c_CommandParser extends c_WebSocketComm {
         js_eventEmitter.fn_dispatch(js_event.EVT_VEHICLE_HOME_CHANGED,
             {
                 lat: c_mavlinkMessage.latitude,
-                lng: c_mavlinkMessage.longitude
+                lng: c_mavlinkMessage.longitude,
+                vehicle: v_vehicle
             });
     }
 }

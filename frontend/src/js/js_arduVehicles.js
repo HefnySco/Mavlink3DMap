@@ -29,6 +29,44 @@ class c_ArduVehicles extends Vehicle {
 
         const v = new URLSearchParams(window.location.search);
         this.m_vtol = (v.get("vtol") != null);
+        this.mGpsLocation = {
+            lat: 0.0,
+            lng: 0.0,
+            alt:0.0
+        };
+
+        this.m_zero_set = false;
+    }
+
+
+    fn_setVehicleLocalPosition (x, y, z)
+    {
+        if (!this.m_zero_set)
+        {
+            this.fn_setZeroPosition (x, y, z);
+            this.m_zero_set = true;
+        }
+        else
+        {
+            this.fn_setPosition (x, y, z);
+        }
+    }
+
+    fn_setLatLngAlt(lat, lng, alt)
+    {
+        this.mGpsLocation.lat = lat;
+        this.mGpsLocation.lng = lng;
+        this.mGpsLocation.alt = alt;
+    }
+
+
+    fn_LatLngToXY (lat, lng)
+    {
+        let loc = {};
+        loc.x = this.m_position_X==0?0:this.mGpsLocation.lat * this.m_position_X / lat;
+        loc.y = this.m_position_Z==0?0:this.mGpsLocation.lng * this.m_position_Z / lng;
+
+        return loc;
     }
 
 
