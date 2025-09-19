@@ -3,13 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import SimObject from '../js_object.js';
 import {EVENTS as js_event} from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
-import { getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
+import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
 
 const PI_div_2 = Math.PI / 2;
 
 // Approximate meters per degree latitude (WGS84)
-const metersPerDegreeLat = 111319.9;
-const getMetersPerDegreeLng = (lat) => metersPerDegreeLat * Math.cos(lat * Math.PI / 180);
 
 export class MapboxWorld {
     constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
@@ -27,8 +25,10 @@ export class MapboxWorld {
         this.displacementY = displacement.Y;
 
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
-            const location_array = vehicle.fn_getPosition();
-            p_me.updateTiles(location_array[0], -location_array[2]);
+            // const location_array = vehicle.fn_getPosition();
+            // p_me.updateTiles(location_array[0], -location_array[2]);
+            const {x,y,z} = vehicle.fn_translateXYZ();
+            p_me.updateTiles(x, -z); // Update tiles based on drone position
         });
 
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, {lat,lng}) => {

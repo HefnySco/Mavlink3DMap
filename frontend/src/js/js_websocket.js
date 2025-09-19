@@ -115,9 +115,6 @@ class c_CommandParser extends c_WebSocketComm {
                     case mavlink20.MAVLINK_MSG_ID_SERVO_OUTPUT_RAW:
                         if (v_vehicle) this.handleServosOutputs(v_vehicle, c_mavlinkMessage);
                         break;
-                    case mavlink20.MAVLINK_MSG_ID_LOCAL_POSITION_NED:
-                        if (v_vehicle) this.handleLocalPosition(v_vehicle, c_world, c_mavlinkMessage);
-                        break;
                     case mavlink20.MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
                         if (v_vehicle) this.handleGlobalPosition(v_vehicle, c_world, c_mavlinkMessage);
                         break;
@@ -181,26 +178,17 @@ class c_CommandParser extends c_WebSocketComm {
         v_vehicle.fn_setServosOutputs(9, servos);
     }
 
-    handleGlobalPosition (v_vehicle, c_world, c_mavlinkMessage) {
+    handleGlobalPosition(v_vehicle, c_world, c_mavlinkMessage) {
         v_vehicle.fn_setLatLngAlt(
             c_mavlinkMessage.lat,
             c_mavlinkMessage.lon,
-            c_mavlinkMessage.alt
-        );
-
-    }
-
-    handleLocalPosition(v_vehicle, c_world, c_mavlinkMessage) {
-
-        
-        v_vehicle.fn_setVehicleLocalPosition(
-            c_mavlinkMessage.x,
-            c_world.v_height3D - c_mavlinkMessage.z,
-            c_mavlinkMessage.y
+            c_mavlinkMessage.alt,
+            c_mavlinkMessage.relative_alt
         );
 
         js_eventEmitter.fn_dispatch(js_event.EVT_VEHICLE_POS_CHANGED, v_vehicle);
     }
+
 
     handleAttitude(v_vehicle, c_mavlinkMessage) {
         v_vehicle.fn_setRotation(
@@ -211,12 +199,7 @@ class c_CommandParser extends c_WebSocketComm {
     }
 
     handleHomePosition(v_vehicle, c_mavlinkMessage) {
-        js_eventEmitter.fn_dispatch(js_event.EVT_VEHICLE_HOME_CHANGED,
-            {
-                lat: c_mavlinkMessage.latitude,
-                lng: c_mavlinkMessage.longitude,
-                vehicle: v_vehicle
-            });
+        v_vehicle.fn_setHomeLatLngAlt(c_mavlinkMessage.latitude, c_mavlinkMessage.longitude, c_mavlinkMessage.altitude);
     }
 }
 

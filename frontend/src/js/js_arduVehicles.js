@@ -12,7 +12,10 @@
 
 import * as THREE from 'three';
 import { CameraController } from './js_camera.js';
-import Vehicle from './js_vehicle.js'
+import Vehicle from './js_vehicle.js';
+import { getMetersPerDegreeLng, metersPerDegreeLat } from './js_globals.js';
+import { EVENTS as js_event } from './js_eventList.js'
+import { js_eventEmitter } from './js_eventEmitter.js';
 
 const FRAME_TYPE_PLUS = 0;
 const FRAME_TYPE_PLANE = 1;
@@ -32,43 +35,68 @@ class c_ArduVehicles extends Vehicle {
         this.mGpsLocation = {
             lat: 0.0,
             lng: 0.0,
-            alt:0.0
+            alt: 0.0
         };
+
+        this.m_homeLat = 0;
+        this.m_homeLng = 0;
+        this.m_homeAlt = 0;
 
         this.m_zero_set = false;
     }
 
 
-    fn_setVehicleLocalPosition (x, y, z)
-    {
-        if (!this.m_zero_set)
-        {
-            this.fn_setZeroPosition (x, y, z);
-            this.m_zero_set = true;
+    // fn_setVehicleLocalPosition(x, y, z) {
+    //     if (!this.m_zero_set) {
+    //         this.fn_setZeroPosition(x, y, z);
+    //         this.m_zero_set = true;
+    //     }
+    //     else {
+    //         this.fn_setPosition(x, y, z);
+    //     }
+    // }
+
+    fn_setLatLngAlt(lat, lng, alt_abs, alt_res) {
+
+        if (this.m_homeLat === 0.0 && this.m_homeLng === 0.0) {
+            this.fn_setHomeLatLngAlt(lat, lng, alt_abs - alt_res); // create an initial home locaion.
         }
-        else
-        {
-            this.fn_setPosition (x, y, z);
+        this.mGpsLocation.lat = lat / 1e7; // Convert from 1e7 degrees to degrees
+        this.mGpsLocation.lng = lng / 1e7;
+        this.mGpsLocation.alt = alt_res / 1000; // Convert from mm to meters
+        this.mGpsLocation.alt_abs = alt_abs / 1000; // Convert from mm to meters
+    }
+
+
+    fn_setHomeLatLngAlt(lat, lng, alt) {
+        this.m_homeLat = lat / 1e7;
+        this.m_homeLng = lng / 1e7;
+        this.m_homeAlt = alt / 1000;
+
+
+        js_eventEmitter.fn_dispatch(js_event.EVT_VEHICLE_HOME_CHANGED,
+            {
+                lat: lat,
+                lng: lng,
+                alt: alt,
+                vehicle: this
+            });
+    }
+
+
+    fn_getLocalPositionFromLatLng() {
+        if (this.m_homeLat === 0.0 && this.m_homeLng === 0.0) {
+            return { x: 0, y: 0, z: 0 }; // Home not set yet
         }
+        const deltaLat = this.mGpsLocation.lat - this.m_homeLat;
+        const deltaLng = this.mGpsLocation.lng - this.m_homeLng;
+        const avgLat = (this.mGpsLocation.lat + this.m_homeLat) / 2;
+        const lat = deltaLat * metersPerDegreeLat; // North (x)
+        const lng = deltaLng * getMetersPerDegreeLng(avgLat); // East (y)
+        const alt = this.m_homeAlt - this.mGpsLocation.alt; // Down (z, positive downward)
+        const o = { 'x': lat, 'z': lng, 'y': alt };
+        return o;
     }
-
-    fn_setLatLngAlt(lat, lng, alt)
-    {
-        this.mGpsLocation.lat = lat;
-        this.mGpsLocation.lng = lng;
-        this.mGpsLocation.alt = alt;
-    }
-
-
-    fn_LatLngToXY (lat, lng)
-    {
-        let loc = {};
-        loc.x = this.m_position_X==0?0:this.mGpsLocation.lat * this.m_position_X / lat;
-        loc.y = this.m_position_Z==0?0:this.mGpsLocation.lng * this.m_position_Z / lng;
-
-        return loc;
-    }
-
 
     fn_createVehicle(p_classType, p_attachCamera, p_customObject, p_callbackfunc, p_addtoscene) {
         switch (p_classType) {
@@ -173,7 +201,7 @@ class c_ArduVehicles extends Vehicle {
     }
 
 
-     #fn_createDrone4(p_attachCamera, p_callbackfunc) {
+    #fn_createDrone4(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
         let Me = this;
         c_loader.load('./models/vehicles/drone4/drone-4.json', function (p_obj) {
@@ -209,6 +237,11 @@ class c_ArduVehicles extends Vehicle {
                 p_callbackfunc(p_mesh);
             });
         });
+    }
+
+    // Override
+    fn_translateXYZ() {
+        return this.fn_getLocalPositionFromLatLng();
     }
 
     #fn_createDronePlane(p_attachCamera, p_callbackfunc) {

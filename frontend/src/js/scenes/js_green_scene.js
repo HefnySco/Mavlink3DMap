@@ -16,8 +16,8 @@ export class CGrassWorld {
         this.droneId = null; // To store the ID of the drone
 
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
-            const location_array = vehicle.fn_getPosition();
-            p_me.updateTiles(location_array[0], - location_array[2]); // Update tiles based on drone position
+            const {x,y,z} = vehicle.fn_translateXYZ();
+            p_me.updateTiles(x, -z); // Update tiles based on drone position
         });
     }
 

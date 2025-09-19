@@ -165,6 +165,14 @@ class SimObject {
         }
     }
 
+    /**
+     * Can be overridden by children classes to use different coordinates.
+     */
+    fn_translateXYZ()
+    {
+        return {x:this.m_position_X, y:this.m_position_Y, z:this.m_position_Z};
+    }
+
     fn_applyIMU() {
         if (this.m_Mesh == null) return;
 
@@ -176,7 +184,8 @@ class SimObject {
 
         this.m_Mesh.setRotationFromQuaternion(this.v_qt);
 
-        this.m_Mesh.position.set(this.m_position_X, this.m_position_Y, this.m_position_Z);
+        const {x,y,z} = this.fn_translateXYZ();
+        this.m_Mesh.position.set(x, y, z);
 
         const v_len = this.m_cameras.length;
 

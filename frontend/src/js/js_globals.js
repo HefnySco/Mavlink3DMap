@@ -18,6 +18,7 @@ export const DEG_2_RAD = Math.PI / 180.0;
 export const MAP_SCALE = 1418;
 export const MILE_TO_KM = 1.60934;
 export const gravityConstant = 9.8;
+export const metersPerDegreeLat = 111319.9;
 
 // Three.js vectors
 export const _xAxis = new THREE.Vector3(1, 0, 0);
@@ -44,3 +45,7 @@ export function getInitialDisplacement() {
     //return { X: -140, Y: 110,  Alt: 0}; // Default: no offset
     return { X: 0, Y: 0,  Alt: 0}; // Default: no offset
 }
+
+
+
+export const getMetersPerDegreeLng = (lat) => metersPerDegreeLat * Math.cos(lat * Math.PI / 180);
