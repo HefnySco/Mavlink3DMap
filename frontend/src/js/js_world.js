@@ -148,8 +148,8 @@ class C_World {
     };
 
 
-    fn_addCanvas(p_canvas) {
-        this.v_views.push(new C_View(this, p_canvas, this.v_XZero, this.v_YZero));
+    fn_addCanvas(p_canvas, isStreamable = false) {
+        this.v_views.push(new C_View(this, p_canvas, this.v_XZero, this.v_YZero, isStreamable));
         this.v_selectedView = p_canvas;
     };
 
@@ -240,10 +240,9 @@ class C_World {
             this.#m_robots[c_keys[i]].fn_updateSimulationStep();
         }
 
-        for (let i = 0; i < this.v_views.length; ++i) {
-            this.renderer.render(this.v_scene, this.v_views[i].v_localActiveCamera);
-            this.v_views[i].v_context.drawImage(this.renderer.domElement, 0, 0);
-        }
+        this.v_views.forEach(view => {
+        view.fn_render();
+        });
 
         if (this.v_water != null) this.v_water.material.uniforms['time'].value += 1.0 / 60.0;
 
