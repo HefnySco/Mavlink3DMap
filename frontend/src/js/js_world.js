@@ -11,7 +11,7 @@ const FLAGS = { CF_KINEMATIC_OBJECT: 2 };
 
 class C_World {
     #m_robots = {};
-        
+
     constructor(p_XZero, p_YZero) {
 
         if (p_XZero == null) p_XZero = 0;
@@ -19,7 +19,7 @@ class C_World {
 
         this.v_scene = null
 
-        this.v_clock;
+        this.v_clock = null;
         this.v_water = null;
         this.v_selectedView = null;
         this.v_collisionConfiguration;
@@ -39,10 +39,10 @@ class C_World {
         this.v_views = [];
 
         this.v_needUpdate = false;
-        this.canvas;
-        this.stats;
-        this.camera;
-        this.renderer;
+        this.canvas = null;
+        this.stats = null;
+        this.camera = null;
+        this.renderer = null;
 
         this.raycaster = new THREE.Raycaster();
         this.mouseCoords = new THREE.Vector2();
@@ -51,7 +51,7 @@ class C_World {
         this.pos = new THREE.Vector3();
         this.quat = new THREE.Quaternion();
 
-        this.v_convexBreaker;
+        this.v_convexBreaker = null;
         this.fractureImpulse = 15; // force to break object.
 
         this.v_impactPoint = new THREE.Vector3();
@@ -73,6 +73,7 @@ class C_World {
                 <li>F1: Help Toggle</li>
                 <li>'P , O' Switch Cameras</li>
                 <li>'W A S D Q E' Change Camera View for Vehicles</li>
+                <li>'L' Goto Drone</li>
                 <li>'R' Reset Camera View</li>
             </ul>
         `;
@@ -80,21 +81,19 @@ class C_World {
         helpDlg.style.display = 'none'; // Initially hidden
 
         this.fn_animate = this.fn_animate.bind(this);
+
     }
 
-    fn_addRobot(key, value)
-    {
-        if (!key) return ;
+    fn_addRobot(key, value) {
+        if (!key) return;
         this.#m_robots[key] = value;
     }
 
-    fn_getRobot(key)
-    {
+    fn_getRobot(key) {
         return this.#m_robots[key];
     }
 
-    fn_deleteRobot(key)
-    {
+    fn_deleteRobot(key) {
         delete this.#m_robots[key];
     }
 
@@ -145,6 +144,37 @@ class C_World {
     fn_onKeyDown(event) {
         if (this.v_selectedView == null || this.v_selectedView.fn_handleCameraSwitch == null) return;
         this.v_selectedView.fn_handleCameraSwitch(event);
+
+        if (event.keyCode === 76) { /* L */
+            // Get the first ArduVehicle from v_drone
+            const vehicleIds = Object.keys(this.v_drone);
+            if (vehicleIds.length === 0) {
+                console.warn('No ArduVehicles found to position camera above.');
+                return;
+            }
+
+            const firstVehicle = this.v_drone[vehicleIds[0]];
+            if (!firstVehicle) {
+                console.warn('First vehicle is undefined.');
+                return;
+            }
+
+            // Get the vehicle's position
+            const { x, y, z } = firstVehicle.fn_translateXYZ();
+
+            // Position the main camera above the vehicle (e.g., 10 units above)
+            const cameraHeight = 10; // Adjust this value as needed
+            this.v_selectedView.m_main_camera.position.set(x, y + cameraHeight, z);
+
+            // Make the camera look at the vehicle's position
+            this.v_selectedView.m_main_camera.lookAt(new THREE.Vector3(x, y, z));
+
+            // Update OrbitControls to focus on the vehicle
+            if (this.v_selectedView.m_main_camera.m_controls) {
+                this.v_selectedView.m_main_camera.m_controls.target.set(x, y, z);
+                this.v_selectedView.m_main_camera.m_controls.update();
+            }
+        }
     };
 
 
@@ -241,7 +271,7 @@ class C_World {
         }
 
         this.v_views.forEach(view => {
-        view.fn_render();
+            view.fn_render();
         });
 
         if (this.v_water != null) this.v_water.material.uniforms['time'].value += 1.0 / 60.0;
