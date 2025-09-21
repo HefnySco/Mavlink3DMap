@@ -1,8 +1,10 @@
 {
-  "name": "frontend",
+  "name": "mavlink-3d-map-simulator-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "MAVLink 3D Map Simulator - A JavaScript library for visualizing MAVLink-enabled vehicles in 3D environments, including physics simulation, camera controls, and map integration.",
+  "author": "Mohammad Hefny <mohammad.hefny@gmail.com>",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

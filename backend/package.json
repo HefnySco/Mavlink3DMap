@@ -1,5 +1,7 @@
 {
-  "version":"1.0.0",
+  "version": "1.0.0",
+  "author": "Mohammad Hefny <mohammad.hefny@gmail.com>",
+
   "dependencies": {
     "commander": "^14.0.0",
     "jspack": "^0.0.4",
