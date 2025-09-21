@@ -32,8 +32,8 @@ function initWorld() {
     if (canvas) {
         canvas.width = document.documentElement.clientWidth;
         canvas.height = document.documentElement.clientHeight;
-        c_world.fn_addCanvas(canvas);
         c_world.fn_initTHREE(canvas.width, canvas.height);
+        c_world.fn_addCanvas(canvas);
     } else {
         console.error(`Canvas element with ID ${CONFIG.canvasId} not found.`);
     }
