@@ -46,16 +46,6 @@ class c_ArduVehicles extends Vehicle {
     }
 
 
-    // fn_setVehicleLocalPosition(x, y, z) {
-    //     if (!this.m_zero_set) {
-    //         this.fn_setZeroPosition(x, y, z);
-    //         this.m_zero_set = true;
-    //     }
-    //     else {
-    //         this.fn_setPosition(x, y, z);
-    //     }
-    // }
-
     fn_setLatLngAlt(lat, lng, alt_abs, alt_res) {
 
         if (this.m_homeLat === 0.0 && this.m_homeLng === 0.0) {
@@ -142,25 +132,28 @@ class c_ArduVehicles extends Vehicle {
             // extract object from Group
 
             if (p_attachCamera === true) {
-                let v_cam1 = new CameraController(Me, true);
-                v_cam1.fn_setRotationIndependence(false, true, true);
+                let v_cam1_down = new CameraController(Me, true);
+                v_cam1_down.fn_setRotationIndependence(false, true, true);
                 // facing down with stabilizer
-                v_cam1.fn_setCameraRelativePosition(0.0, 0.2, 0.0,
+                v_cam1_down.fn_setCameraRelativePosition(0.0, 0.0, 0.0,
                     0.0, -1.57, 0.0);
 
-                let v_cam2 = new CameraController(Me, false, true);
-                v_cam2.fn_setRotationIndependence(true);
-                v_cam2.fn_setOrbitMode(true);
-                v_cam2.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
-                    , 0.0, -0.5, 0.0);
-
-                let v_cam3 = new CameraController(Me, true);
-                v_cam3.fn_setCameraRelativePosition(1.0, 0.0, 0.0,
+                let v_cam_front = new CameraController(Me, true);
+                v_cam_front.fn_setRotationIndependence(false, true, true);
+                v_cam_front.fn_setCameraRelativePosition(0.3, 0.0, 0.0,
                     0.0, 0.0, 0.0);
 
-                Me.m_cameras.push(v_cam1);  // drone cam
-                Me.m_cameras.push(v_cam2);  // follow-me
-                Me.m_cameras.push(v_cam3);  // drone cam front
+                let v_cam_follow_me = new CameraController(Me, false);
+                v_cam_follow_me.fn_setRotationIndependence(true);
+                v_cam_follow_me.fn_setOrbitMode(true);
+                v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
+                    , 0.0, -0.5, 0.0);
+
+                
+                Me.m_cameras.push(v_cam1_down);  // drone cam
+                Me.m_cameras.push(v_cam_front);  // drone cam front
+                Me.m_cameras.push(v_cam_follow_me);  // follow-me
+                
             }
 
             Me.fn_createCustom(p_obj, function (p_mesh) {
@@ -182,18 +175,18 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                let v_cam1 = new CameraController(Me, true);
-                v_cam1.fn_setRotationIndependence(false, false, false);
+                let v_cam1_down = new CameraController(Me, true);
+                v_cam1_down.fn_setRotationIndependence(false, false, false);
                 // facing down with stabilizer
-                v_cam1.fn_setCameraRelativePosition(0.0, -0.1, 0.0,
+                v_cam1_down.fn_setCameraRelativePosition(0.0, -0.1, 0.0,
                     0.0, -1.57, 0.0);
-                let v_cam2 = new CameraController(Me, false, true);
-                v_cam2.fn_setRotationIndependence(true);
-                v_cam2.fn_setCameraRelativePosition(- 1.5, 0.0, 1.5
+                let v_cam_follow_me = new CameraController(Me, false);
+                v_cam_follow_me.fn_setRotationIndependence(true);
+                v_cam_follow_me.fn_setCameraRelativePosition(- 1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
 
-                Me.m_cameras.push(v_cam1);
-                Me.m_cameras.push(v_cam2);
+                Me.m_cameras.push(v_cam1_down);
+                Me.m_cameras.push(v_cam_follow_me);
             }
 
             Me.fn_createCustom(p_obj, p_callbackfunc);
@@ -214,23 +207,26 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                let v_cam1 = new CameraController(Me, true);
-                v_cam1.fn_setRotationIndependence(false, true, true);
+                let v_cam1_down = new CameraController(Me, true);
+                v_cam1_down.fn_setRotationIndependence(false, true, true);
                 // facing down with stabilizer
-                v_cam1.fn_setCameraRelativePosition(-0.1, -0.3, 0.8,
+                v_cam1_down.fn_setCameraRelativePosition(-0.1, -0.3, 0.8,
                     0.0, 1.57, 0.0);
-                let v_cam2 = new CameraController(Me, false, true);
-                v_cam2.fn_setRotationIndependence(true);
-                v_cam2.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
+                
+                
+                let v_cam_follow_me = new CameraController(Me, false);
+                v_cam_follow_me.fn_setRotationIndependence(true);
+                v_cam_follow_me.fn_setOrbitMode(true);
+                v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
 
+                
                 // var v_cam3 = new CameraController(Me, true);
                 // v_cam3.fn_setCameraRelativePosition(1.0, 0.0, 0.0,
                 //     0.0, 0.0, 0.0);
 
-                Me.m_cameras.push(v_cam1);  // drone cam
-                Me.m_cameras.push(v_cam2);  // monitor
-                //Me.m_cameras.push(v_cam3);  // monitor
+                Me.m_cameras.push(v_cam1_down);  // drone cam
+                Me.m_cameras.push(v_cam_follow_me);  // follow-me
             }
 
             Me.fn_createCustom(p_obj, function (p_mesh) {
@@ -255,20 +251,23 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                let v_cam1 = new CameraController(Me, true);
+                let v_cam_front = new CameraController(Me, true);
                 // 6 & 7 are servo channels that is used by gimbal... you can use them to get real feedback
                 //v_cam1.fn_setRotationIndependence (false, false, false, 6, 7);
-                v_cam1.fn_setRotationIndependence(false, false, false, null, null);
+                v_cam_front.fn_setRotationIndependence(false, false, false, null, null);
                 // facing down with stabilizer
-                v_cam1.fn_setCameraRelativePosition(0.4, 0.0, 0.0,
+                v_cam_front.fn_setCameraRelativePosition(0.4, 0.0, 0.0,
                     0.0, 0.0, 0.0);
-                let v_cam2 = new CameraController(Me, false, true);
-                v_cam2.fn_setRotationIndependence(true);
-                v_cam2.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
+                
+                    let v_cam_follow_me = new CameraController(Me, false);
+                v_cam_follow_me.fn_setRotationIndependence(true);
+                v_cam_follow_me.fn_setOrbitMode(true);
+                v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
 
-                Me.m_cameras.push(v_cam1);
-                Me.m_cameras.push(v_cam2);
+                
+                Me.m_cameras.push(v_cam_front);
+                Me.m_cameras.push(v_cam_follow_me);  // follow-me
             }
 
             Me.fn_createCustom(p_obj, p_callbackfunc);
@@ -329,13 +328,16 @@ class c_ArduVehicles extends Vehicle {
                 // facing down with stabilizer
                 v_cam1.fn_setCameraRelativePosition(1.0, 0.0, 0.0,
                     0.0, 0.0, 0.0);
-                let v_cam2 = new CameraController(Me, false, true);
-                v_cam2.fn_setRotationIndependence(true);
-                v_cam2.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
+                
+                let v_cam_follow_me = new CameraController(Me, false);
+                v_cam_follow_me.fn_setRotationIndependence(true);
+                v_cam_follow_me.fn_setOrbitMode(true);
+                v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
 
+                
                 Me.m_cameras.push(v_cam1);
-                Me.m_cameras.push(v_cam2);
+                Me.m_cameras.push(v_cam_follow_me);  // follow-me
             }
 
             Me.fn_createCustom(p_obj, function (p_mesh) {
