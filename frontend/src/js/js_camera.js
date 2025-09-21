@@ -38,6 +38,13 @@ class CameraController {
     m_fov = 75;
     m_isDownward = false;
 
+    // Reusable temps to avoid per-frame allocations
+    v_q1; v_q2; v_q3;
+    _qIdentity = new THREE.Quaternion(); // left at identity; never mutate directly
+    _eulerYXZ = new THREE.Euler(0, 0, 0, 'YXZ'); // Y->X->Z (matches existing multiply order)
+    _tmpV1 = new THREE.Vector3();
+    _tmpV2 = new THREE.Vector3();
+
     /**
      * @param {Object} p_attachedObject - The object to which the camera is attached.
      * @param {boolean} p_createHelper - Whether to create a camera helper for debugging.
@@ -177,92 +184,108 @@ class CameraController {
 
         if (!c_camera) return;
 
-        let vehicleOrientation = v_vehicleOrientationQT;
-        if (this.m_OwnerRotationIndependent) {
-            vehicleOrientation = new THREE.Quaternion(); // Reset orientation if independent
-        }
+        const rotationIndependent = this.m_OwnerRotationIndependent;
 
         if (this.m_orbitMode) {
-            // Orbit mode: Position camera by rotating relative position around parent's origin
-            const relative = this.m_relativePosition.clone();
+            // Orbit mode: rotate relative position around parent's origin
+            // Use cached temp vector instead of clone()
+            const rel = this._tmpV1.copy(this.m_relativePosition);
 
-            // Apply rotations in parent’s local space: elevation (around X), azimuth (around Y), bank (around Z)
-            const qElev = new THREE.Quaternion().setFromAxisAngle(_xAxis, this.m_elevation);
-            const qAzim = new THREE.Quaternion().setFromAxisAngle(_yAxis, this.m_azimuth);
-            relative.applyQuaternion(qElev).applyQuaternion(qAzim);
+            // Apply elevation (X) and azimuth (Y) in parent's local space
+            if (this.m_elevation !== 0) {
+                this.v_q1.setFromAxisAngle(_xAxis, this.m_elevation);
+                rel.applyQuaternion(this.v_q1);
+            }
+            if (this.m_azimuth !== 0) {
+                this.v_q2.setFromAxisAngle(_yAxis, this.m_azimuth);
+                rel.applyQuaternion(this.v_q2);
+            }
 
-            // Transform relative position to world space using parent's orientation
-            relative.applyQuaternion(vehicleOrientation);
+            // Transform to world space by parent's orientation unless rotation-independent
+            if (!rotationIndependent) {
+                rel.applyQuaternion(v_vehicleOrientationQT);
+            }
 
-            // Set camera position: parent position + rotated relative position
-            c_camera.position.copy(p_position).add(relative);
+            // Position = parent position + rotated relative vector
+            c_camera.position.copy(p_position).add(rel);
 
-            // Make camera look at the parent's origin (position)
+            // Look at parent origin
             c_camera.lookAt(p_position);
 
-            // Apply bank (roll around camera's local Z axis)
-            c_camera.rotateZ(this.m_bank);
-        } else {
-            // Original non-orbit behavior
-            // this line that makes the camera rotates around itself not around the vechile.
-            c_camera.setRotationFromQuaternion(vehicleOrientation);
-
-            // Move camera to the parent object's position
-            c_camera.position.set(p_position.x, p_position.y, p_position.z);
-
-            // Adjust camera's position relative to the parent object
-            c_camera.translateOnAxis(_xAxis, this.m_positionCamera_Y);
-            c_camera.translateOnAxis(_yAxis, this.m_positionCamera_Z);
-            c_camera.translateOnAxis(_zAxis, -this.m_positionCamera_X);
-
-            if (this.m_isDownward) {
-                // Downward-facing: Look at ground
-                const groundY = -0.01;
-                c_camera.lookAt(p_position.x, groundY, p_position.z);
-
-                // Apply stabilization
-                let c_pitchCaneller = 0;
-                let c_rollCaneller = 0;
-                if (!this.m_OwnerRotationIndependent) {
-                    if (this.m_HorizontalStabilizer) {
-                        c_rollCaneller = this.m_ownerObject.m_roll;
-                    }
-                    if (this.m_VerticalStabilizer) {
-                        c_pitchCaneller = -this.m_ownerObject.m_pitch;
-                    }
-                    if (this.m_tilteServoChannel != null) {
-                        c_pitchCaneller -= getAngleOfPWM(
-                            90 * DEG_2_RAD,
-                            -45 * DEG_2_RAD,
-                            this.m_ownerObject.m_servoValues[this.m_tilteServoChannel],
-                            1900,
-                            1100
-                        );
-                    }
-                    if (this.m_rollServoChannel != null) {
-                        c_rollCaneller = getAngleOfPWM(
-                            90 * DEG_2_RAD,
-                            -45 * DEG_2_RAD,
-                            this.m_ownerObject.m_servoValues[this.m_rollServoChannel],
-                            1900,
-                            1100
-                        );
-                    }
-                }
-                this.v_q1.setFromAxisAngle(_yAxis, c_pitchCaneller);
-                this.v_q2.setFromAxisAngle(_zAxis, c_rollCaneller);
-                c_camera.quaternion.multiply(this.v_q1).multiply(this.v_q2);
-            } else {
-                // Forward-facing: Rotate around own center
-                // Start with identity quaternion or yaw-only if rotation-independent
-                c_camera.setRotationFromQuaternion(this.m_OwnerRotationIndependent ? vehicleOrientation : v_vehicleOrientationQT);
-
-                // Apply local camera rotations
-                this.v_q1.setFromAxisAngle(_yAxis, this.m_yawCamera);
-                this.v_q2.setFromAxisAngle(_zAxis, this.m_pitchCamera);
-                this.v_q3.setFromAxisAngle(_xAxis, this.m_rollCamera);
-                c_camera.quaternion.multiply(this.v_q1).multiply(this.v_q3).multiply(this.v_q2);
+            // Apply bank around camera's local Z
+            if (this.m_bank !== 0) {
+                c_camera.rotateZ(this.m_bank);
             }
+
+            return;
+        }
+
+        // ---------- Non-orbit behavior ----------
+        // Base orientation: either parent's or identity (no allocation)
+        c_camera.quaternion.copy(rotationIndependent ? this._qIdentity : v_vehicleOrientationQT);
+
+        // Position offset in one pass (replaces three translateOnAxis calls)
+        // Local offset vector (right, up, forward)
+        const offset = this._tmpV2.set(
+            this.m_positionCamera_Y,
+            this.m_positionCamera_Z,
+            -this.m_positionCamera_X
+        ).applyQuaternion(c_camera.quaternion);
+
+        c_camera.position.copy(p_position).add(offset);
+
+        if (this.m_isDownward) {
+            // Downward-facing: Look at ground
+            // Use a tiny epsilon below to avoid exact horizontal lookAt edge cases
+            const groundY = -0.01;
+            c_camera.lookAt(p_position.x, groundY, p_position.z);
+
+            // Stabilization
+            let c_pitchCaneller = 0;
+            let c_rollCaneller = 0;
+
+            if (!rotationIndependent) {
+                if (this.m_HorizontalStabilizer) {
+                    c_rollCaneller = this.m_ownerObject.m_roll;
+                }
+                if (this.m_VerticalStabilizer) {
+                    c_pitchCaneller = -this.m_ownerObject.m_pitch;
+                }
+
+                if (this.m_tilteServoChannel != null) {
+                    c_pitchCaneller -= getAngleOfPWM(
+                        90 * DEG_2_RAD,
+                        -45 * DEG_2_RAD,
+                        this.m_ownerObject.m_servoValues[this.m_tilteServoChannel],
+                        1900,
+                        1100
+                    );
+                }
+
+                if (this.m_rollServoChannel != null) {
+                    c_rollCaneller = getAngleOfPWM(
+                        90 * DEG_2_RAD,
+                        -45 * DEG_2_RAD,
+                        this.m_ownerObject.m_servoValues[this.m_rollServoChannel],
+                        1900,
+                        1100
+                    );
+                }
+            }
+
+            if (c_pitchCaneller !== 0) this.v_q1.setFromAxisAngle(_yAxis, c_pitchCaneller);
+            if (c_rollCaneller !== 0) this.v_q2.setFromAxisAngle(_zAxis, c_rollCaneller);
+
+            // Multiply only what’s needed; preserves original order q = q * q1 * q2
+            if (c_pitchCaneller !== 0) c_camera.quaternion.multiply(this.v_q1);
+            if (c_rollCaneller !== 0) c_camera.quaternion.multiply(this.v_q2);
+
+        } else {
+            // Forward-facing: local camera rotations (combine into one quaternion)
+            // Original order: q = base * yaw(Y) * roll(X) * pitch(Z)  => Euler order 'YXZ'
+            this._eulerYXZ.set(this.m_rollCamera, this.m_yawCamera, this.m_pitchCamera, 'YXZ');
+            this.v_q1.setFromEuler(this._eulerYXZ);
+            c_camera.quaternion.multiply(this.v_q1);
         }
     }
 }
