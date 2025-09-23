@@ -40,8 +40,8 @@ function initWorld() {
 
     // Initialize physics and world
     c_world.fn_initPhysics();
-    c_world.fn_initWorld = new CGrassWorld(c_world); 
-    c_world.fn_initWorld.init(CONFIG.worldZero.x, CONFIG.worldZero.y);
+    c_world.m_scene_env = new CGrassWorld(c_world); 
+    c_world.m_scene_env.init(CONFIG.worldZero.x, CONFIG.worldZero.y);
 
     return c_world;
 }

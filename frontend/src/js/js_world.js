@@ -234,9 +234,9 @@ class C_World {
         document.addEventListener('keydown', this.fn_onKeyDown, false);
     };
 
-    fn_initWorld(p_XZero, p_YZero) {
+    m_scene_env(p_XZero, p_YZero) {
         // Placeholder: Implement or import fn_initDesertWorld
-        console.warn('fn_initWorld not implemented; define fn_initDesertWorld');
+        console.warn('m_scene_env not implemented; define fn_initDesertWorld');
     };
 
     /*

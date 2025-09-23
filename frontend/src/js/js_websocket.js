@@ -134,6 +134,8 @@ class c_CommandParser extends c_WebSocketComm {
         v_droneInProgress.add(src);
 
         const v_vehicle_new = new c_ArduVehicles();
+        v_vehicle_new.sid = src;
+        v_vehicle_new.world = c_world;
         v_vehicle_new.fn_createVehicle(c_mavlinkMessage.type, true, null,
             () => {
                 v_vehicle_new.fn_setPosition(0, 0, 0);

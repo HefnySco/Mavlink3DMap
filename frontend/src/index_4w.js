@@ -43,8 +43,8 @@ function initWorld() {
 
     // Initialize physics and world
     c_world.fn_initPhysics();
-    c_world.fn_initWorld = scene; 
-    c_world.fn_initWorld.init(0, 0);
+    c_world.m_scene_env = scene; 
+    c_world.m_scene_env.init(0, 0);
 
     return c_world;
 }
