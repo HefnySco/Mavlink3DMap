@@ -8,8 +8,6 @@
 *********************************************************************************** */
 
 
-/*jshint esversion: 6 */
-
 import * as THREE from 'three';
 import { CameraController } from './js_camera.js';
 import Vehicle from './js_vehicle.js';
@@ -83,7 +81,7 @@ class c_ArduVehicles extends Vehicle {
         const avgLat = (this.mGpsLocation.lat + this.m_homeLat) / 2;
         const lat = deltaLat * metersPerDegreeLat; // North (x)
         const lng = deltaLng * getMetersPerDegreeLng(avgLat); // East (y)
-        const alt = this.m_homeAlt - this.mGpsLocation.alt; // Down (z, positive downward)
+        const alt = (this.m_homeAlt - this.mGpsLocation.alt) / 50 ; // Down (z, positive downward)
         const o = { 'x': lat, 'z': lng, 'y': alt };
         return o;
     }
@@ -126,19 +124,18 @@ class c_ArduVehicles extends Vehicle {
         c_loader.load('/models/vehicles/quadX.json', function (p_obj) {
             /*
             Adjust relative object position & orientation here if needed.
-            obj.rotateOnAxis(_xAxis,90);
             */
 
             // extract object from Group
 
             if (p_attachCamera === true) {
-                let v_cam1_down = new CameraController(Me, true);
+                let v_cam1_down = new CameraController(Me, true, 90);
                 v_cam1_down.fn_setRotationIndependence(false, true, true);
                 // facing down with stabilizer
                 v_cam1_down.fn_setCameraRelativePosition(0.0, 0.0, 0.0,
                     0.0, -1.57, 0.0);
 
-                let v_cam_front = new CameraController(Me, true);
+                let v_cam_front = new CameraController(Me, true, 90);
                 v_cam_front.fn_setRotationIndependence(false, true, true);
                 v_cam_front.fn_setCameraRelativePosition(0.3, 0.0, 0.0,
                     0.0, 0.0, 0.0);
@@ -168,7 +165,6 @@ class c_ArduVehicles extends Vehicle {
         c_loader.load('./models/vehicles/quadplus.json', function (p_obj) {
             /*
             Adjust relative object position & orientation here if needed.
-            obj.rotateOnAxis(_xAxis,90);
             */
 
             // extract object from Group
@@ -200,7 +196,6 @@ class c_ArduVehicles extends Vehicle {
         c_loader.load('./models/vehicles/drone4/drone-4.json', function (p_obj) {
             /*
             Adjust relative object position & orientation here if needed.
-            obj.rotateOnAxis(_xAxis,90);
             */
 
             // extract object from Group
@@ -208,7 +203,7 @@ class c_ArduVehicles extends Vehicle {
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
                 let v_cam1_down = new CameraController(Me, true);
-                v_cam1_down.fn_setRotationIndependence(false, true, true);
+                v_cam1_down.fn_setRotationIndependence(false, true, true, 90);
                 // facing down with stabilizer
                 v_cam1_down.fn_setCameraRelativePosition(-0.1, -0.3, 0.8,
                     0.0, 1.57, 0.0);
@@ -246,7 +241,6 @@ class c_ArduVehicles extends Vehicle {
         c_loader.load('./models/vehicles/plane_model1.json', function (p_obj) {
             /*
             Adjust relative object position & orientation here if needed.
-            obj.rotateOnAxis(_xAxis,90);
             */
 
             if (p_attachCamera === true) {
@@ -282,7 +276,6 @@ class c_ArduVehicles extends Vehicle {
 
             /*
             Adjust relative object position & orientation here if needed.
-            obj.rotateOnAxis(_xAxis,90);
             */
 
             const c_ServoChannels = [10, 11, 12];
