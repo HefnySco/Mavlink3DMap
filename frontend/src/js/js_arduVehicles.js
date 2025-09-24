@@ -28,6 +28,8 @@ class c_ArduVehicles extends Vehicle {
     constructor(p_name) {
         super(p_name);
 
+        this.sid = 0;
+
         const v = new URLSearchParams(window.location.search);
         this.m_vtol = (v.get("vtol") != null);
         this.mGpsLocation = {
@@ -41,6 +43,7 @@ class c_ArduVehicles extends Vehicle {
         this.m_homeAlt = 0;
 
         this.m_zero_set = false;
+        this.world = null;  // Reference to C_World
     }
 
 
@@ -76,14 +79,36 @@ class c_ArduVehicles extends Vehicle {
         if (this.m_homeLat === 0.0 && this.m_homeLng === 0.0) {
             return { x: 0, y: 0, z: 0 }; // Home not set yet
         }
-        const deltaLat = this.mGpsLocation.lat - this.m_homeLat;
-        const deltaLng = this.mGpsLocation.lng - this.m_homeLng;
-        const avgLat = (this.mGpsLocation.lat + this.m_homeLat) / 2;
-        const lat = deltaLat * metersPerDegreeLat; // North (x)
-        const lng = deltaLng * getMetersPerDegreeLng(avgLat); // East (y)
-        const alt = (this.m_homeAlt - this.mGpsLocation.alt) / 50 ; // Down (z, positive downward)
-        const o = { 'x': lat, 'z': lng, 'y': alt };
-        return o;
+
+        let refLat = this.m_homeLat;
+        let refLng = this.m_homeLng;
+        let refAlt = this.m_homeAlt;
+
+        // Use global ref if available (for multi-vehicle consistency)
+        if (this.world && this.world.m_scene_env.refLat !== null) {
+            refLat = this.world.m_scene_env.refLat;
+            refLng = this.world.m_scene_env.refLng;
+            refAlt = this.world.m_scene_env.refAlt;
+        }
+
+        const deltaLat = this.mGpsLocation.lat - refLat;
+        const deltaLng = this.mGpsLocation.lng - refLng;
+        const avgLat = (this.mGpsLocation.lat + refLat) / 2;
+
+        const x = deltaLat * metersPerDegreeLat; // North (x)
+        const z = deltaLng * getMetersPerDegreeLng(avgLat); // East (z)
+        const y = this.mGpsLocation.alt_abs - refAlt / 1000.0; 
+
+        return { x, y, z };
+
+        // const deltaLat = this.mGpsLocation.lat - this.m_homeLat;
+        // const deltaLng = this.mGpsLocation.lng - this.m_homeLng;
+        // const avgLat = (this.mGpsLocation.lat + this.m_homeLat) / 2;
+        // const lat = deltaLat * metersPerDegreeLat; // North (x)
+        // const lng = deltaLng * getMetersPerDegreeLng(avgLat); // East (y)
+        // const alt = (this.m_homeAlt - this.mGpsLocation.alt) / 50 ; // Down (z, positive downward)
+        // const o = { 'x': lat, 'z': lng, 'y': alt };
+        // return o;
     }
 
     fn_createVehicle(p_classType, p_attachCamera, p_customObject, p_callbackfunc, p_addtoscene) {

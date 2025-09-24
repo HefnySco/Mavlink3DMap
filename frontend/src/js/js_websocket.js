@@ -135,6 +135,11 @@ class c_CommandParser extends c_WebSocketComm {
 
         const v_vehicle_new = new c_ArduVehicles();
         v_vehicle_new.sid = src;
+
+        if (!c_world.m_scene_env.m_default_vehicle_sid) {
+            c_world.m_scene_env.m_default_vehicle_sid = src;
+        }
+
         v_vehicle_new.world = c_world;
         v_vehicle_new.fn_createVehicle(c_mavlinkMessage.type, true, null,
             () => {

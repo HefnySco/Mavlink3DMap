@@ -24,15 +24,27 @@ export class MapboxWorld {
         this.displacementX = displacement.X;
         this.displacementY = displacement.Y;
 
+        this.m_default_vehicle_sid = null;
+                
+        this.refLat = null;
+        this.refLng = null;
+        this.refAlt = null;
+        
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
             // const location_array = vehicle.fn_getPosition();
             // p_me.updateTiles(location_array[0], -location_array[2]);
+            if (vehicle.sid !=this.m_default_vehicle_sid) return ;
             const {x,y,z} = vehicle.fn_translateXYZ();
             p_me.updateTiles(x, -z); // Update tiles based on drone position
         });
 
-        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, {lat,lng}) => {
-            p_me.loadMapFromHome(lat, lng);
+        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, {lat, lng, alt, vehicle}) => {
+            if (p_me.refLat === null) {
+                p_me.refLat = lat * 1E-7;  // Convert degE7 to deg
+                p_me.refLng = lng * 1E-7;
+                p_me.refAlt = alt ;  // Convert mm to meters
+                p_me.loadMapFromHome(lat , lng );  // Load map only once
+            }
         });
     }
 
