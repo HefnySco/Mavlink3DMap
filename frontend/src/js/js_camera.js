@@ -37,16 +37,31 @@ class CameraController {
      * @param {boolean} p_createHelper - Whether to create a camera helper for debugging.
      * @param {number} p_fov - camera FOV
      */
-    constructor(p_attachedObject, p_createHelper, p_fov=75) {
+    constructor(p_attachedObject, p_createHelper, p_fov = 75) {
         this.v_q1 = new THREE.Quaternion();
         this.v_q2 = new THREE.Quaternion();
         this.v_q3 = new THREE.Quaternion();
 
         this.m_helperThree = null;
-        this.m_ownerObject = null;
         this.m_cameraThree = null;
+        this.m_ownerObject = p_attachedObject;
 
-        this.fn_createCameraForObject(p_attachedObject, p_createHelper, p_fov);
+        this.#fn_createCameraForObject( p_createHelper, p_fov);
+    }
+
+
+    // Inside class CameraController
+    fn_scaleRelativePosition(scaleFactorX, scaleFactorY, scaleFactorZ) {
+        this.#m_positionCamera_Y *= scaleFactorX;  // Affects X-axis translate
+        this.#m_positionCamera_Z *= scaleFactorY;  // Affects Y-axis translate
+        this.#m_positionCamera_X *= scaleFactorZ;  // Affects Z-axis translate
+
+        // If in orbit mode, scale the relative position vector accordingly
+        if (this.#m_orbitMode) {
+            this.m_relativePosition.x *= scaleFactorX;
+            this.m_relativePosition.y *= scaleFactorY;
+            this.m_relativePosition.z *= scaleFactorZ;
+        }
     }
 
     /**
@@ -57,7 +72,7 @@ class CameraController {
      * @param {number} p_tiltChannel - The servo channel for tilt stabilization (optional).
      * @param {number} p_rollChannel - The servo channel for roll stabilization (optional).
      */
-    fn_setRotationIndependence(p_no_stabilization, p_enable_vertical_stabilization, 
+    fn_setRotationIndependence(p_no_stabilization, p_enable_vertical_stabilization,
         p_enable_horizontal_stabilization,
         p_tiltChannel, p_rollChannel) {
         this.#m_OwnerRotationIndependent = p_no_stabilization;
@@ -77,9 +92,8 @@ class CameraController {
     /**
      * Creates a camera and attaches it to the specified object.
      * @param {boolean} p_createHelper - Whether to create a camera helper for debugging.
-     * @param {Object} p_attachedObject - The object to which the camera is attached.
      */
-    fn_createCameraForObject(p_attachedObject, p_createHelper, p_fov) {
+    #fn_createCameraForObject(p_createHelper, p_fov) {
         const v_camera = new THREE.PerspectiveCamera(
             p_fov, // FOV
             1,  // Aspect Ratio
@@ -89,13 +103,13 @@ class CameraController {
 
         v_camera.userData.m_ownerObject = this;
         this.m_cameraThree = v_camera;
-        this.m_ownerObject = p_attachedObject;
+
 
         if (p_createHelper) {
             this.m_helperThree = new THREE.CameraHelper(v_camera);
         }
     }
-    
+
     /**
      * Enables or disables the THREE.CameraHelper visualization.
      * If the helper does not exist, it will be created when enabling.
@@ -103,8 +117,7 @@ class CameraController {
      * @param {THREE.Scene} scene - The THREE.Scene instance to add/remove the helper from (required when enabling if not already added).
      */
     fn_setCameraHelperEnabled(enable) {
-        if (this.m_helperThree)
-        {
+        if (this.m_helperThree) {   // camera created with no helper will not be able to enable this.
             this.m_helperThree.visible = enable
         }
     }

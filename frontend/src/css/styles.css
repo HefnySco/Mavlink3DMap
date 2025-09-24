@@ -19,9 +19,9 @@ body {
   
   .column4 {
     float: left;
-    width: 800px !important;
     padding: 1px;
-    height: 600px !important; /* Should be removed. Only for demonstration */
+    height: 49vh; /* Full viewport height */
+    width: 49vw; /* Full viewport width */
   }
   
   .column4 {

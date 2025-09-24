@@ -156,9 +156,8 @@ export class MapboxWorld {
     }
 
     _adjustCameras(p_XZero, p_YZero) {
-        for (let i = 0; i < this.world.v_views.length; ++i) {
-            for (let j = 0; j < this.world.v_views[i].v_localCameras.length; ++j) {
-                const cam = this.world.v_views[i].v_localCameras[j];
+            for (let j = 0; j < this.world.m_objects_attached_cameras.length; ++j) {
+                const cam = this.world.m_objects_attached_cameras[j];
                 if (cam instanceof THREE.PerspectiveCamera) {
                     // Position camera above the vehicle with an offset
                     cam.position.set(p_XZero + 5, 5, p_YZero);
@@ -170,7 +169,6 @@ export class MapboxWorld {
                     }
                 }
             }
-        }
     }
 
     _addCar(p_id, p_x, p_y, p_radius) {

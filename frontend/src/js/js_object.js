@@ -42,6 +42,7 @@ class SimObject {
     m_rcChannelsValues = [0, 0, 0, 0, 0, 0];
     m_startRCChannelIndex = 0;
 
+    m_scale = new THREE.Vector3(1, 1, 1);
     m_Mesh = null;
     m_type = FRAME_TYPE_UNKNOWN;
     m_animateFunction = null;
@@ -58,10 +59,40 @@ class SimObject {
         this.fn_setZeroPosition(displacement.X, displacement.Y, displacement.Alt);
     }
 
+    fn_changeScaleByDelta(dX, dY, dZ) {
+        const old_scale = this.m_scale.clone();
+
+        this.m_scale.x += dX;
+        this.m_scale.y += dY;
+        this.m_scale.z += dZ;
+
+        // Prevent division by zero or invalid scales (e.g., clamp to min 0.1)
+        if (old_scale.x === 0) old_scale.x = 1;
+        if (old_scale.y === 0) old_scale.y = 1;
+        if (old_scale.z === 0) old_scale.z = 1;
+        this.m_scale.x = Math.max(0.1, this.m_scale.x);
+        this.m_scale.y = Math.max(0.1, this.m_scale.y);
+        this.m_scale.z = Math.max(0.1, this.m_scale.z);
+
+        this.m_scale.x = Math.min(100, this.m_scale.x);
+        this.m_scale.y = Math.min(100, this.m_scale.y);
+        this.m_scale.z = Math.min(100, this.m_scale.z);
+
+        // Scale attached cameras' relative positions
+        const factorX = this.m_scale.x / old_scale.x;
+        const factorY = this.m_scale.y / old_scale.y;
+        const factorZ = this.m_scale.z / old_scale.z;
+
+        for (let i = 0; i < this.m_cameras.length; ++i) {
+            const cam = this.m_cameras[i];
+            cam.fn_scaleRelativePosition(factorX, factorY, factorZ);
+        }
+    }
+
     fn_setZeroPosition(x, y, z) {
         this.m_positionZero_X = x;
         this.m_positionZero_Y = y; // Altitude in three.js
-        this.m_positionZero_Z = z; 
+        this.m_positionZero_Z = z;
     }
 
     fn_setPosition(p_lat, p_lng, p_alt) {
@@ -71,7 +102,6 @@ class SimObject {
         this.m_position_Y = p_alt - this.m_positionZero_Z;
         this.m_position_Z = p_lng - this.m_positionZero_Y;
     }
-
 
     fn_getPosition() {
         return [this.m_position_X, this.m_position_Y, this.m_position_Z];
@@ -168,9 +198,8 @@ class SimObject {
     /**
      * Can be overridden by children classes to use different coordinates.
      */
-    fn_translateXYZ()
-    {
-        return {x:this.m_position_X, y:this.m_position_Y, z:this.m_position_Z};
+    fn_translateXYZ() {
+        return { x: this.m_position_X, y: this.m_position_Y, z: this.m_position_Z };
     }
 
     fn_applyIMU() {
@@ -184,9 +213,11 @@ class SimObject {
 
         this.m_Mesh.setRotationFromQuaternion(this.v_qt);
 
-        const {x,y,z} = this.fn_translateXYZ();
+        const { x, y, z } = this.fn_translateXYZ();
         this.m_Mesh.position.set(x, y, z);
-
+        this.m_Mesh.scale.x = this.m_scale.x;
+        this.m_Mesh.scale.y = this.m_scale.y;
+        this.m_Mesh.scale.z = this.m_scale.z;
         const v_len = this.m_cameras.length;
 
         for (let i = 0; i < v_len; ++i) {

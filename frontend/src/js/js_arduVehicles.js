@@ -100,15 +100,6 @@ class c_ArduVehicles extends Vehicle {
         const y = this.mGpsLocation.alt_abs - refAlt / 1000.0; 
 
         return { x, y, z };
-
-        // const deltaLat = this.mGpsLocation.lat - this.m_homeLat;
-        // const deltaLng = this.mGpsLocation.lng - this.m_homeLng;
-        // const avgLat = (this.mGpsLocation.lat + this.m_homeLat) / 2;
-        // const lat = deltaLat * metersPerDegreeLat; // North (x)
-        // const lng = deltaLng * getMetersPerDegreeLng(avgLat); // East (y)
-        // const alt = (this.m_homeAlt - this.mGpsLocation.alt) / 50 ; // Down (z, positive downward)
-        // const o = { 'x': lat, 'z': lng, 'y': alt };
-        // return o;
     }
 
     fn_createVehicle(p_classType, p_attachCamera, p_customObject, p_callbackfunc, p_addtoscene) {

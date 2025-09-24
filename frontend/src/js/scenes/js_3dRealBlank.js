@@ -74,12 +74,12 @@ var fn_init3DWorld = function fn_init3DWorld(p_XZero, p_YZero) {
         // Adjust cameras to new locations
         for (var i = 0; i < Me.v_views.length; ++ i) 
         {
-            for (var j=0; j < Me.v_views[i].v_localCameras.length; ++j)
+            for (var j=0; j < Me.v_views[i].m_objects_attached_cameras.length; ++j)
             {
-                if ((Me.v_views[i].v_localCameras[j] instanceof THREE.PerspectiveCamera) === true)
+                if ((Me.v_views[i].m_objects_attached_cameras[j] instanceof THREE.PerspectiveCamera) === true)
                 {
-                    Me.v_views[i].v_localCameras[j].position.y = Me.v_height3D +  (70 + i*70);
-                    Me.v_views[i].v_localCameras[j].lookAt(new THREE.Vector3(p_XZero + 0, Me.v_height3D, p_YZero + 0));
+                    Me.v_views[i].m_objects_attached_cameras[j].position.y = Me.v_height3D +  (70 + i*70);
+                    Me.v_views[i].m_objects_attached_cameras[j].lookAt(new THREE.Vector3(p_XZero + 0, Me.v_height3D, p_YZero + 0));
                 }
             }
         }

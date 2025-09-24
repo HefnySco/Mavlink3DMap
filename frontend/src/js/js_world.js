@@ -59,6 +59,8 @@ class C_World {
 
         this.v_objectsToRemove = [];
 
+        this.m_objects_attached_cameras = [];
+        this.m_global_camera_helper = true;
         for (let i = 0; i < 500; i++) {
             this.v_objectsToRemove[i] = null;
         }
@@ -73,9 +75,10 @@ class C_World {
                 <li>F1: Help Toggle</li>
                 <li>'P , O' Switch Cameras</li>
                 <li>'W A S D Q E' Change Camera View for Vehicles</li>
-                <li>'L' Goto Drone</li>
+                <li>'L' Goto First Drone</li>
+                <li>'T' Toggle Camera Trace
+                <li>'1-9' Goto Drone by Index</li>
                 <li>'R' Reset Camera View</li>
-
             </ul>
         `;
         document.getElementById('mav3dmap').appendChild(helpDlg);
@@ -105,11 +108,14 @@ class C_World {
         let cameras = p_vehicle.fn_getCamera();
         for (let i = 0; i < cameras.length; ++i) {
             let v_camera = cameras[i];
-            for (let j = 0; j < this.v_views.length; ++j) {
-                this.v_views[j].v_localCameras.push(v_camera);
-            }
-            this.v_scene.add(v_camera.m_cameraThree);
+            
+            this.m_objects_attached_cameras.push(v_camera);
+            
+            // add three.js camera to Three.scene
+            this.v_scene.add(v_camera.m_cameraThree); 
+            
             if (v_camera.m_helperThree != null) {
+                // add three.js helper to Three.scene
                 this.v_scene.add(v_camera.m_helperThree);
             }
         }
@@ -143,10 +149,55 @@ class C_World {
     * Send event to selected view to handle keydown logic.
     */
     fn_onKeyDown(event) {
-        if (this.v_selectedView == null || this.v_selectedView.fn_handleCameraSwitch == null) return;
-        this.v_selectedView.fn_handleCameraSwitch(event);
+        if (event.key == '-') {
+            const vehicleIds = Object.keys(this.v_drone);
 
-        if (event.keyCode === 76) { /* L */
+            for (const id of vehicleIds) {
+                const vehicle = this.v_drone[id];
+                vehicle.fn_changeScaleByDelta(-2, -2, -2);
+            }
+        }
+        else if ((event.key == '+') || (event.key == '=')) {
+            const vehicleIds = Object.keys(this.v_drone);
+
+            for (const id of vehicleIds) {
+                const vehicle = this.v_drone[id];
+                vehicle.fn_changeScaleByDelta(+2, +2, +2);
+            }
+        }
+        // Handle number keys 1-9 (keyCodes 49 to 57)
+        else if (event.keyCode >= 49 && event.keyCode <= 57) {
+            const drone_index = event.keyCode - 49; // Convert keyCode to 0-based index (49='1', 50='2', etc.)
+            const vehicleIds = Object.keys(this.v_drone);
+            if (drone_index >= vehicleIds.length) {
+                console.warn(`No drone found at index ${drone_index}.`);
+                return;
+            }
+
+            this.v_selectedView.fn_selectWorldCamera();
+            const vehicle = this.v_drone[vehicleIds[drone_index]];
+            if (!vehicle) {
+                console.warn(`Drone at index ${drone_index} is undefined.`);
+                return;
+            }
+
+            // Get the vehicle's position
+            const { x, y, z } = vehicle.fn_translateXYZ();
+
+            // Position the main camera above the vehicle (e.g., 10 units above)
+            const cameraHeight = 10; // Adjust this value as needed
+            this.v_selectedView.m_main_camera.position.set(x, y + cameraHeight, z);
+
+            // Make the camera look at the vehicle's position
+            this.v_selectedView.m_main_camera.lookAt(new THREE.Vector3(x, y, z));
+
+            // Update OrbitControls to focus on the vehicle
+            if (this.v_selectedView.m_main_camera.m_controls) {
+                this.v_selectedView.m_main_camera.m_controls.target.set(x, y, z);
+                this.v_selectedView.m_main_camera.m_controls.update();
+            }
+        }
+        else if (event.keyCode === 76) { /* L */
             // Get the first ArduVehicle from v_drone
             const vehicleIds = Object.keys(this.v_drone);
             if (vehicleIds.length === 0) {
@@ -177,8 +228,29 @@ class C_World {
                 this.v_selectedView.m_main_camera.m_controls.update();
             }
         }
+        else if (event.keyCode === 84) { /* T */
+            this.m_global_camera_helper = !this.m_global_camera_helper;
+
+            
+            const len = this.m_objects_attached_cameras.length;
+            for (let drone_index =0; drone_index < len; ++drone_index) {
+                this.fn_setCameraHelperEnabled(drone_index, this.m_global_camera_helper);
+            }
+        }
+        
+        if (this.v_selectedView == null || this.v_selectedView.fn_handleCameraSwitch == null) return;
+        this.v_selectedView.fn_handleCameraSwitch(event);
+
+        
     };
 
+
+    fn_setCameraHelperEnabled(drone_index, enable)
+    {
+        if (this.m_objects_attached_cameras[drone_index] && this.m_objects_attached_cameras[drone_index].m_cameraThree != null) {
+            this.m_objects_attached_cameras[drone_index].fn_setCameraHelperEnabled(enable);
+        }
+    }
 
     fn_addCanvas(p_canvas, isStreamable = false) {
         this.v_views.push(new C_View(this, p_canvas, this.v_XZero, this.v_YZero, isStreamable));
