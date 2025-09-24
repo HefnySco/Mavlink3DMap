@@ -75,6 +75,7 @@ class C_World {
                 <li>'W A S D Q E' Change Camera View for Vehicles</li>
                 <li>'L' Goto Drone</li>
                 <li>'R' Reset Camera View</li>
+
             </ul>
         `;
         document.getElementById('mav3dmap').appendChild(helpDlg);
@@ -153,6 +154,7 @@ class C_World {
                 return;
             }
 
+            this.v_selectedView.fn_selectWorldCamera();
             const firstVehicle = this.v_drone[vehicleIds[0]];
             if (!firstVehicle) {
                 console.warn('First vehicle is undefined.');

@@ -95,6 +95,19 @@ class CameraController {
             this.m_helperThree = new THREE.CameraHelper(v_camera);
         }
     }
+    
+    /**
+     * Enables or disables the THREE.CameraHelper visualization.
+     * If the helper does not exist, it will be created when enabling.
+     * @param {boolean} enable - Whether to enable (true) or disable (false) the camera helper.
+     * @param {THREE.Scene} scene - The THREE.Scene instance to add/remove the helper from (required when enabling if not already added).
+     */
+    fn_setCameraHelperEnabled(enable) {
+        if (this.m_helperThree)
+        {
+            this.m_helperThree.visible = enable
+        }
+    }
 
     /**
      * Sets the camera's position relative to the parent object.

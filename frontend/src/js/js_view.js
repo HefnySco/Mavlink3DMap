@@ -122,6 +122,18 @@ class C_View {
         return needResize;
     };
 
+    fn_selectWorldCamera()
+    {
+        this.v_localActiveCamera = this.v_localCameras[0];
+    }
+
+    fn_setCameraHelperEnabled(droneIndex, enable)
+    {
+if (this.v_localCameras[this.v_droneIndex].m_cameraThree != null) {
+                    this.v_localCameras[this.v_droneIndex].fn_setCameraHelperEnabled(enable);
+                }
+    }
+
     fn_handleCameraSwitch(event) {
         const c_keyLength = this.v_localCameras.length;
         if (c_keyLength == 0) return;
@@ -134,20 +146,29 @@ class C_View {
                 break;
 
             case 79: /*O*/
+                this.fn_setCameraHelperEnabled(this.v_droneIndex, false);
+                
+                if (this.v_localCameras[this.v_droneIndex].m_cameraThree != null) {
+                    this.v_localCameras[this.v_droneIndex].fn_setCameraHelperEnabled(false);
+                }
                 this.v_droneIndex += 1;
                 this.v_droneIndex = this.v_droneIndex % c_keyLength;
                 if (this.v_localCameras[this.v_droneIndex].m_cameraThree != null) {
                     this.v_localActiveCamera = this.v_localCameras[this.v_droneIndex].m_cameraThree;
+                    this.fn_setCameraHelperEnabled(this.v_droneIndex, true);
                 } else {
                     this.v_localActiveCamera = this.v_localCameras[this.v_droneIndex];
                 }
                 break;
 
             case 80: /*P*/
+                this.fn_setCameraHelperEnabled(this.v_droneIndex, false);
+                
                 this.v_droneIndex -= 1;
                 if (this.v_droneIndex < 0) this.v_droneIndex = c_keyLength - 1;
                 if (this.v_localCameras[this.v_droneIndex].m_cameraThree != null) {
                     this.v_localActiveCamera = this.v_localCameras[this.v_droneIndex].m_cameraThree;
+                    this.fn_setCameraHelperEnabled(this.v_droneIndex, true);
                 } else {
                     this.v_localActiveCamera = this.v_localCameras[this.v_droneIndex];
                 }
