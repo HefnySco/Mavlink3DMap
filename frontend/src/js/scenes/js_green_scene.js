@@ -10,11 +10,15 @@ const PI_div_2 = Math.PI / 2;
 
 export class CGrassWorld {
     constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
+        this.m_env_name = 'forest';
         this.world = worldInstance;
-        this.tileSize = 50; // Size of each square tile (width and height)
         this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
         this.tiles = new Map(); // Map to store active tiles by their grid coordinates
-        this.droneId = null; // To store the ID of the drone
+        this.droneId = null;
+        this.textureLoader = new THREE.TextureLoader();
+        this.m_max_titles_lat = 2;
+        this.m_max_titles_lng = 2;
+        this.zoomLevel = 16;
         this.homeLat = homeLat;
         this.homeLng = homeLng;
         const displacement = getInitialDisplacement();
@@ -28,7 +32,9 @@ export class CGrassWorld {
         this.refAlt = null;
         
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
-            if (vehicle.sid != this.m_default_vehicle_sid) return;
+            // const location_array = vehicle.fn_getPosition();
+            // p_me.updateTiles(location_array[0], -location_array[2]);
+            if (vehicle.sid !=this.m_default_vehicle_sid) return ;
             const {x,y,z} = vehicle.fn_translateXYZ();
             p_me.updateTiles(x, -z); // Update tiles based on drone position
         });
@@ -37,9 +43,8 @@ export class CGrassWorld {
             if (p_me.refLat === null) {
                 p_me.refLat = lat * 1E-7;  // Convert degE7 to deg
                 p_me.refLng = lng * 1E-7;
-                p_me.refAlt = alt;  // Convert mm to meters
-                p_me.m_default_vehicle_sid = vehicle.sid;
-                p_me.loadMapFromHome(lat, lng);  // Load map only once
+                p_me.refAlt = alt ;  // Convert mm to meters
+                p_me.loadMapFromHome(lat , lng );  // Load map only once
             }
         });
     }
@@ -58,6 +63,9 @@ export class CGrassWorld {
         // Clear existing tiles
         for (const tile of this.tiles.values()) {
             this.world.v_scene.remove(tile);
+            if (tile.material.map) tile.material.map.dispose();
+            tile.material.dispose();
+            tile.geometry.dispose();
         }
         this.tiles.clear();
 
@@ -82,7 +90,7 @@ export class CGrassWorld {
         this._addLights();
 
         // Update tiles around the vehicle's position
-        this.updateTiles(vehicleX, vehicleY);
+        this.updateTiles(vehicleX, -vehicleY);
 
         // Adjust cameras to focus on the vehicle's new position
         this._adjustCameras(vehicleX, vehicleY);
@@ -90,55 +98,85 @@ export class CGrassWorld {
 
     init(p_XZero, p_YZero) {
         this.droneId = 'car' + uuidv4();
-        this._addCar(this.droneId, p_XZero + 10, p_YZero + 0, 7);
+        this._addCar(this.droneId, p_XZero + 10, p_YZero, 7);
         this._addBuildings(p_XZero, p_YZero);
         this._addLights();
-        this.updateTiles(p_XZero, p_YZero); // Initialize tiles around starting position
+        this.updateTiles(p_XZero, p_YZero);
     }
 
-    // Update tiles based on drone's position
     updateTiles(droneX, droneY) {
-        // Calculate grid coordinates (use -droneY to align with 3D Z-axis)
-        const gridX = Math.floor(droneX / this.tileSize);
-        const gridY = Math.floor(-droneY / this.tileSize);
+        const adjustedX = droneX - this.displacementX;
+        const adjustedY = -droneY - this.displacementY;
 
-        // Debug: Log grid coordinates to verify changes
-        //console.log(`Updating tiles: droneX=${droneX}, droneY=${droneY}, gridX=${gridX}, gridY=${gridY}`);
+        // Convert vehicle position to geographic coordinates
+        const centerLat = this.homeLat + (adjustedX / metersPerDegreeLat);
+        const metersPerDegreeLng = getMetersPerDegreeLng(centerLat);
+        const centerLng = this.homeLng + (adjustedY / metersPerDegreeLng);
 
-        // Create a set of required tile coordinates
+        // Calculate current Mapbox tile coordinates for vehicle position
+        const n = Math.pow(2, this.zoomLevel);
+        const gridTileX = Math.floor((centerLng + 180) / 360 * n);
+        const gridTileY = Math.floor((1 - Math.log(Math.tan(centerLat * Math.PI / 180) + 1 / Math.cos(centerLat * Math.PI / 180)) / Math.PI) / 2 * n);
+
+        // Create a set of required tile coordinates, including preload range
         const requiredTiles = new Set();
-        for (let x = gridX - this.tileRange; x <= gridX + this.tileRange; x++) {
-            for (let y = gridY - this.tileRange; y <= gridY + this.tileRange; y++) {
+        const preloadRange = this.tileRange + 1;
+        for (let x = gridTileX - preloadRange; x <= gridTileX + preloadRange; x++) {
+            for (let y = gridTileY - preloadRange; y <= gridTileY + preloadRange; y++) {
                 requiredTiles.add(`${x},${y}`);
             }
         }
 
-        // Remove tiles that are no longer needed
+        // Remove tiles outside extended range (tileRange + 2)
+        const maxRange = this.tileRange + 2;
         for (const key of this.tiles.keys()) {
-            if (!requiredTiles.has(key)) {
+            const [x, y] = key.split(',').map(Number);
+            if (Math.abs(x - gridTileX) > maxRange || Math.abs(y - gridTileY) > maxRange) {
                 const tile = this.tiles.get(key);
                 this.world.v_scene.remove(tile);
+                if (tile.material.map) tile.material.map.dispose();
+                tile.material.dispose();
+                tile.geometry.dispose();
                 this.tiles.delete(key);
-                //console.log(`Removed tile: ${key}`);
             }
         }
 
-        // Add new tiles that are needed
+        // Add new tiles
         for (const key of requiredTiles) {
             if (!this.tiles.has(key)) {
-                const [x, y] = key.split(',').map(Number);
-                this._addGrassPlane(x * this.tileSize, y * this.tileSize);
-                //console.log(`Added tile: ${key}`);
+                const [tileX, tileY] = key.split(',').map(Number);
+                // Convert tile center back to world coordinates
+                const lon = (tileX + 0.5) / n * 360 - 180;
+                const latRad = Math.atan(0.5 * (Math.exp(Math.PI - 2 * Math.PI * (tileY + 0.5) / n) - Math.exp(-(Math.PI - 2 * Math.PI * (tileY + 0.5) / n))));
+                const lat = (180 / Math.PI) * latRad;
+                const p_XZero = (lat - this.homeLat) * metersPerDegreeLat - this.displacementX;
+                const p_YZero = (lon - this.homeLng) * getMetersPerDegreeLng(lat) - this.displacementY;
+                this._addMapboxTile(p_XZero, p_YZero, tileX, tileY);
             }
         }
     }
 
-    // Private method to create and add a drone to the scene
+    _adjustCameras(p_XZero, p_YZero) {
+            for (let j = 0; j < this.world.m_objects_attached_cameras.length; ++j) {
+                const cam = this.world.m_objects_attached_cameras[j];
+                if (cam instanceof THREE.PerspectiveCamera) {
+                    // Position camera above the vehicle with an offset
+                    cam.position.set(p_XZero + 5, 5, p_YZero);
+                    cam.lookAt(new THREE.Vector3(p_XZero, 0, p_YZero));
+                    // Update OrbitControls if present
+                    if (cam.m_controls) {
+                        cam.m_controls.target.set(p_XZero, 0, p_YZero);
+                        cam.m_controls.update();
+                    }
+                }
+            }
+    }
+
     _addCar(p_id, p_x, p_y, p_radius) {
         const loader = new THREE.ObjectLoader();
         loader.load('../../models/vehicles/car1.json', (obj) => {
             obj.rotateZ(0);
-            const c_robot = new SimObject(p_id);
+            const c_robot = new SimObject(p_id, this.homeLat, this.homeLng);
             c_robot.fn_createCustom(obj);
             c_robot.fn_setPosition(p_x, p_y, 0);
             c_robot.fn_castShadow(false);
@@ -161,30 +199,52 @@ export class CGrassWorld {
                 c_robot.fn_setPosition(newX, newY, 0);
                 c_deg = (c_deg + 0.01) % (2 * Math.PI);
                 c_robot.fn_setRotation(0, 0, -c_deg - PI_div_2);
-
-                
             });
 
             this.world.fn_registerCamerasOfObject(c_robot);
             c_robot.fn_setRotation(0, 0.0, 0.0);
-            this.world.fn_addRobot(p_id,c_robot);
+            this.world.fn_addRobot(p_id, c_robot);
             this.world.v_scene.add(c_robot.fn_getMesh());
         });
     }
 
-    // Private method to add a single grass plane tile
-    _addGrassPlane(p_XZero, p_YZero) {
-        const loader = new THREE.ObjectLoader();
-        loader.load('/models/grass_plan.json', (obj) => {
-            obj.position.set(p_XZero, -0.01, p_YZero);
-            obj.rotateZ(0);
-            const tileKey = `${Math.floor(p_XZero / this.tileSize)},${Math.floor(p_YZero / this.tileSize)}`;
-            this.tiles.set(tileKey, obj);
-            this.world.v_scene.add(obj);
-        });
+    _addMapboxTile(p_XZero, p_YZero, tileX, tileY) {
+        const adjustedX = p_XZero + this.displacementX;
+        const adjustedY = p_YZero + this.displacementY;
+
+        const centerLat = this.homeLat + (adjustedX / metersPerDegreeLat);
+        const metersPerDegreeLng = getMetersPerDegreeLng(centerLat);
+        const centerLng = this.homeLng + (adjustedY / metersPerDegreeLng);
+
+        // Compute actual tile bounds
+        const n = Math.pow(2, this.zoomLevel);
+        const lonLeft = tileX / n * 360 - 180;
+        const lonRight = (tileX + 1) / n * 360 - 180;
+        const deltaLng = lonRight - lonLeft;
+
+        const latNorth = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(Math.PI - 2 * Math.PI * tileY / n) - Math.exp(-(Math.PI - 2 * Math.PI * tileY / n))));
+        const latSouth = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(Math.PI - 2 * Math.PI * (tileY + 1) / n) - Math.exp(-(Math.PI - 2 * Math.PI * (tileY + 1) / n))));
+        const deltaLat = latNorth - latSouth;
+
+        // Compute dimensions in meters
+        const tileWidth = deltaLng * metersPerDegreeLng;
+        const tileHeight = deltaLat * metersPerDegreeLat;
+        const x= tileX % this.m_max_titles_lng;
+        const y= tileY % this.m_max_titles_lat;
+        const tileUrl = `../../models/images/${this.m_env_name}/${this.m_env_name}_${x}_${y}.png?${this.zoomLevel}`;
+
+        const geometry = new THREE.PlaneGeometry(tileWidth, tileHeight);
+        const material = new THREE.MeshBasicMaterial({ map: this.textureLoader.load(tileUrl), side: THREE.DoubleSide });
+
+        const tile = new THREE.Mesh(geometry, material);
+        tile.position.set(p_XZero, -0.01, p_YZero);
+        tile.rotation.x = -PI_div_2;
+        tile.rotation.z = -PI_div_2;
+        const tileKey = `${tileX},${tileY}`;
+        this.tiles.set(tileKey, tile);
+        this.world.v_scene.add(tile);
     }
 
-    // Private method to add buildings
     _addBuildings(p_XZero, p_YZero) {
         const c_buildings = [
             [-16, -8], [-16, -12], [-16, -16],
@@ -202,33 +262,17 @@ export class CGrassWorld {
 
         const building2Loader = new THREE.ObjectLoader();
         building2Loader.load('./models/building2.json', (obj) => {
-            obj.position.set(p_XZero + 22, 0.0, p_YZero + 0);
+            obj.position.set(0.0, 0.0, p_YZero + 0);
             obj.rotateZ(0);
             this.world.v_scene.add(obj);
         });
     }
 
-    // Private method to add lights
     _addLights() {
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         this.world.v_scene.add(ambientLight);
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
         this.world.v_scene.add(directionalLight);
-    }
-
-    // Adjust cameras to the new vehicle position
-    _adjustCameras(p_XZero, p_YZero) {
-        const cams = this.world.v_cameras || [];
-        for (const cam of cams) {
-            // Position camera above the vehicle with an offset
-            cam.position.set(p_XZero + 5, 5, p_YZero);
-            cam.lookAt(new THREE.Vector3(p_XZero, 0, p_YZero));
-            // Update OrbitControls if present
-            if (cam.m_controls) {
-                cam.m_controls.target.set(p_XZero, 0, p_YZero);
-                cam.m_controls.update();
-            }
-        }
     }
 }

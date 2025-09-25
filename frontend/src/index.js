@@ -1,21 +1,21 @@
 import * as THREE from 'three';
-import Stats from './js/stats.module.js'; // Placeholder: Ensure this file exists or use npm stats.js
+import Stats from './js/stats.module.js';  
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { C_World } from './js/js_world.js';
-import { c_ArduVehicles } from './js/js_arduVehicles.js'; // Placeholder: Ensure this file exists
-import { c_CommandParser } from './js/js_websocket.js'; // Placeholder: Ensure this file exists
+import { c_ArduVehicles } from './js/js_arduVehicles.js'; 
+import { c_CommandParser } from './js/js_websocket.js'; 
 import './js/js_globals.js';
-import './js/js_utilities.js'; // Placeholder: Ensure this file exists
-import './js/js_triggerObject.js'; // Placeholder: Ensure this file exists
+import './js/js_utilities.js'; 
+import './js/js_triggerObject.js'; 
 import './js/js_object.js';
-import './js/js_physicsObject.js'; // Placeholder: Ensure this file exists
+import './js/js_physicsObject.js'; 
 import './js/js_vehicle.js';
 import './js/js_camera.js';
-import { CGrassWorld } from './js/scenes/js_green_scene.js'; // Placeholder: Ensure this file exists
-//import './js/objects/Water.js'; // Placeholder: Ensure this file exists
-import './js/ConvexHull.js'; // Placeholder: Ensure this file exists
-import './js/ConvexGeometry.js'; // Placeholder: Ensure this file exists
-import './js/ConvexObjectBreaker.js'; // Placeholder: Ensure this file exists
+import { CGrassWorld } from './js/scenes/js_green_scene.js'; 
+//import './js/objects/Water.js'; 
+import './js/ConvexHull.js'; 
+import './js/ConvexGeometry.js'; 
+import './js/ConvexObjectBreaker.js'; 
 
 // Constants for configuration
 const CONFIG = {
@@ -25,7 +25,9 @@ const CONFIG = {
 
 // Initialize the 3D world
 function initWorld() {
-    const c_world = new C_World(CONFIG.worldZero.x, CONFIG.worldZero.y);
+    const sceneType = window.sceneType;
+    const c_world = new C_World(0, 0);
+    
 
     // Add canvas to the world
     const canvas = document.getElementById(CONFIG.canvasId);
