@@ -131,16 +131,29 @@ class C_View {
     }
 
     fn_handleCameraSwitch(event) {
+
+        const speed = 0.5; // Adjust this for faster/slower movement
+        
         const c_keyLength = this.m_world.m_objects_attached_cameras.length;
         if (c_keyLength == 0) return;
 
         switch (event.keyCode) {
             case 65: /*A*/
+                if (this.m_view_selected_camera === this.m_main_camera)
+                {
+                    this.m_main_camera.translateX(-speed);
+                    break;
+                }
                 if (this.m_view_selected_camera.userData.m_ownerObject == null) break;
                 this.m_view_selected_camera.userData.m_ownerObject.fn_setCameraDeltaOrientation(0.0, 0, 0.1);
                 break;
 
             case 68: /*D*/
+                if (this.m_view_selected_camera === this.m_main_camera)
+                {
+                    this.m_main_camera.translateX(speed);
+                    break;
+                }
                 if (this.m_view_selected_camera.userData.m_ownerObject == null) break;
                 this.m_view_selected_camera.userData.m_ownerObject.fn_setCameraDeltaOrientation(0.0, 0, -0.1);
                 break;
@@ -182,6 +195,12 @@ class C_View {
                 break;
 
             case 81: /*Q*/
+                if (this.m_view_selected_camera === this.m_main_camera)
+                {
+                    this.m_main_camera.position.set(5, 5, 0);
+                this.m_main_camera.lookAt(new THREE.Vector3(0, 0, 0));
+                break;
+                }
                 if (this.m_view_selected_camera.userData.m_ownerObject == null) break;
                 this.m_view_selected_camera.userData.m_ownerObject.fn_setCameraDeltaOrientation(0.1, 0, 0);
                 break;
@@ -192,11 +211,21 @@ class C_View {
                 break;
 
             case 83: /*S*/
+                if (this.m_view_selected_camera === this.m_main_camera)
+                {
+                    this.m_main_camera.translateZ(speed);
+                    break;
+                }
                 if (this.m_view_selected_camera.userData.m_ownerObject == null) break;
                 this.m_view_selected_camera.userData.m_ownerObject.fn_setCameraDeltaOrientation(0, -0.1, 0);
                 break;
             
             case 87: /*W*/
+                if (this.m_view_selected_camera === this.m_main_camera)
+                {
+                    this.m_main_camera.translateZ(-speed);
+                    break;
+                }
                 if (this.m_view_selected_camera.userData.m_ownerObject == null) break;
                 this.m_view_selected_camera.userData.m_ownerObject.fn_setCameraDeltaOrientation(0, 0.1, 0);
                 break;
