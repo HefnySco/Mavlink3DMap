@@ -4,21 +4,88 @@ import SimObject from '../js_object.js';
 
 import {EVENTS as js_event} from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
+import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
 
 const PI_div_2 = Math.PI / 2;
 
 export class CGrassWorld {
-    constructor(worldInstance) {
+    constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
         this.world = worldInstance;
         this.tileSize = 50; // Size of each square tile (width and height)
         this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
         this.tiles = new Map(); // Map to store active tiles by their grid coordinates
         this.droneId = null; // To store the ID of the drone
+        this.homeLat = homeLat;
+        this.homeLng = homeLng;
+        const displacement = getInitialDisplacement();
+        this.displacementX = displacement.X;
+        this.displacementY = displacement.Y;
 
+        this.m_default_vehicle_sid = null;
+                
+        this.refLat = null;
+        this.refLng = null;
+        this.refAlt = null;
+        
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
+            if (vehicle.sid != this.m_default_vehicle_sid) return;
             const {x,y,z} = vehicle.fn_translateXYZ();
             p_me.updateTiles(x, -z); // Update tiles based on drone position
         });
+
+        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, {lat, lng, alt, vehicle}) => {
+            if (p_me.refLat === null) {
+                p_me.refLat = lat * 1E-7;  // Convert degE7 to deg
+                p_me.refLng = lng * 1E-7;
+                p_me.refAlt = alt;  // Convert mm to meters
+                p_me.m_default_vehicle_sid = vehicle.sid;
+                p_me.loadMapFromHome(lat, lng);  // Load map only once
+            }
+        });
+    }
+
+    // Load map with new home coordinates and center on vehicle position
+    loadMapFromHome(lat, lng, vehicleX = 0, vehicleY = 0) {
+        // Update home coordinates
+        this.homeLat = lat * 1E-7;
+        this.homeLng = lng * 1E-7;
+
+        // Update displacement
+        const displacement = getInitialDisplacement();
+        this.displacementX = displacement.X;
+        this.displacementY = displacement.Y;
+
+        // Clear existing tiles
+        for (const tile of this.tiles.values()) {
+            this.world.v_scene.remove(tile);
+        }
+        this.tiles.clear();
+
+        // Remove existing car (if any) to avoid duplicates
+        if (this.droneId && this.world.fn_getRobot(this.droneId)) {
+            const robot = this.world.fn_getRobot(this.droneId);
+            this.world.v_scene.remove(robot.fn_getMesh());
+            this.world.fn_deleteRobot(this.droneId);
+            this.droneId = null;
+        }
+
+        // Remove existing buildings and lights
+        this.world.v_scene.children = this.world.v_scene.children.filter(child => 
+            !(child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry) && // Keep non-tile meshes temporarily
+            !(child instanceof THREE.AmbientLight || child instanceof THREE.DirectionalLight) // Remove lights
+        );
+
+        // Reinitialize scene with new car, buildings, and lights
+        this.droneId = 'car' + uuidv4();
+        this._addCar(this.droneId, vehicleX, vehicleY, 7);
+        this._addBuildings(vehicleX, vehicleY);
+        this._addLights();
+
+        // Update tiles around the vehicle's position
+        this.updateTiles(vehicleX, vehicleY);
+
+        // Adjust cameras to focus on the vehicle's new position
+        this._adjustCameras(vehicleX, vehicleY);
     }
 
     init(p_XZero, p_YZero) {
@@ -148,5 +215,20 @@ export class CGrassWorld {
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
         this.world.v_scene.add(directionalLight);
+    }
+
+    // Adjust cameras to the new vehicle position
+    _adjustCameras(p_XZero, p_YZero) {
+        const cams = this.world.v_cameras || [];
+        for (const cam of cams) {
+            // Position camera above the vehicle with an offset
+            cam.position.set(p_XZero + 5, 5, p_YZero);
+            cam.lookAt(new THREE.Vector3(p_XZero, 0, p_YZero));
+            // Update OrbitControls if present
+            if (cam.m_controls) {
+                cam.m_controls.target.set(p_XZero, 0, p_YZero);
+                cam.m_controls.update();
+            }
+        }
     }
 }
