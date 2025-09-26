@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { targetFps } from './js_config.js';
 
 class C_View {
@@ -33,12 +34,23 @@ class C_View {
         );
 
         this.m_view_selected_camera = this.m_main_camera;
-        
+
         this.m_main_camera.position.set(5, 5, 0);
         this.m_main_camera.lookAt(new THREE.Vector3(p_XZero + 0, 0, p_YZero + 0));
-
         this.m_main_camera.m_controls = new OrbitControls(this.m_main_camera, p_canvas);
 
+
+        // Add CSS2DRenderer for this view
+        this.labelRenderer = new CSS2DRenderer();
+        const container = this.m_canvas.parentNode;
+        this.labelRenderer.setSize(container.clientWidth, container.clientHeight);
+        this.labelRenderer.domElement.style.position = 'absolute';
+        this.labelRenderer.domElement.style.top = '0px';
+        this.labelRenderer.domElement.style.left = '0px';
+        this.labelRenderer.domElement.style.pointerEvents = 'none';
+        this.labelRenderer.domElement.className = `label-renderer-${p_canvas.id}`; // Unique class for debugging
+        container.appendChild(this.labelRenderer.domElement);
+        console.log(`Initialized CSS2DRenderer for canvas ${p_canvas.id}, container size: ${container.clientWidth}x${container.clientHeight}`);
 
         // Event listeners
         this.fn_onMouseDown = this.fn_onMouseDown.bind(this);
@@ -122,6 +134,9 @@ class C_View {
         if (needResize) {
             canvas.width = width;
             canvas.height = height;
+            this.renderer.setSize(width, height, false);
+            const container = canvas.parentNode;
+            this.labelRenderer.setSize(container.clientWidth, container.clientHeight);
         }
         return needResize;
     };
@@ -133,14 +148,13 @@ class C_View {
     fn_handleCameraSwitch(event) {
 
         const speed = 0.5; // Adjust this for faster/slower movement
-        
+
         const c_keyLength = this.m_world.m_objects_attached_cameras.length;
         if (c_keyLength == 0) return;
 
         switch (event.keyCode) {
             case 65: /*A*/
-                if (this.m_view_selected_camera === this.m_main_camera)
-                {
+                if (this.m_view_selected_camera === this.m_main_camera) {
                     this.m_main_camera.translateX(-speed);
                     break;
                 }
@@ -149,8 +163,7 @@ class C_View {
                 break;
 
             case 68: /*D*/
-                if (this.m_view_selected_camera === this.m_main_camera)
-                {
+                if (this.m_view_selected_camera === this.m_main_camera) {
                     this.m_main_camera.translateX(speed);
                     break;
                 }
@@ -169,8 +182,6 @@ class C_View {
                 break;
 
             case 79: /*O*/
-                this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, false);
-
                 this.v_droneIndex += 1;
                 this.v_droneIndex = this.v_droneIndex % c_keyLength;
                 if (this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree != null) {
@@ -182,8 +193,6 @@ class C_View {
                 break;
 
             case 80: /*P*/
-                this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, false);
-
                 this.v_droneIndex -= 1;
                 if (this.v_droneIndex < 0) this.v_droneIndex = c_keyLength - 1;
                 if (this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree != null) {
@@ -195,11 +204,10 @@ class C_View {
                 break;
 
             case 81: /*Q*/
-                if (this.m_view_selected_camera === this.m_main_camera)
-                {
+                if (this.m_view_selected_camera === this.m_main_camera) {
                     this.m_main_camera.position.set(5, 5, 0);
-                this.m_main_camera.lookAt(new THREE.Vector3(0, 0, 0));
-                break;
+                    this.m_main_camera.lookAt(new THREE.Vector3(0, 0, 0));
+                    break;
                 }
                 if (this.m_view_selected_camera.userData.m_ownerObject == null) break;
                 this.m_view_selected_camera.userData.m_ownerObject.fn_setCameraDeltaOrientation(0.1, 0, 0);
@@ -211,18 +219,16 @@ class C_View {
                 break;
 
             case 83: /*S*/
-                if (this.m_view_selected_camera === this.m_main_camera)
-                {
+                if (this.m_view_selected_camera === this.m_main_camera) {
                     this.m_main_camera.translateZ(speed);
                     break;
                 }
                 if (this.m_view_selected_camera.userData.m_ownerObject == null) break;
                 this.m_view_selected_camera.userData.m_ownerObject.fn_setCameraDeltaOrientation(0, -0.1, 0);
                 break;
-            
+
             case 87: /*W*/
-                if (this.m_view_selected_camera === this.m_main_camera)
-                {
+                if (this.m_view_selected_camera === this.m_main_camera) {
                     this.m_main_camera.translateZ(-speed);
                     break;
                 }
@@ -240,43 +246,52 @@ class C_View {
 
     // Render method (call this per frame from C_World.fn_animate)
     fn_render() {
-        const c_renderer = this.renderer;
-
-        if (!this.renderer) {
-            console.error('Renderer is undefined in C_View.fn_render');
-            return;
-        }
-
-        const c_world = this.m_world;
-        const canvas = this.m_canvas;
-        c_renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
-        c_renderer.setScissor(0, 0, canvas.clientWidth, canvas.clientHeight);
-        c_renderer.setScissorTest(true);
-
-        if (this.fn_resizeRendererToDisplaySize()) {
-            this.m_view_selected_camera.aspect = canvas.clientWidth / canvas.clientHeight;
-            this.m_view_selected_camera.updateProjectionMatrix();
-        }
-
-        c_renderer.render(c_world.v_scene, this.m_view_selected_camera);
-        this.v_context.drawImage(c_renderer.domElement, 0, 0);
-
-        c_world.fn_setCameraHelperEnabled(this.v_droneIndex, c_world.m_global_camera_helper );
-
-        // Send JPEG every N frames for ~30 FPS
-        this.m_skip++;
-        if (this.m_skip % this.sendInterval === 0 && this.isStreamable && this.ws?.readyState === WebSocket.OPEN) {
-            this.v_context.canvas.toBlob((blob) => {
-                if (blob) {
-                    const reader = new FileReader();
-                    reader.onload = () => this.ws.send(reader.result); // Binary JPEG
-                    reader.readAsArrayBuffer(blob);
-                }
-            }, 'image/jpeg', 0.8); // 80% quality; adjust 0.5-0.9 for size vs. quality
-        }
-
-        c_renderer.setScissorTest(false);
+    if (!this.renderer) {
+        console.error('Renderer is undefined in C_View.fn_render');
+        return;
     }
+
+    const canvas = this.m_canvas;
+    const container = canvas.parentNode;
+
+    // Set viewport and scissor for WebGL
+    const width = canvas.clientWidth * window.devicePixelRatio;
+    const height = canvas.clientHeight * window.devicePixelRatio;
+    this.renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+    this.renderer.setScissor(0, 0, canvas.clientWidth, canvas.clientHeight);
+    this.renderer.setScissorTest(true);
+
+    // Resize if needed
+    if (this.fn_resizeRendererToDisplaySize()) {
+        this.m_view_selected_camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        this.m_view_selected_camera.updateProjectionMatrix();
+        this.labelRenderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    // Render WebGL scene
+    this.renderer.render(this.m_world.v_scene, this.m_view_selected_camera);
+
+    // Render CSS2D labels
+    this.labelRenderer.render(this.m_world.v_scene, this.m_view_selected_camera);
+
+    this.v_context.drawImage(this.renderer.domElement, 0, 0);
+
+    this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, this.m_world.m_global_camera_helper);
+
+    // Stream if enabled
+    this.m_skip++;
+    if (this.m_skip % this.sendInterval === 0 && this.isStreamable && this.ws?.readyState === WebSocket.OPEN) {
+        this.v_context.canvas.toBlob((blob) => {
+            if (blob) {
+                const reader = new FileReader();
+                reader.onload = () => this.ws.send(reader.result);
+                reader.readAsArrayBuffer(blob);
+            }
+        }, 'image/jpeg', 0.8);
+    }
+
+    this.renderer.setScissorTest(false);
+}
 }
 
 export default C_View;

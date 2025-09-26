@@ -60,3 +60,31 @@ canvas
   width: 40em;
   height: 20em;
 }
+
+
+#mav3dmap {
+    width: 100%;
+    height: 100vh; /* Full viewport height */
+    overflow: hidden;
+}
+.map3D_container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    float: left; /* For 2x2 grid */
+    overflow: hidden;
+}
+.map3D_container canvas {
+    width: 100%;
+    height: 100%;
+    display: block; /* Removes extra spacing */
+}
+.drone-sid-label {
+    background: rgba(0, 0, 0, 0.59);
+    color: white;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+    pointer-events: none;
+    position: absolute;
+}

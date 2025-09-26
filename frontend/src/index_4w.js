@@ -22,11 +22,21 @@ function initWorld() {
     const sceneType = window.sceneType;
     const c_world = new C_World(0, 0);
     c_world.fn_initTHREE(document.documentElement.clientWidth / 2.1, document.documentElement.clientHeight / 2.1);
-    c_world.fn_addCanvas(document.getElementById('map3D_1'), false);
-    c_world.fn_addCanvas(document.getElementById('map3D_2'), false);
-    c_world.fn_addCanvas(document.getElementById('map3D_3'), false);
-    c_world.fn_addCanvas(document.getElementById('map3D_4'), true);
     
+    // Ensure canvases are in containers
+    ['map3D_1', 'map3D_2', 'map3D_3', 'map3D_4'].forEach((id, index) => {
+        const canvas = document.getElementById(id);
+        let container = canvas.parentNode;
+        if (!container.classList.contains('map3D_container')) {
+            container = document.createElement('div');
+            container.className = 'map3D_container';
+            container.id = `container${index + 1}`;
+            canvas.parentNode.insertBefore(container, canvas);
+            container.appendChild(canvas);
+        }
+        c_world.fn_addCanvas(canvas, id === 'map3D_4'); // Only last is streamable
+    });
+
     
     let scene;
     // Select scene based on sceneType
