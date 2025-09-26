@@ -1,21 +1,22 @@
 import * as THREE from 'three';
-import Stats from './js/stats.module.js';  
+import Stats from './js/stats.module.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { C_World } from './js/js_world.js';
-import { c_ArduVehicles } from './js/js_arduVehicles.js'; 
-import { c_CommandParser } from './js/js_websocket.js'; 
+import { c_ArduVehicles } from './js/js_arduVehicles.js';
+import { c_CommandParser } from './js/js_websocket.js';
 import './js/js_globals.js';
-import './js/js_utilities.js'; 
-import './js/js_triggerObject.js'; 
+import './js/js_utilities.js';
+import './js/js_triggerObject.js';
 import './js/js_object.js';
-import './js/js_physicsObject.js'; 
+import './js/js_physicsObject.js';
 import './js/js_vehicle.js';
 import './js/js_camera.js';
 import { CGrassWorld } from './js/scenes/js_green_scene.js'; 
-//import './js/objects/Water.js'; 
-import './js/ConvexHull.js'; 
-import './js/ConvexGeometry.js'; 
-import './js/ConvexObjectBreaker.js'; 
+import { RealMapWorld } from './js/scenes/js_3d_real_blank.js';
+import {MapboxWorld} from './js/scenes/js_map_box_scene.js';
+import './js/ConvexHull.js';
+import './js/ConvexGeometry.js';
+import './js/ConvexObjectBreaker.js';
 
 // Constants for configuration
 const CONFIG = {
@@ -27,7 +28,7 @@ const CONFIG = {
 function initWorld() {
     const sceneType = window.sceneType;
     const c_world = new C_World(0, 0);
-    
+
 
     // Add canvas to the world
     const canvas = document.getElementById(CONFIG.canvasId);
@@ -40,9 +41,22 @@ function initWorld() {
         console.error(`Canvas element with ID ${CONFIG.canvasId} not found.`);
     }
 
+    let scene;
+    // Select scene based on sceneType
+    if (sceneType === 'realmap') {
+        scene = new RealMapWorld(c_world);
+    } else if (sceneType === 'greengrass') {
+        scene = new CGrassWorld(c_world);
+    } else if (sceneType === 'map_box') {
+        scene = new MapboxWorld(c_world);
+    } else {
+        console.warn(`Unknown scene type: ${sceneType}. Defaulting to CGrassWorld.`);
+        scene = new CGrassWorld(c_world);
+    }
+
     // Initialize physics and world
     c_world.fn_initPhysics();
-    c_world.m_scene_env = new CGrassWorld(c_world); 
+    c_world.m_scene_env = scene;
     c_world.m_scene_env.init(CONFIG.worldZero.x, CONFIG.worldZero.y);
 
     return c_world;

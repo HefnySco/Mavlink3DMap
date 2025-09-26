@@ -1,0 +1,351 @@
+import * as THREE from 'three';
+import { v4 as uuidv4 } from 'uuid';
+import SimObject from '../js_object.js';
+import {EVENTS as js_event} from '../js_eventList.js';
+import { js_eventEmitter } from '../js_eventEmitter.js';
+import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
+
+const PI_div_2 = Math.PI / 2;
+
+export class RealMapWorld {
+    constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
+        this.world = worldInstance;
+        this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
+        this.tiles = new Map(); // Map to store active tiles by their grid coordinates
+        this.droneId = null;
+        this.textureLoader = new THREE.TextureLoader();
+        this.mapboxAccessToken = 'pk.eyJ1IjoibWhlZm55IiwiYSI6ImNrZW84Nm9rYTA2ZWgycm9mdmNscmFxYzcifQ.c-zxDjXCthXmRsErPzKhbQ';
+        this.zoomLevel = 14; // Lower zoom for larger tiles to reduce load; adjust as needed
+        this.homeLat = homeLat;
+        this.homeLng = homeLng;
+        const displacement = getInitialDisplacement();
+        this.displacementX = displacement.X;
+        this.displacementY = displacement.Y;
+
+        this.m_default_vehicle_sid = null;
+                
+        this.refLat = null;
+        this.refLng = null;
+        this.refAlt = null;
+        
+        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
+            if (vehicle.sid !=this.m_default_vehicle_sid) return ;
+            const {x,y,z} = vehicle.fn_translateXYZ();
+            p_me.updateTiles(x, -z); // Update tiles based on drone position
+        });
+
+        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, {lat, lng, alt, vehicle}) => {
+            if (p_me.refLat === null) {
+                p_me.refLat = lat * 1E-7;  // Convert degE7 to deg
+                p_me.refLng = lng * 1E-7;
+                p_me.refAlt = alt ;  // Convert mm to meters
+                p_me.loadMapFromHome(lat , lng );  // Load map only once
+            }
+        });
+    }
+
+    // Load map with new home coordinates and center on vehicle position
+    loadMapFromHome(lat, lng, vehicleX = 0, vehicleY = 0) {
+        // Update home coordinates
+        this.homeLat = lat * 1E-7;
+        this.homeLng = lng * 1E-7;
+
+        // Update displacement
+        const displacement = getInitialDisplacement();
+        this.displacementX = displacement.X;
+        this.displacementY = displacement.Y;
+
+        // Clear existing tiles
+        for (const tile of this.tiles.values()) {
+            this.world.v_scene.remove(tile);
+            if (tile.userData.m_physicsBody) {
+                this.world.v_physicsWorld.removeRigidBody(tile.userData.m_physicsBody);
+            }
+            tile.traverse(child => {
+                if (child instanceof THREE.Mesh) {
+                    if (child.material.map) child.material.map.dispose();
+                    child.material.dispose();
+                    child.geometry.dispose();
+                }
+            });
+        }
+        this.tiles.clear();
+
+        // Remove existing car (if any) to avoid duplicates
+        if (this.droneId && this.world.fn_getRobot(this.droneId)) {
+            const robot = this.world.fn_getRobot(this.droneId);
+            this.world.v_scene.remove(robot.fn_getMesh());
+            this.world.fn_deleteRobot(this.droneId);
+            this.droneId = null;
+        }
+
+        // Remove existing buildings and lights
+        this.world.v_scene.children = this.world.v_scene.children.filter(child => 
+            !child.userData?.isTile &&
+            !(child instanceof THREE.AmbientLight || child instanceof THREE.DirectionalLight) // Remove lights
+        );
+
+        // Reinitialize scene with new car, buildings, and lights
+        this.droneId = 'car' + uuidv4();
+        this._addCar(this.droneId, vehicleX, vehicleY, 7);
+        this._addBuildings(vehicleX, vehicleY);
+        this._addLights();
+
+        // Update tiles around the vehicle's position
+        this.updateTiles(vehicleX, -vehicleY);
+
+        // Adjust cameras to focus on the vehicle's new position
+        this._adjustCameras(vehicleX, vehicleY);
+    }
+
+    init(p_XZero, p_YZero) {
+        this.droneId = 'car' + uuidv4();
+        this._addCar(this.droneId, p_XZero + 10, p_YZero, 7);
+        this._addBuildings(p_XZero, p_YZero);
+        this._addLights();
+        this.updateTiles(p_XZero + 10, p_YZero);
+    }
+
+    async updateTiles(droneX, droneY) {
+        const adjustedX = droneX - this.displacementX;
+        const adjustedY = -droneY - this.displacementY;
+
+        // Convert vehicle position to geographic coordinates
+        const centerLat = this.homeLat + (adjustedX / metersPerDegreeLat);
+        const metersPerDegreeLng = getMetersPerDegreeLng(centerLat);
+        const centerLng = this.homeLng + (adjustedY / metersPerDegreeLng);
+
+        // Compute current tile coordinates (Web Mercator)
+        const n = Math.pow(2, this.zoomLevel);
+        const currentTileX = Math.floor((centerLng + 180) / 360 * n);
+        const sinLat = Math.sin(centerLat * Math.PI / 180);
+        const currentTileY = Math.floor((1 - Math.log((1 + sinLat) / (1 - sinLat)) / (2 * Math.PI)) / 2 * n);
+
+        const newTiles = new Set();
+        const newTilePromises = [];
+
+        for (let dx = -this.tileRange; dx <= this.tileRange; dx++) {
+            for (let dy = -this.tileRange; dy <= this.tileRange; dy++) {
+                const tileX = currentTileX + dx;
+                const tileY = currentTileY + dy;
+                const tileKey = `${tileX},${tileY}`;
+                newTiles.add(tileKey);
+                if (!this.tiles.has(tileKey)) {
+                    newTilePromises.push(this._add3DTerrainTile(tileX, tileY));
+                }
+            }
+        }
+
+        await Promise.all(newTilePromises);
+
+        // Remove tiles outside the current range
+        for (const [key, tile] of this.tiles) {
+            if (!newTiles.has(key)) {
+                this.world.v_scene.remove(tile);
+                if (tile.userData.m_physicsBody) {
+                    this.world.v_physicsWorld.removeRigidBody(tile.userData.m_physicsBody);
+                }
+                tile.traverse(child => {
+                    if (child instanceof THREE.Mesh) {
+                        if (child.material.map) child.material.map.dispose();
+                        child.material.dispose();
+                        child.geometry.dispose();
+                    }
+                });
+                this.tiles.delete(key);
+            }
+        }
+    }
+
+    _loadImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = url;
+        });
+    }
+
+    async _add3DTerrainTile(tileX, tileY) {
+        const n = Math.pow(2, this.zoomLevel);
+
+        // Compute tile bounds
+        const lonLeft = tileX / n * 360 - 180;
+        const lonRight = (tileX + 1) / n * 360 - 180;
+        const deltaLng = lonRight - lonLeft;
+
+        const latNorth = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(Math.PI - 2 * Math.PI * tileY / n) - Math.exp(-(Math.PI - 2 * Math.PI * tileY / n))));
+        const latSouth = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(Math.PI - 2 * Math.PI * (tileY + 1) / n) - Math.exp(-(Math.PI - 2 * Math.PI * (tileY + 1) / n))));
+        const deltaLat = latNorth - latSouth;
+
+        // Compute dimensions in meters
+        const centerLat = (latNorth + latSouth) / 2;
+        const metersPerDegreeLngCenter = getMetersPerDegreeLng(centerLat);
+        const tileWidth = deltaLng * metersPerDegreeLngCenter;
+        const tileHeight = deltaLat * metersPerDegreeLat;
+
+        // Compute tile center position in world meters
+        const tileCenterX = (centerLat - this.homeLat) * metersPerDegreeLat;
+        const tileCenterZ = (((lonLeft + lonRight) / 2) - this.homeLng) * metersPerDegreeLngCenter;
+
+        // Terrain URL (use .png for image loading)
+        const terrainUrl = `https://api.mapbox.com/v4/mapbox.terrain-rgb/${this.zoomLevel}/${tileX}/${tileY}.png?access_token=${this.mapboxAccessToken}`;
+        const satelliteUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/${this.zoomLevel}/${tileX}/${tileY}?access_token=${this.mapboxAccessToken}`;
+
+        try {
+            // Load terrain image
+            const terrainImg = await this._loadImage(terrainUrl);
+
+            // Create canvas and extract height data
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(terrainImg, 0, 0);
+            const imageData = ctx.getImageData(0, 0, 256, 256);
+            const data = imageData.data;
+
+            // Create geometry
+            const geometry = new THREE.PlaneGeometry(tileWidth, tileHeight, 255, 255);
+            const vertices = geometry.attributes.position.array;
+
+            for (let y = 0; y < 256; y++) {
+                for (let x = 0; x < 256; x++) {
+                    const i = (y * 256 + x) * 4;
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const height = -10000 + ((r * 65536 + g * 256 + b) * 0.1);
+
+                    const vertIndex = (y * 256 + x) * 3;
+                    vertices[vertIndex + 2] = height; // Set z (which becomes y after rotation)
+                }
+            }
+
+            geometry.attributes.position.needsUpdate = true;
+            geometry.computeVertexNormals();
+
+            // Load satellite texture
+            const texture = this.textureLoader.load(satelliteUrl);
+
+            // Create material and mesh
+            const material = new THREE.MeshLambertMaterial({ map: texture });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.rotation.x = -PI_div_2;
+            mesh.rotation.z = -PI_div_2;
+
+            // Create group for the tile
+            const tileGroup = new THREE.Group();
+            tileGroup.add(mesh);
+            tileGroup.position.set(tileCenterX, 0, tileCenterZ);
+            tileGroup.userData.isTile = true;
+
+            // Add to scene
+            this.world.v_scene.add(tileGroup);
+
+            // Add physics body (static)
+            const c_body = c_PhysicsObject.fn_createBox(0, tileGroup);
+            tileGroup.userData.m_physicsBody = c_body;
+            this.world.v_physicsWorld.addRigidBody(c_body);
+            this.world.v_rigidBodies.push(tileGroup);
+
+            // Store in tiles map
+            const tileKey = `${tileX},${tileY}`;
+            this.tiles.set(tileKey, tileGroup);
+
+        } catch (error) {
+            console.error(`Failed to load terrain tile ${tileX},${tileY}:`, error);
+        }
+    }
+
+    _adjustCameras(p_XZero, p_YZero) {
+        // Adjust cameras to new locations
+        for (var i = 0; i < this.world.v_views.length; ++ i) 
+        {
+            for (var j=0; j < this.world.v_views[i].m_objects_attached_cameras.length; ++j)
+            {
+                if ((this.world.v_views[i].m_objects_attached_cameras[j] instanceof THREE.PerspectiveCamera) === true)
+                {
+                    const cam = this.world.v_views[i].m_objects_attached_cameras[j];
+                    // Place camera above the vehicle with an offset
+                    cam.position.set(p_XZero + 5, 50, p_YZero + 5); // Higher to see over terrain
+                    cam.lookAt(new THREE.Vector3(p_XZero, 0, p_YZero));
+                    // Update OrbitControls if present
+                    if (cam.m_controls) {
+                        cam.m_controls.target.set(p_XZero, 0, p_YZero);
+                        cam.m_controls.update();
+                    }
+                }
+            }
+        }
+    }
+
+    _addCar(p_id, p_x, p_y, p_radius) {
+        const loader = new THREE.ObjectLoader();
+        loader.load('../../models/vehicles/car1.json', (obj) => {
+            obj.rotateZ(0);
+            const c_robot = new SimObject(p_id, this.homeLat, this.homeLng);
+            c_robot.fn_createCustom(obj);
+            c_robot.fn_setPosition(p_x, p_y, 0);
+            c_robot.fn_castShadow(false);
+
+            let c_y_deg_step = 0.01;
+            let c_y_deg = 0.0;
+            let c_deg = Math.random() * Math.PI;
+
+            c_robot.fn_setAnimate(() => {
+                c_y_deg += c_y_deg_step;
+                if (c_y_deg >= 1.1) {
+                    c_y_deg_step = -0.01;
+                    c_y_deg = 1.1;
+                } else if (c_y_deg <= -1.1) {
+                    c_y_deg_step = 0.01;
+                    c_y_deg = -1.1;
+                }
+                const newX = p_radius * Math.cos(c_deg) + p_x;
+                const newY = p_radius * Math.sin(c_deg) + p_y;
+                c_robot.fn_setPosition(newX, newY, 0);
+                c_deg = (c_deg + 0.01) % (2 * Math.PI);
+                c_robot.fn_setRotation(0, 0, -c_deg - PI_div_2);
+            });
+
+            this.world.fn_registerCamerasOfObject(c_robot);
+            c_robot.fn_setRotation(0, 0.0, 0.0);
+            this.world.fn_addRobot(p_id, c_robot);
+            this.world.v_scene.add(c_robot.fn_getMesh());
+        });
+    }
+
+    _addBuildings(p_XZero, p_YZero) {
+        const c_buildings = [
+            [-16, -8], [-16, -12], [-16, -16],
+            [16, 20], [16, 24], [16, 28]
+        ];
+
+        for (const c_location of c_buildings) {
+            const buildingLoader = new THREE.ObjectLoader();
+            buildingLoader.load('./models/building1.json', (obj) => {
+                obj.position.set(p_XZero + c_location[0], 0.01, p_YZero + c_location[1]);
+                obj.rotateZ(0);
+                this.world.v_scene.add(obj);
+            });
+        }
+
+        const building2Loader = new THREE.ObjectLoader();
+        building2Loader.load('./models/building2.json', (obj) => {
+            obj.position.set(0.0, 0.0, p_YZero + 0);
+            obj.rotateZ(0);
+            this.world.v_scene.add(obj);
+        });
+    }
+
+    _addLights() {
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        this.world.v_scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(1, 1, 0.5);
+        this.world.v_scene.add(directionalLight);
+    }
+}
