@@ -11,6 +11,7 @@ import { CameraController } from './js_camera.js';
 import { Trigger } from './js_triggerObject.js';
 import { FRAME_TYPE_UNKNOWN, _xAxis, _yAxis, _zAxis, DEG_2_RAD } from './js_globals.js'; // Assumes js_globals.js provides these
 import { getInitialDisplacement } from './js_globals.js';
+import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
 // Stub for getAngleOfPWM (used in fn_apply_attached_units)
 function getAngleOfPWM(maxAngle, minAngle, pwmValue, maxPWM, minPWM) {
@@ -48,6 +49,9 @@ class SimObject {
     m_animateFunction = null;
 
     m_trigger = new Trigger();
+    
+    m_label_object = null;
+    m_label_enabled = true; 
 
     constructor(p_name) {
         this.m_name = p_name;
@@ -57,6 +61,18 @@ class SimObject {
         this.v_qt = new THREE.Quaternion();
         const displacement = getInitialDisplacement();
         this.fn_setZeroPosition(displacement.X, displacement.Y, displacement.Alt);
+    }
+
+    fn_addLabel(p_label) {
+
+    }
+
+    fn_toggleLabel()
+    {
+        if (this.m_label_object)
+        {
+            this.m_label_object.visible = !this.m_label_object.visible;
+        }
     }
 
     fn_changeScaleByDelta(dX, dY, dZ) {
@@ -171,6 +187,9 @@ class SimObject {
     fn_createCustom(p_customObject, p_callbackfunc) {
         this.m_Mesh = new THREE.Group();
         this.m_Mesh.add(p_customObject);
+        
+        // Add SID label after mesh creation
+        this.fn_addLabel();
 
         if (p_callbackfunc != null) p_callbackfunc(this.m_Mesh);
     }

@@ -14,6 +14,7 @@ import Vehicle from './js_vehicle.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat } from './js_globals.js';
 import { EVENTS as js_event } from './js_eventList.js'
 import { js_eventEmitter } from './js_eventEmitter.js';
+import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
 const FRAME_TYPE_PLUS = 0;
 const FRAME_TYPE_PLANE = 1;
@@ -46,6 +47,42 @@ class c_ArduVehicles extends Vehicle {
         this.world = null;  // Reference to C_World
     }
 
+
+    /**
+     *  must be called after mesh is created.
+     * @returns 
+     */
+    fn_addLabel(p_label_text)
+    {
+        if (!this.m_Mesh) {
+            console.warn('Cannot add SID label: Mesh not initialized');
+            return;
+        }
+
+        // Create HTML element for the label
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'drone-sid-label';
+        labelDiv.textContent = p_label_text;
+        labelDiv.style.background = 'rgba(0, 0, 0, 0.59)';
+        labelDiv.style.color = 'white';
+        labelDiv.style.padding = '2px 5px';
+        labelDiv.style.borderRadius = '3px';
+        labelDiv.style.fontSize = '10px';
+        labelDiv.style.pointerEvents = 'none'; // Prevent mouse interaction
+
+        // Create CSS2DObject and attach to mesh
+        this.m_label_object = new CSS2DObject(labelDiv);
+        this.m_label_object.position.set(0.0, 0.5, 0.0); // Position above drone; adjust as needed
+        this.m_Mesh.add(this.m_label_object);
+    }
+
+    fn_updateLabel(p_label_text) {
+        if (this.m_label_object) {
+            this.m_label_object.element.textContent = p_label_text;
+        }
+    }
+
+    
 
     fn_setLatLngAlt(lat, lng, alt_abs, alt_res) {
 
@@ -103,6 +140,8 @@ class c_ArduVehicles extends Vehicle {
     }
 
     fn_createVehicle(p_classType, p_attachCamera, p_customObject, p_callbackfunc, p_addtoscene) {
+
+        this.m_label_text = 'droneX';
         switch (p_classType) {
             case FRAME_TYPE_X: this.m_type = FRAME_TYPE_X;
                 this.#fn_createDroneX(p_attachCamera, p_callbackfunc, p_addtoscene);
