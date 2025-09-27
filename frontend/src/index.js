@@ -12,7 +12,7 @@ import './js/js_physicsObject.js';
 import './js/js_vehicle.js';
 import './js/js_camera.js';
 import { CGrassWorld } from './js/scenes/js_green_scene.js'; 
-import { RealMapWorld } from './js/scenes/js_3d_real_blank.js';
+import { CRealMapWorld } from './js/scenes/js_3d_real_blank.js';
 import {MapboxWorld} from './js/scenes/js_map_box_scene.js';
 import './js/ConvexHull.js';
 import './js/ConvexGeometry.js';
@@ -44,7 +44,7 @@ function initWorld() {
     let scene;
     // Select scene based on sceneType
     if (sceneType === 'realmap') {
-        scene = new RealMapWorld(c_world);
+        scene = new CRealMapWorld(c_world);
     } else if (sceneType === 'greengrass') {
         scene = new CGrassWorld(c_world);
     } else if (sceneType === 'map_box') {

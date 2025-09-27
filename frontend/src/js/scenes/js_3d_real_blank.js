@@ -7,7 +7,7 @@ import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map
 
 const PI_div_2 = Math.PI / 2;
 
-export class RealMapWorld {
+export class CRealMapWorld {
     constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
         this.world = worldInstance;
         this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
@@ -27,6 +27,10 @@ export class RealMapWorld {
         this.refLat = null;
         this.refLng = null;
         this.refAlt = null;
+
+        this.baseHeight = 0; // Will be set to terrain height at home
+        this.heightScale = 1.0; // Controllable height exaggeration (resolution/scale factor)
+        this.terrainResolution = 255; // Controllable mesh resolution (e.g., 255 for full, 127 for half)
         
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
             if (vehicle.sid !=this.m_default_vehicle_sid) return ;
@@ -34,21 +38,38 @@ export class RealMapWorld {
             p_me.updateTiles(x, -z); // Update tiles based on drone position
         });
 
-        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, {lat, lng, alt, vehicle}) => {
+        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, async (p_me, {lat, lng, alt, vehicle}) => {
             if (p_me.refLat === null) {
                 p_me.refLat = lat * 1E-7;  // Convert degE7 to deg
                 p_me.refLng = lng * 1E-7;
                 p_me.refAlt = alt ;  // Convert mm to meters
-                p_me.loadMapFromHome(lat , lng );  // Load map only once
+                await p_me.loadMapFromHome(lat , lng );  // Load map only once
             }
         });
     }
 
+    // Setter to control height scale (exaggeration)
+    setHeightScale(scale) {
+        this.heightScale = scale;
+        // To apply changes, you may need to reload tiles or update existing geometries
+        console.warn('Height scale changed. Reload tiles to apply.');
+    }
+
+    // Setter to control terrain mesh resolution
+    setTerrainResolution(resolution) {
+        this.terrainResolution = resolution;
+        // To apply changes, you may need to reload tiles
+        console.warn('Terrain resolution changed. Reload tiles to apply.');
+    }
+
     // Load map with new home coordinates and center on vehicle position
-    loadMapFromHome(lat, lng, vehicleX = 0, vehicleY = 0) {
+    async loadMapFromHome(lat, lng, vehicleX = 0, vehicleY = 0) {
         // Update home coordinates
         this.homeLat = lat * 1E-7;
         this.homeLng = lng * 1E-7;
+
+        // Compute base height from terrain at home position
+        this.baseHeight = await this._getTerrainHeight(this.homeLat, this.homeLng);
 
         // Update displacement
         const displacement = getInitialDisplacement();
@@ -138,6 +159,8 @@ export class RealMapWorld {
 
         await Promise.all(newTilePromises);
 
+        // await ImageCache.getInstance().clearTiles(new Set(this.tiles.keys()));
+
         // Remove tiles outside the current range
         for (const [key, tile] of this.tiles) {
             if (!newTiles.has(key)) {
@@ -165,6 +188,52 @@ export class RealMapWorld {
             img.onerror = reject;
             img.src = url;
         });
+    }
+
+    async _getTerrainHeight(lat, lng) {
+        const zoom = this.zoomLevel;
+        const n = Math.pow(2, zoom);
+
+        // Compute tile coordinates
+        const tileX = Math.floor((lng + 180) / 360 * n);
+        const tileY = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n);
+
+        // Compute tile bounds for fractions
+        const lonLeft = tileX / n * 360 - 180;
+        const lonRight = (tileX + 1) / n * 360 - 180;
+
+        // Mercator Y for accurate y_frac
+        const latRad = lat * Math.PI / 180;
+        const mercY = Math.log(Math.tan(Math.PI / 4 + latRad / 2));
+
+        const mercYNorth = Math.PI - (tileY / n) * 2 * Math.PI;
+        const mercYSouth = Math.PI - ((tileY + 1) / n) * 2 * Math.PI;
+
+        const x_frac = (lng - lonLeft) / (lonRight - lonLeft);
+        const y_frac = (mercYNorth - mercY) / (mercYNorth - mercYSouth);
+
+        const pixelX = Math.floor(x_frac * 256);
+        const pixelY = Math.floor(y_frac * 256);
+
+        // Load terrain image
+        const terrainUrl = `https://api.mapbox.com/v4/mapbox.terrain-rgb/${zoom}/${tileX}/${tileY}.png?access_token=${this.mapboxAccessToken}`;
+        const terrainImg = await this._loadImage(terrainUrl);
+        const terrainImg = await ImageCache.getInstance().getImage(terrainUrl, this.zoomLevel, tileX, tileY);
+
+        // Extract RGB at pixel
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(terrainImg, 0, 0);
+        const imageData = ctx.getImageData(pixelX, pixelY, 1, 1).data;
+
+        const r = imageData[0];
+        const g = imageData[1];
+        const b = imageData[2];
+
+        const height = -10000 + ((r * 65536 + g * 256 + b) * 0.1);
+        return height;
     }
 
     async _add3DTerrainTile(tileX, tileY) {
@@ -206,19 +275,26 @@ export class RealMapWorld {
             const imageData = ctx.getImageData(0, 0, 256, 256);
             const data = imageData.data;
 
-            // Create geometry
-            const geometry = new THREE.PlaneGeometry(tileWidth, tileHeight, 255, 255);
+            // Create geometry with controllable resolution
+            const segments = this.terrainResolution;
+            const geometry = new THREE.PlaneGeometry(tileWidth, tileHeight, segments, segments);
             const vertices = geometry.attributes.position.array;
 
-            for (let y = 0; y < 256; y++) {
-                for (let x = 0; x < 256; x++) {
-                    const i = (y * 256 + x) * 4;
+            for (let y = 0; y <= segments; y++) {
+                for (let x = 0; x <= segments; x++) {
+                    // Sample from 256x256 data, interpolate if segments != 255
+                    const dataX = Math.floor(x / segments * 255);
+                    const dataY = Math.floor(y / segments * 255);
+                    const i = (dataY * 256 + dataX) * 4;
                     const r = data[i];
                     const g = data[i + 1];
                     const b = data[i + 2];
-                    const height = -10000 + ((r * 65536 + g * 256 + b) * 0.1);
+                    let height = -10000 + ((r * 65536 + g * 256 + b) * 0.1);
 
-                    const vertIndex = (y * 256 + x) * 3;
+                    // Apply offset and scale
+                    height = (height - this.baseHeight) * this.heightScale;
+
+                    const vertIndex = (y * (segments + 1) + x) * 3;
                     vertices[vertIndex + 2] = height; // Set z (which becomes y after rotation)
                 }
             }
@@ -245,10 +321,10 @@ export class RealMapWorld {
             this.world.v_scene.add(tileGroup);
 
             // Add physics body (static)
-            const c_body = c_PhysicsObject.fn_createBox(0, tileGroup);
-            tileGroup.userData.m_physicsBody = c_body;
-            this.world.v_physicsWorld.addRigidBody(c_body);
-            this.world.v_rigidBodies.push(tileGroup);
+            // const c_body = c_PhysicsObject.fn_createBox(0, tileGroup);
+            // tileGroup.userData.m_physicsBody = c_body;
+            // this.world.v_physicsWorld.addRigidBody(c_body);
+            // this.world.v_rigidBodies.push(tileGroup);
 
             // Store in tiles map
             const tileKey = `${tileX},${tileY}`;
