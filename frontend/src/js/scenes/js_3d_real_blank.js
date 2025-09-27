@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import SimObject from '../js_object.js';
-import {EVENTS as js_event} from '../js_eventList.js';
+import { EVENTS as js_event } from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
-import {ImageCache} from '../js_image_cache.js'
+import { ImageCache } from '../js_image_cache.js'
 
 const PI_div_2 = Math.PI / 2;
 
@@ -24,7 +24,7 @@ export class CRealMapWorld {
         this.displacementY = displacement.Y;
 
         this.m_default_vehicle_sid = null;
-                
+
         this.refLat = null;
         this.refLng = null;
         this.refAlt = null;
@@ -32,19 +32,19 @@ export class CRealMapWorld {
         this.baseHeight = 0; // Will be set to terrain height at home
         this.heightScale = 1.0; // Controllable height exaggeration (resolution/scale factor)
         this.terrainResolution = 255; // Controllable mesh resolution (e.g., 255 for full, 127 for half)
-        
+
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
-            if (vehicle.sid !=this.m_default_vehicle_sid) return ;
-            const {x,y,z} = vehicle.fn_translateXYZ();
+            if (vehicle.sid != this.m_default_vehicle_sid) return;
+            const { x, y, z } = vehicle.fn_translateXYZ();
             p_me.updateTiles(x, -z); // Update tiles based on drone position
         });
 
-        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, async (p_me, {lat, lng, alt, vehicle}) => {
+        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, async (p_me, { lat, lng, alt, vehicle }) => {
             if (p_me.refLat === null) {
                 p_me.refLat = lat * 1E-7;  // Convert degE7 to deg
                 p_me.refLng = lng * 1E-7;
-                p_me.refAlt = alt ;  // Convert mm to meters
-                await p_me.loadMapFromHome(lat , lng );  // Load map only once
+                p_me.refAlt = alt;  // Convert mm to meters
+                await p_me.loadMapFromHome(lat, lng);  // Load map only once
             }
         });
     }
@@ -102,7 +102,7 @@ export class CRealMapWorld {
         }
 
         // Remove existing buildings and lights
-        this.world.v_scene.children = this.world.v_scene.children.filter(child => 
+        this.world.v_scene.children = this.world.v_scene.children.filter(child =>
             !child.userData?.isTile &&
             !(child instanceof THREE.AmbientLight || child instanceof THREE.DirectionalLight) // Remove lights
         );
@@ -261,6 +261,7 @@ export class CRealMapWorld {
 
         // Terrain URL (use .png for image loading)
         const terrainUrl = `https://api.mapbox.com/v4/mapbox.terrain-rgb/${this.zoomLevel}/${tileX}/${tileY}.png?access_token=${this.mapboxAccessToken}`;
+        //const satelliteUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/${this.zoomLevel}/${tileX}/${tileY}?access_token=${this.mapboxAccessToken}`;
         const satelliteUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/${this.zoomLevel}/${tileX}/${tileY}?access_token=${this.mapboxAccessToken}`;
 
         try {
@@ -304,7 +305,20 @@ export class CRealMapWorld {
             geometry.attributes.position.needsUpdate = true;
             geometry.computeVertexNormals();
 
-            // Load satellite texture
+            // Load image with caching
+            // const cachedImage = await ImageCache.getInstance().getImage(satelliteUrl, this.zoomLevel, tileX, tileY);
+
+            // if (!cachedImage) {
+            //     console.error(`Failed to load tile image for ${tileX},${tileY}`);
+            //     return; // Skip adding the tile or use a fallback placeholder mesh
+            // }
+
+            // BUG: for unknown reason I cannot used the cached image with THREE.Texture() & geometry.
+            // // 2. Create an empty texture and assign the cached image to its .image property
+            // const texture = new THREE.Texture();
+            // texture.image = cachedImage;
+            // texture.needsUpdate = true;
+
             const texture = this.textureLoader.load(satelliteUrl);
 
             // Create material and mesh
@@ -322,12 +336,6 @@ export class CRealMapWorld {
             // Add to scene
             this.world.v_scene.add(tileGroup);
 
-            // Add physics body (static)
-            // const c_body = c_PhysicsObject.fn_createBox(0, tileGroup);
-            // tileGroup.userData.m_physicsBody = c_body;
-            // this.world.v_physicsWorld.addRigidBody(c_body);
-            // this.world.v_rigidBodies.push(tileGroup);
-
             // Store in tiles map
             const tileKey = `${tileX},${tileY}`;
             this.tiles.set(tileKey, tileGroup);
@@ -339,14 +347,11 @@ export class CRealMapWorld {
 
     _adjustCameras(p_XZero, p_YZero) {
         // Adjust cameras to new locations
-        
-        for (var i = 0; i < this.world.v_views.length; ++ i) 
-        {
-            if (!this.world.v_views[i].m_objects_attached_cameras) continue ;
-            for (var j=0; j < this.world.v_views[i].m_objects_attached_cameras.length; ++j)
-            {
-                if ((this.world.v_views[i].m_objects_attached_cameras[j] instanceof THREE.PerspectiveCamera) === true)
-                {
+
+        for (var i = 0; i < this.world.v_views.length; ++i) {
+            if (!this.world.v_views[i].m_objects_attached_cameras) continue;
+            for (var j = 0; j < this.world.v_views[i].m_objects_attached_cameras.length; ++j) {
+                if ((this.world.v_views[i].m_objects_attached_cameras[j] instanceof THREE.PerspectiveCamera) === true) {
                     const cam = this.world.v_views[i].m_objects_attached_cameras[j];
                     // Place camera above the vehicle with an offset
                     cam.position.set(p_XZero + 5, 50, p_YZero + 5); // Higher to see over terrain
