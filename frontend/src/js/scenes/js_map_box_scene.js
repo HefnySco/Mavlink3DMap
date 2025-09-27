@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import SimObject from '../js_object.js';
-import {EVENTS as js_event} from '../js_eventList.js';
+import { EVENTS as js_event } from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
+import { ImageCache } from '../js_image_cache.js'
 
 const PI_div_2 = Math.PI / 2;
 
@@ -25,25 +26,25 @@ export class MapboxWorld {
         this.displacementY = displacement.Y;
 
         this.m_default_vehicle_sid = null;
-                
+
         this.refLat = null;
         this.refLng = null;
         this.refAlt = null;
-        
+
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
             // const location_array = vehicle.fn_getPosition();
             // p_me.updateTiles(location_array[0], -location_array[2]);
-            if (vehicle.sid !=this.m_default_vehicle_sid) return ;
-            const {x,y,z} = vehicle.fn_translateXYZ();
+            if (vehicle.sid != this.m_default_vehicle_sid) return;
+            const { x, y, z } = vehicle.fn_translateXYZ();
             p_me.updateTiles(x, -z); // Update tiles based on drone position
         });
 
-        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, {lat, lng, alt, vehicle}) => {
+        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, { lat, lng, alt, vehicle }) => {
             if (p_me.refLat === null) {
                 p_me.refLat = lat * 1E-7;  // Convert degE7 to deg
                 p_me.refLng = lng * 1E-7;
-                p_me.refAlt = alt ;  // Convert mm to meters
-                p_me.loadMapFromHome(lat , lng );  // Load map only once
+                p_me.refAlt = alt;  // Convert mm to meters
+                p_me.loadMapFromHome(lat, lng);  // Load map only once
             }
         });
     }
@@ -77,7 +78,7 @@ export class MapboxWorld {
         }
 
         // Remove existing buildings and lights
-        this.world.v_scene.children = this.world.v_scene.children.filter(child => 
+        this.world.v_scene.children = this.world.v_scene.children.filter(child =>
             !(child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry) && // Keep non-tile meshes temporarily
             !(child instanceof THREE.AmbientLight || child instanceof THREE.DirectionalLight) // Remove lights
         );
@@ -156,8 +157,9 @@ export class MapboxWorld {
     }
 
     _adjustCameras(p_XZero, p_YZero) {
-            for (let j = 0; j < this.world.m_objects_attached_cameras.length; ++j) {
-                const cam = this.world.m_objects_attached_cameras[j];
+        for (let i = 0; i < this.world.v_views.length; ++i) {
+            for (let j = 0; j < this.world.v_views[i].v_localCameras.length; ++j) {
+                const cam = this.world.v_views[i].v_localCameras[j];
                 if (cam instanceof THREE.PerspectiveCamera) {
                     // Position camera above the vehicle with an offset
                     cam.position.set(p_XZero + 5, 5, p_YZero);
@@ -169,6 +171,7 @@ export class MapboxWorld {
                     }
                 }
             }
+        }
     }
 
     _addCar(p_id, p_x, p_y, p_radius) {
@@ -207,7 +210,7 @@ export class MapboxWorld {
         });
     }
 
-    _addMapboxTile(p_XZero, p_YZero, tileX, tileY) {
+    async _addMapboxTile(p_XZero, p_YZero, tileX, tileY) {
         const adjustedX = p_XZero + this.displacementX;
         const adjustedY = p_YZero + this.displacementY;
 
@@ -231,9 +234,22 @@ export class MapboxWorld {
 
         const tileUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/${this.zoomLevel}/${tileX}/${tileY}?access_token=${this.mapboxAccessToken}`;
 
-        const geometry = new THREE.PlaneGeometry(tileWidth, tileHeight);
-        const material = new THREE.MeshBasicMaterial({ map: this.textureLoader.load(tileUrl), side: THREE.DoubleSide });
+        // Load image with caching
+        const cachedImage = await ImageCache.getInstance().getImage(tileUrl, this.zoomLevel, tileX, tileY);
 
+        if (!cachedImage) {
+            console.error(`Failed to load tile image for ${tileX},${tileY}`);
+            return; // Skip adding the tile or use a fallback placeholder mesh
+        }
+
+        // Create Three.js texture from cached image
+        const texture = new THREE.Texture(cachedImage);
+        texture.needsUpdate = true; // Ensure texture is updated in Three.js
+
+        const geometry = new THREE.PlaneGeometry(tileWidth, tileHeight);
+        const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+
+        
         const tile = new THREE.Mesh(geometry, material);
         tile.position.set(p_XZero, -0.01, p_YZero);
         tile.rotation.x = -PI_div_2;

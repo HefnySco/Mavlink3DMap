@@ -4,6 +4,7 @@ import SimObject from '../js_object.js';
 import {EVENTS as js_event} from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
+import {ImageCache} from '../js_image_cache.js'
 
 const PI_div_2 = Math.PI / 2;
 
@@ -159,7 +160,7 @@ export class CRealMapWorld {
 
         await Promise.all(newTilePromises);
 
-        // await ImageCache.getInstance().clearTiles(new Set(this.tiles.keys()));
+        //await ImageCache.getInstance().clearTiles(new Set(this.tiles.keys()));
 
         // Remove tiles outside the current range
         for (const [key, tile] of this.tiles) {
@@ -217,7 +218,7 @@ export class CRealMapWorld {
 
         // Load terrain image
         const terrainUrl = `https://api.mapbox.com/v4/mapbox.terrain-rgb/${zoom}/${tileX}/${tileY}.png?access_token=${this.mapboxAccessToken}`;
-        const terrainImg = await this._loadImage(terrainUrl);
+        //const terrainImg = await this._loadImage(terrainUrl);
         const terrainImg = await ImageCache.getInstance().getImage(terrainUrl, this.zoomLevel, tileX, tileY);
 
         // Extract RGB at pixel
@@ -264,7 +265,8 @@ export class CRealMapWorld {
 
         try {
             // Load terrain image
-            const terrainImg = await this._loadImage(terrainUrl);
+            //const terrainImg = await this._loadImage(terrainUrl);
+            const terrainImg = await ImageCache.getInstance().getImage(terrainUrl, this.zoomLevel, tileX, tileY);
 
             // Create canvas and extract height data
             const canvas = document.createElement('canvas');
@@ -337,8 +339,10 @@ export class CRealMapWorld {
 
     _adjustCameras(p_XZero, p_YZero) {
         // Adjust cameras to new locations
+        
         for (var i = 0; i < this.world.v_views.length; ++ i) 
         {
+            if (!this.world.v_views[i].m_objects_attached_cameras) continue ;
             for (var j=0; j < this.world.v_views[i].m_objects_attached_cameras.length; ++j)
             {
                 if ((this.world.v_views[i].m_objects_attached_cameras[j] instanceof THREE.PerspectiveCamera) === true)
