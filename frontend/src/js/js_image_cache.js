@@ -7,6 +7,7 @@ export class ImageCache {
     #placeholderImage = null;
     #dbInitializationPromise = null;
     #placeholderPromise = null; // FIX: Added promise for placeholder
+    #enabled = false; // Allow disabling the cache at runtime
 
     // Private constructor for singleton
     constructor() {
@@ -25,6 +26,15 @@ export class ImageCache {
             ImageCache.#instance = new ImageCache();
         }
         return ImageCache.#instance;
+    }
+
+    // Enable/disable caching globally (when disabled, operates pass-through)
+    setEnabled(enabled) {
+        this.#enabled = !!enabled;
+    }
+
+    isEnabled() {
+        return this.#enabled;
     }
 
     // Initialize placeholder image (blank 256x256 canvas)
@@ -136,7 +146,13 @@ export class ImageCache {
 
     // Get image from cache or load and store
     async getImage(url, zoom, tileX, tileY) {
-        await this.#ready(); // FIX: Ensure both DB and placeholder are ready
+        // If caching disabled: fetch and return without touching DB
+        if (!this.#enabled) {
+            const image = await this.#loadImageWithRetry(url);
+            return image;
+        }
+
+        await this.#ready(); // Ensure both DB and placeholder are ready
 
         const type = url.includes('terrain-rgb') ? 'terrain-rgb' : 'satellite-v9';
         const key = `${type}_${zoom}_${tileX}_${tileY}`;
