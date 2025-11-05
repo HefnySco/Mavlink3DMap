@@ -15,6 +15,7 @@ export class MapboxWorld {
         this.world = worldInstance;
         this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
         this.tiles = new Map(); // Map to store active tiles by their grid coordinates
+        this.pendingTiles = new Set(); // avoid duplicate in-flight loads
         this.droneId = null;
         this.textureLoader = new THREE.TextureLoader();
         this.mapboxAccessToken = 'pk.eyJ1IjoiaHNhYWQiLCJhIjoiY2tqZnIwNXRuMndvdTJ4cnV0ODQ4djZ3NiJ9.LKojA3YMrG34L93jRThEGQ';
@@ -141,9 +142,9 @@ export class MapboxWorld {
             }
         }
 
-        // Add new tiles
+        // Add new tiles (debounced by pendingTiles)
         for (const key of requiredTiles) {
-            if (!this.tiles.has(key)) {
+            if (!this.tiles.has(key) && !this.pendingTiles.has(key)) {
                 const [tileX, tileY] = key.split(',').map(Number);
                 // Convert tile center back to world coordinates
                 const lon = (tileX + 0.5) / n * 360 - 180;
@@ -151,7 +152,10 @@ export class MapboxWorld {
                 const lat = (180 / Math.PI) * latRad;
                 const p_XZero = (lat - this.homeLat) * metersPerDegreeLat - this.displacementX;
                 const p_YZero = (lon - this.homeLng) * getMetersPerDegreeLng(lat) - this.displacementY;
-                this._addMapboxTile(p_XZero, p_YZero, tileX, tileY);
+                this.pendingTiles.add(key);
+                this._addMapboxTile(p_XZero, p_YZero, tileX, tileY)
+                    .catch(e => console.error('Tile load failed', key, e))
+                    .finally(() => this.pendingTiles.delete(key));
             }
         }
     }
@@ -245,19 +249,35 @@ export class MapboxWorld {
             return; // Skip adding the tile or use a fallback placeholder mesh
         }
 
-        // Create Three.js texture from cached image
-        const texture = new THREE.Texture(cachedImage);
-        texture.needsUpdate = true; // Ensure texture is updated in Three.js
+        // Create Three.js texture from cached image with robust params
+        const texture = new THREE.CanvasTexture(cachedImage);
+        texture.flipY = true; // align with PlaneGeometry UVs and Web image origin
+        texture.generateMipmaps = true;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        if (THREE.sRGBEncoding) {
+            texture.encoding = THREE.sRGBEncoding;
+        }
 
         const geometry = new THREE.PlaneGeometry(tileWidth, tileHeight);
-        const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+        const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
 
-        
         const tile = new THREE.Mesh(geometry, material);
         tile.position.set(p_XZero, -0.01, p_YZero);
         tile.rotation.x = -PI_div_2;
         tile.rotation.z = -PI_div_2;
         const tileKey = `${tileX},${tileY}`;
+        // Replace existing tile if present (avoid stacking/darkening)
+        const existing = this.tiles.get(tileKey);
+        if (existing) {
+            this.world.v_scene.remove(existing);
+            if (existing.material?.map) existing.material.map.dispose();
+            existing.material?.dispose?.();
+            existing.geometry?.dispose?.();
+            this.tiles.delete(tileKey);
+        }
         this.tiles.set(tileKey, tile);
         this.world.v_scene.add(tile);
     }

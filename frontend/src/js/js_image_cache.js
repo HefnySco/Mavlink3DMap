@@ -7,7 +7,7 @@ export class ImageCache {
     #placeholderImage = null;
     #dbInitializationPromise = null;
     #placeholderPromise = null; // FIX: Added promise for placeholder
-    #enabled = false; // Allow disabling the cache at runtime
+    #enabled = true; // Allow disabling the cache at runtime
 
     // Private constructor for singleton
     constructor() {
@@ -174,50 +174,49 @@ export class ImageCache {
     // Retrieve image from IndexedDB and update LRU in a single transaction
     async #getFromCache(key) {
         return new Promise((resolve) => {
-            const transaction = this.#db.transaction(['tiles', 'metadata'], 'readwrite');
-            const tileStore = transaction.objectStore('tiles');
-            const metadataStore = transaction.objectStore('metadata');
-            let imageToReturn = null;
+            // Read the tile blob with a readonly transaction
+            const tx = this.#db.transaction(['tiles'], 'readonly');
+            const tileStore = tx.objectStore('tiles');
 
             const tileRequest = tileStore.get(key);
             tileRequest.onsuccess = () => {
                 const data = tileRequest.result;
                 if (!data || !data.blob) {
-                    // This is a cache miss, the transaction will complete and resolve null.
+                    resolve(null); // miss
                     return;
                 }
 
-                // This is a cache hit.
                 const img = new Image();
                 const objectURL = URL.createObjectURL(data.blob);
-                
                 img.onload = () => {
-                    imageToReturn = img;
-                    URL.revokeObjectURL(objectURL); // FIX: Revoke URL only after image is loaded
+                    URL.revokeObjectURL(objectURL);
+                    // Update LRU in a fresh readwrite transaction (not the closed one)
+                    try {
+                        const lruTx = this.#db.transaction(['metadata'], 'readwrite');
+                        const metadataStore = lruTx.objectStore('metadata');
+                        const lruRequest = metadataStore.get('lru');
+                        lruRequest.onsuccess = () => {
+                            let lruList = Array.isArray(lruRequest.result) ? lruRequest.result : [];
+                            lruList = [key, ...lruList.filter(k => k !== key)];
+                            metadataStore.put(lruList, 'lru');
+                        };
+                        // We don't need to wait for lruTx completion here.
+                    } catch (e) {
+                        console.warn('LRU update skipped due to transaction error:', e);
+                    }
+                    resolve(img);
                 };
                 img.onerror = () => {
                     console.error(`Failed to load image from cached blob for key ${key}`);
-                    URL.revokeObjectURL(objectURL); // FIX: Also revoke on error
-                    // Don't return placeholder, treat as a miss
+                    URL.revokeObjectURL(objectURL);
+                    resolve(null); // treat as miss
                 };
                 img.src = objectURL;
-
-                // Update LRU list since this was a successful hit
-                const lruRequest = metadataStore.get('lru');
-                lruRequest.onsuccess = () => {
-                    let lruList = Array.isArray(lruRequest.result) ? lruRequest.result : [];
-                    lruList = [key, ...lruList.filter(k => k !== key)];
-                    metadataStore.put(lruList, 'lru');
-                };
             };
 
-            transaction.oncomplete = () => {
-                // FIX: Only resolve the image if found, otherwise it's a clear 'null' for a cache miss.
-                resolve(imageToReturn);
-            };
-            transaction.onerror = (event) => {
-                console.error('Get from cache transaction failed:', event.target.error);
-                resolve(null); // Treat transaction error as a miss
+            tileRequest.onerror = (event) => {
+                console.error('Get from cache read failed:', event.target.error);
+                resolve(null);
             };
         });
     }
