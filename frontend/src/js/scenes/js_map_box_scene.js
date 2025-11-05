@@ -157,9 +157,12 @@ export class MapboxWorld {
     }
 
     _adjustCameras(p_XZero, p_YZero) {
+        if (!this.world || !Array.isArray(this.world.v_views)) return;
         for (let i = 0; i < this.world.v_views.length; ++i) {
-            for (let j = 0; j < this.world.v_views[i].v_localCameras.length; ++j) {
-                const cam = this.world.v_views[i].v_localCameras[j];
+            const view = this.world.v_views[i];
+            const cams = view?.m_objects_attached_cameras || view?.v_localCameras || [];
+            for (let j = 0; j < cams.length; ++j) {
+                const cam = cams[j] && (cams[j].m_cameraThree instanceof THREE.PerspectiveCamera ? cams[j].m_cameraThree : cams[j]);
                 if (cam instanceof THREE.PerspectiveCamera) {
                     // Position camera above the vehicle with an offset
                     cam.position.set(p_XZero + 5, 5, p_YZero);
