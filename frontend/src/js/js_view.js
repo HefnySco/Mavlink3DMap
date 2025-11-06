@@ -18,8 +18,15 @@ class C_View {
         this.sendInterval = Math.ceil(60 / this.targetFps); // e.g., 2 for 30 FPS at 60Hz render
 
         // Set canvas dimensions
-        this.m_canvas.width = p_canvas.clientWidth * window.devicePixelRatio;
-        this.m_canvas.height = p_canvas.clientHeight * window.devicePixelRatio;
+        // IMPORTANT: Enforce EVEN pixel dimensions for the offscreen canvas.
+        // Many downstream pipelines (ffmpeg -> v4l2loopback -> OpenCV YUV420) require
+        // even width and height to avoid chroma-subsampling and SIMD alignment errors.
+        // Keeping these even prevents distorted frames and cv::cvtColor assertions.
+        const dpr = window.devicePixelRatio;
+        const initW = Math.floor(p_canvas.clientWidth * dpr) & ~1;
+        const initH = Math.floor(p_canvas.clientHeight * dpr) & ~1;
+        this.m_canvas.width = initW;
+        this.m_canvas.height = initH;
 
         this.v_context = p_canvas.getContext('2d');
 
@@ -128,8 +135,13 @@ class C_View {
             return false;
         }
         const canvas = this.m_canvas;
-        const width = canvas.clientWidth * window.devicePixelRatio;
-        const height = canvas.clientHeight * window.devicePixelRatio;
+        const dpr = window.devicePixelRatio;
+        const widthRaw = canvas.clientWidth * dpr;
+        const heightRaw = canvas.clientHeight * dpr;
+        // IMPORTANT: Keep resized dimensions EVEN to maintain compatibility
+        // with YUV420/NV12 encoders and v4l2 sinks that expect even sizes.
+        const width = Math.floor(widthRaw) & ~1;
+        const height = Math.floor(heightRaw) & ~1;
         const needResize = canvas.width !== width || canvas.height !== height;
         if (needResize) {
             canvas.width = width;
