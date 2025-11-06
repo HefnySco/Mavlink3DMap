@@ -159,11 +159,11 @@ export class ImageCache {
 
         const cachedImage = await this.#getFromCache(key);
         if (cachedImage) {
-            console.log(`Retrieved from cache: ${key}`);
+            //console.log(`Retrieved from cache: ${key}`);
             return cachedImage;
         }
 
-        console.log(`Cache miss for ${key}, fetching from network...`);
+        //console.log(`Cache miss for ${key}, fetching from network...`);
         const image = await this.#loadImageWithRetry(url);
         if (image !== this.#placeholderImage) { // Don't cache placeholder on network failure
             await this.#addToCache(key, image);
