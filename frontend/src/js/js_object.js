@@ -15,7 +15,6 @@ import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRe
 
 // Stub for getAngleOfPWM (used in fn_apply_attached_units)
 function getAngleOfPWM(maxAngle, minAngle, pwmValue, maxPWM, minPWM) {
-    console.warn('getAngleOfPWM not implemented; returning default angle');
     return (pwmValue - minPWM) / (maxPWM - minPWM) * (maxAngle - minAngle) + minAngle;
 }
 

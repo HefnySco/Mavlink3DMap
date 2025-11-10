@@ -37,7 +37,7 @@ class CameraController {
      * @param {boolean} p_createHelper - Whether to create a camera helper for debugging.
      * @param {number} p_fov - camera FOV
      */
-    constructor(p_attachedObject, p_createHelper, p_fov = 75) {
+    constructor(p_attachedObject, p_createHelper, p_fov = 45) {
         this.v_q1 = new THREE.Quaternion();
         this.v_q2 = new THREE.Quaternion();
         this.v_q3 = new THREE.Quaternion();

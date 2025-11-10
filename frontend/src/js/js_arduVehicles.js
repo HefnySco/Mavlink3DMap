@@ -184,11 +184,11 @@ class c_ArduVehicles extends Vehicle {
             // extract object from Group
 
             if (p_attachCamera === true) {
-                let v_cam1_down = new CameraController(Me, true, 90);
-                v_cam1_down.fn_setRotationIndependence(false, true, true);
+                let v_cam_down = new CameraController(Me, true, 90);
+                v_cam_down.fn_setRotationIndependence(true, true);
                 // facing down with stabilizer
-                v_cam1_down.fn_setCameraRelativePosition(0.0, 0.0, 0.0,
-                    0.0, -1.57, 0.0);
+                v_cam_down.fn_setCameraRelativePosition(0.0, 0.0, 0.0,
+                    1.57, -1.57, -1.57);
 
                 let v_cam_front = new CameraController(Me, true, 90);
                 v_cam_front.fn_setRotationIndependence(false, true, true);
@@ -202,7 +202,7 @@ class c_ArduVehicles extends Vehicle {
                     , 0.0, -0.5, 0.0);
 
                 
-                Me.m_cameras.push(v_cam1_down);  // drone cam
+                Me.m_cameras.push(v_cam_down);  // drone cam
                 Me.m_cameras.push(v_cam_front);  // drone cam front
                 Me.m_cameras.push(v_cam_follow_me);  // follow-me
                 
@@ -226,17 +226,17 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                let v_cam1_down = new CameraController(Me, true);
-                v_cam1_down.fn_setRotationIndependence(false, false, false);
+                let v_cam_down = new CameraController(Me, true);
+                v_cam_down.fn_setRotationIndependence(true, true);
                 // facing down with stabilizer
-                v_cam1_down.fn_setCameraRelativePosition(0.0, 0.0, 0.0,
-                    0.0, -1.57, 0.0);
+                v_cam_down.fn_setCameraRelativePosition(0.0, 0.0, 0.0,
+                    1.57, -1.57, -1.57);
                 let v_cam_follow_me = new CameraController(Me, false);
                 v_cam_follow_me.fn_setRotationIndependence(true);
                 v_cam_follow_me.fn_setCameraRelativePosition(- 1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
 
-                Me.m_cameras.push(v_cam1_down);
+                Me.m_cameras.push(v_cam_down);
                 Me.m_cameras.push(v_cam_follow_me);
             }
 
@@ -257,11 +257,11 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 //this.fn_attachedCamera(false,false,false);
-                let v_cam1_down = new CameraController(Me, true);
-                v_cam1_down.fn_setRotationIndependence(false, true, true, 90);
+                let v_cam_down = new CameraController(Me, true, 90);
+                v_cam_down.fn_setRotationIndependence(true, true);
                 // facing down with stabilizer
-                v_cam1_down.fn_setCameraRelativePosition(-0.1, -0.3, 0.8,
-                    0.0, 1.57, 0.0);
+                v_cam_down.fn_setCameraRelativePosition(-0.1, -0.3, 0.8,
+                    1.57, -1.57, -1.57);
                 
                 
                 let v_cam_follow_me = new CameraController(Me, false);
@@ -275,7 +275,7 @@ class c_ArduVehicles extends Vehicle {
                 // v_cam3.fn_setCameraRelativePosition(1.0, 0.0, 0.0,
                 //     0.0, 0.0, 0.0);
 
-                Me.m_cameras.push(v_cam1_down);  // drone cam
+                Me.m_cameras.push(v_cam_down);  // drone cam
                 Me.m_cameras.push(v_cam_follow_me);  // follow-me
             }
 
@@ -303,12 +303,12 @@ class c_ArduVehicles extends Vehicle {
                 let v_cam_front = new CameraController(Me, true);
                 // 6 & 7 are servo channels that is used by gimbal... you can use them to get real feedback
                 //v_cam1.fn_setRotationIndependence (false, false, false, 6, 7);
-                v_cam_front.fn_setRotationIndependence(false, false, false, null, null);
+                v_cam_front.fn_setRotationIndependence(false, true, false, null,null);
                 // facing down with stabilizer
                 v_cam_front.fn_setCameraRelativePosition(0.4, 0.0, 0.0,
                     0.0, 0.0, 0.0);
                 
-                    let v_cam_follow_me = new CameraController(Me, false);
+                let v_cam_follow_me = new CameraController(Me, false);
                 v_cam_follow_me.fn_setRotationIndependence(true);
                 v_cam_follow_me.fn_setOrbitMode(true);
                 v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5

@@ -34,7 +34,6 @@ export const FRAME_TYPE_UNKNOWN = 0;
 
 // Utility function for PWM to angle conversion
 export function getAngleOfPWM(maxAngle, minAngle, pwmValue, maxPWM = 1900, minPWM = 1100) {
-    console.warn('getAngleOfPWM: using placeholder implementation');
     return (pwmValue - minPWM) / (maxPWM - minPWM) * (maxAngle - minAngle) + minAngle;
 }
 
