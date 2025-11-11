@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { getMetersPerDegreeLng, metersPerDegreeLat, _map_lat, _map_lng } from '../js_globals.js';
-import { BaseWorld } from './BaseWorld.js';
+import { CBaseScene } from './js_base_scene.js';
 
 const PI_div_2 = Math.PI / 2;
 
-export class CGrassWorld extends BaseWorld {
+export class CGrassScene extends CBaseScene {
     constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
         super(worldInstance, { homeLat, homeLng, tileRange: 2 });
         this.m_env_name = 'forest';
@@ -13,7 +13,7 @@ export class CGrassWorld extends BaseWorld {
         this.zoomLevel = 16;
     }
 
-    // init and loadMapFromHome inherited from BaseWorld
+    // init and loadMapFromHome inherited from CBaseScene
 
     updateTiles(droneX, droneY) {
         const adjustedX = droneX - this.displacementX;

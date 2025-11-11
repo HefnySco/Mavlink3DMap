@@ -9,7 +9,7 @@ import { Building } from '../physical_objects/Building.js';
 
 const PI_div_2 = Math.PI / 2;
 
-export class BaseWorld {
+export class CBaseScene {
     constructor(worldInstance, { homeLat = _map_lat, homeLng = _map_lng, tileRange = 2 } = {}) {
         this.world = worldInstance;
         this.tileRange = tileRange;

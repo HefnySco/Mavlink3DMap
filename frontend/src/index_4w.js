@@ -9,9 +9,9 @@ import './js/js_object.js';
 import './js/js_physicsObject.js'; 
 import './js/js_vehicle.js';
 import './js/js_camera.js';
-import { CGrassWorld } from './js/scenes/js_green_scene.js'; 
-import { CRealMapWorld } from './js/scenes/js_3d_real_blank.js';
-import {MapboxWorld} from './js/scenes/js_map_box_scene.js';
+import { CGrassScene } from './js/scenes/js_green_scene.js'; 
+import { C3DMapScene } from './js/scenes/js_3d_real_blank.js';
+import {CFlatMapScene} from './js/scenes/js_map_box_scene.js';
 //import './js/objects/Water.js'; 
 import './js/ConvexHull.js'; 
 import './js/ConvexGeometry.js'; 
@@ -41,14 +41,14 @@ async function initWorld() {
     let scene;
     // Select scene based on sceneType
     if (sceneType === 'realmap') {
-        scene = new CRealMapWorld(c_world);
+        scene = new C3DMapScene(c_world);
     } else if (sceneType === 'greengrass') {
-        scene = new CGrassWorld(c_world);
+        scene = new CGrassScene(c_world);
     } else if (sceneType === 'map_box') {
-        scene = new MapboxWorld(c_world);
+        scene = new CFlatMapScene(c_world);
     } else {
-        console.warn(`Unknown scene type: ${sceneType}. Defaulting to CGrassWorld.`);
-        scene = new CGrassWorld(c_world);
+        console.warn(`Unknown scene type: ${sceneType}. Defaulting to CGrassScene.`);
+        scene = new CGrassScene(c_world);
     }
 
     // Initialize physics and world

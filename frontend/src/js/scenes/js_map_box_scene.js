@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { getMetersPerDegreeLng, metersPerDegreeLat, _map_lat, _map_lng } from '../js_globals.js';
 import { ImageCache } from '../js_image_cache.js'
-import { BaseWorld } from './BaseWorld.js';
+import { CBaseScene } from './js_base_scene.js';
 
 const PI_div_2 = Math.PI / 2;
 
 // Approximate meters per degree latitude (WGS84)
 
-export class MapboxWorld extends BaseWorld {
+export class CFlatMapScene extends CBaseScene {
     constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
         super(worldInstance, { homeLat, homeLng, tileRange: 2 });
         this.pendingTiles = new Set(); // avoid duplicate in-flight loads
@@ -15,7 +15,7 @@ export class MapboxWorld extends BaseWorld {
         this.zoomLevel = 16;
     }
 
-    // init and loadMapFromHome are inherited from BaseWorld
+    // init and loadMapFromHome are inherited from CBaseScene
 
     updateTiles(droneX, droneY) {
         const adjustedX = droneX - this.displacementX;

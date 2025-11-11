@@ -10,7 +10,7 @@ import { Building } from '../physical_objects/Building.js';
 
 const PI_div_2 = Math.PI / 2;
 
-export class CRealMapWorld {
+export class C3DMapScene {
     constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
         this.world = worldInstance;
         this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
