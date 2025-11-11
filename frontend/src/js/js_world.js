@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as CANNON from 'cannon-es';
+import { PhysicsBall } from './js_ball.js';
 
 import C_View from './js_view';
-import c_PhysicsObject from './js_physicsObject.js';
-import { gravityConstant } from './js_globals.js';
 
 const STATE = { DISABLE_DEACTIVATION: 4 };
 const FLAGS = { CF_KINEMATIC_OBJECT: 2 };
@@ -134,31 +133,13 @@ class C_World {
     };
 
     fn_createBall(p_id, p_x, p_y, p_radius) {
-        // Visual mesh
-        const ball = new THREE.Mesh(
-            new THREE.SphereGeometry(p_radius, 16, 12),
-            new THREE.MeshPhongMaterial({ color: 0xa0afa4 })
+        const { mesh } = PhysicsBall.create(
+            this,
+            { x: p_x, y: p_radius + 5, z: p_y },
+            p_radius,
+            0xa0afa4
         );
-        ball.name = p_id;
-        ball.castShadow = false;
-        ball.receiveShadow = false;
-
-        // Place above ground slightly
-        ball.position.set(p_x, p_radius + 5, p_y);
-
-        // Optional physics body (if world exists)
-        if (this.cannonWorld) {
-            const shape = new CANNON.Sphere(p_radius);
-            const body = new CANNON.Body({ mass: 1, shape });
-            body.position.set(ball.position.x, ball.position.y, ball.position.z);
-            this.cannonWorld.addBody(body);
-            this._physicsObjects.push({ mesh: ball, body });
-            ball.userData.m_physicsBody = body;
-        } else {
-            ball.userData.m_physicsBody = null;
-        }
-
-        this.v_scene.add(ball);
+        mesh.name = p_id;
     };
 
     /*
@@ -241,31 +222,14 @@ class C_World {
                 const { x, y, z } = vehicle.fn_translateXYZ();
 
                 const radius = 0.2;
-                const ball = new THREE.Mesh(
-                    new THREE.SphereGeometry(radius, 16, 12),
-                    new THREE.MeshPhongMaterial({ color: 0xff5533 })
+                const v0 = this.v_droneVel[chosenId] || {};
+                PhysicsBall.create(
+                    this,
+                    { x, y, z },
+                    radius,
+                    0xff5533,
+                    { vx: v0.x || 0, vy: v0.y || 0, vz: v0.z || 0 }
                 );
-                ball.position.set(x, y, z);
-                ball.castShadow = false;
-                ball.receiveShadow = false;
-
-                // Create cannon body if physics enabled
-                if (this.cannonWorld) {
-                    const shape = new CANNON.Sphere(radius);
-                    const body = new CANNON.Body({ mass: 1, shape });
-                    body.position.set(x, y, z);
-                    // Give it initial velocity roughly matching the drone
-                    const v0 = this.v_droneVel[chosenId];
-                    if (v0) {
-                        body.velocity.set(v0.x || 0, v0.y || 0, v0.z || 0);
-                    }
-                    this.cannonWorld.addBody(body);
-                    this._physicsObjects.push({ mesh: ball, body });
-                    ball.userData.m_physicsBody = body;
-                } else {
-                    ball.userData.m_physicsBody = null;
-                }
-                this.v_scene.add(ball);
             }
         }
 
