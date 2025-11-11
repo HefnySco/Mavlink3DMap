@@ -37,7 +37,7 @@ class CameraController {
      * @param {boolean} p_createHelper - Whether to create a camera helper for debugging.
      * @param {number} p_fov - camera FOV
      */
-    constructor(p_attachedObject, p_createHelper, p_fov = 45) {
+    constructor(p_attachedObject, p_createHelper, p_fov = 45, p_camera_tag = "") {
         this.v_q1 = new THREE.Quaternion();
         this.v_q2 = new THREE.Quaternion();
         this.v_q3 = new THREE.Quaternion();
@@ -46,6 +46,7 @@ class CameraController {
         this.m_cameraThree = null;
         this.m_ownerObject = p_attachedObject;
 
+        this.m_camera_tag = p_camera_tag;
         this.#fn_createCameraForObject( p_createHelper, p_fov);
     }
 
@@ -195,6 +196,11 @@ class CameraController {
         const c_camera = this.m_cameraThree;
 
         if (!c_camera) return;
+
+        // If this camera is under manual mouse control, do not override its transform
+        if (c_camera.userData && c_camera.userData.manualControl === true) {
+            return;
+        }
 
         let vehicleOrientation = v_vehicleOrientationQT;
         if (this.#m_OwnerRotationIndependent) {

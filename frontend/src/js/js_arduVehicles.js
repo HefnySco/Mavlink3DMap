@@ -195,7 +195,7 @@ class c_ArduVehicles extends Vehicle {
                 v_cam_front.fn_setCameraRelativePosition(0.3, 0.0, 0.0,
                     0.0, 0.0, 0.0);
 
-                let v_cam_follow_me = new CameraController(Me, false);
+                let v_cam_follow_me = new CameraController(Me, false, 45, 'followme');
                 v_cam_follow_me.fn_setRotationIndependence(true);
                 v_cam_follow_me.fn_setOrbitMode(true);
                 v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
@@ -231,11 +231,14 @@ class c_ArduVehicles extends Vehicle {
                 // facing down with stabilizer
                 v_cam_down.fn_setCameraRelativePosition(0.0, 0.0, 0.0,
                     1.57, -1.57, -1.57);
-                let v_cam_follow_me = new CameraController(Me, false);
+                
+                let v_cam_follow_me = new CameraController(Me, false, 45, 'followme');
                 v_cam_follow_me.fn_setRotationIndependence(true);
-                v_cam_follow_me.fn_setCameraRelativePosition(- 1.5, 0.0, 1.5
+                v_cam_follow_me.fn_setOrbitMode(true);
+                v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
                     , 0.0, -0.5, 0.0);
 
+                
                 Me.m_cameras.push(v_cam_down);
                 Me.m_cameras.push(v_cam_follow_me);
             }
@@ -264,7 +267,7 @@ class c_ArduVehicles extends Vehicle {
                     1.57, -1.57, -1.57);
                 
                 
-                let v_cam_follow_me = new CameraController(Me, false);
+                let v_cam_follow_me = new CameraController(Me, false, 45, 'followme');
                 v_cam_follow_me.fn_setRotationIndependence(true);
                 v_cam_follow_me.fn_setOrbitMode(true);
                 v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
@@ -308,7 +311,7 @@ class c_ArduVehicles extends Vehicle {
                 v_cam_front.fn_setCameraRelativePosition(0.4, 0.0, 0.0,
                     0.0, 0.0, 0.0);
                 
-                let v_cam_follow_me = new CameraController(Me, false);
+                let v_cam_follow_me = new CameraController(Me, false, 45, 'followme');
                 v_cam_follow_me.fn_setRotationIndependence(true);
                 v_cam_follow_me.fn_setOrbitMode(true);
                 v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
@@ -377,7 +380,7 @@ class c_ArduVehicles extends Vehicle {
                 v_cam1.fn_setCameraRelativePosition(1.0, 0.0, 0.0,
                     0.0, 0.0, 0.0);
                 
-                let v_cam_follow_me = new CameraController(Me, false);
+                let v_cam_follow_me = new CameraController(Me, false, 45, 'followme');
                 v_cam_follow_me.fn_setRotationIndependence(true);
                 v_cam_follow_me.fn_setOrbitMode(true);
                 v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5

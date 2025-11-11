@@ -45,6 +45,8 @@ class C_View {
         this.m_main_camera.position.set(5, 5, 0);
         this.m_main_camera.lookAt(new THREE.Vector3(p_XZero + 0, 0, p_YZero + 0));
         this.m_main_camera.m_controls = new OrbitControls(this.m_main_camera, p_canvas);
+        this.m_main_camera.m_controls.enabled = true;
+        this.m_activeControls = this.m_main_camera.m_controls;
 
 
         // Add CSS2DRenderer for this view
@@ -154,7 +156,7 @@ class C_View {
     };
 
     fn_selectWorldCamera() {
-        this.m_view_selected_camera = this.m_main_camera;
+        this.fn_setSelectedCamera(this.m_main_camera);
     }
 
     fn_handleCameraSwitch(event) {
@@ -197,10 +199,10 @@ class C_View {
                 this.v_droneIndex += 1;
                 this.v_droneIndex = this.v_droneIndex % c_keyLength;
                 if (this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree != null) {
-                    this.m_view_selected_camera = this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree;
+                    this.fn_setSelectedCamera(this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree);
                     this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, true);
                 } else {
-                    this.m_view_selected_camera = this.m_world.m_objects_attached_cameras[this.v_droneIndex];
+                    this.fn_setSelectedCamera(this.m_world.m_objects_attached_cameras[this.v_droneIndex]);
                 }
                 break;
 
@@ -208,10 +210,10 @@ class C_View {
                 this.v_droneIndex -= 1;
                 if (this.v_droneIndex < 0) this.v_droneIndex = c_keyLength - 1;
                 if (this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree != null) {
-                    this.m_view_selected_camera = this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree;
+                    this.fn_setSelectedCamera(this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree);
                     this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, true);
                 } else {
-                    this.m_view_selected_camera = this.m_world.m_objects_attached_cameras[this.v_droneIndex];
+                    this.fn_setSelectedCamera(this.m_world.m_objects_attached_cameras[this.v_droneIndex]);
                 }
                 break;
 
@@ -281,6 +283,9 @@ class C_View {
     }
 
     // Render WebGL scene
+    if (this.m_activeControls && this.m_activeControls.update) {
+        this.m_activeControls.update();
+    }
     this.renderer.render(this.m_world.v_scene, this.m_view_selected_camera);
 
     // Render CSS2D labels
@@ -305,6 +310,52 @@ class C_View {
     this.renderer.setScissorTest(false);
 }
 }
+
+// Enable OrbitControls for the selected camera and disable them for the previously selected one
+C_View.prototype.fn_setSelectedCamera = function (camera) {
+    if (!camera) return;
+
+    // Disable previous controls if any
+    if (this.m_view_selected_camera && this.m_view_selected_camera.m_controls) {
+        this.m_view_selected_camera.m_controls.enabled = false;
+    }
+
+    // If previous camera was an attached helper, clear manual control flag
+    if (this.m_view_selected_camera && this.m_view_selected_camera.userData && this.m_view_selected_camera.userData.m_ownerObject) {
+        this.m_view_selected_camera.userData.manualControl = false;
+    }
+
+    const isAttached = !!(camera.userData && camera.userData.m_ownerObject);
+    const isFollowMe = isAttached && camera.userData.m_ownerObject.m_camera_tag === 'followme';
+
+    if (!camera.m_controls) {
+        camera.m_controls = new OrbitControls(camera, this.m_canvas);
+    }
+
+    if (camera === this.m_main_camera || isFollowMe) {
+        camera.m_controls.enabled = true;
+        this.m_activeControls = camera.m_controls;
+        if (isFollowMe) {
+            camera.userData.manualControl = true;
+            try {
+                const controller = camera.userData.m_ownerObject;
+                const owner = controller && controller.m_ownerObject;
+                if (owner && this.m_activeControls && this.m_activeControls.target) {
+                    const { x, y, z } = owner.fn_translateXYZ();
+                    this.m_activeControls.target.set(x, y, z);
+                }
+            } catch (_) { }
+        }
+    } else {
+        camera.m_controls.enabled = false;
+        this.m_activeControls = null;
+        if (isAttached) {
+            camera.userData.manualControl = false;
+        }
+    }
+
+    this.m_view_selected_camera = camera;
+};
 
 export default C_View;
 
