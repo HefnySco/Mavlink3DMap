@@ -22,6 +22,7 @@ export class PhysicsBall {
     if (world && world.cannonWorld) {
       const shape = new CANNON.Sphere(radius);
       body = new CANNON.Body({ mass: 1, shape });
+      body._isBall = true; // tag for collision checks
       body.position.set(position.x, position.y, position.z);
       if (initialVelocity) {
         const { vx = 0, vy = 0, vz = 0 } = initialVelocity;
@@ -30,6 +31,7 @@ export class PhysicsBall {
       world.cannonWorld.addBody(body);
       world._physicsObjects.push({ mesh, body });
       mesh.userData.m_physicsBody = body;
+      mesh.userData.type = 'ball';
     } else {
       mesh.userData.m_physicsBody = null;
     }
