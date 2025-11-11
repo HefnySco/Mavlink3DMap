@@ -153,9 +153,11 @@ class c_CommandParser extends c_WebSocketComm {
 
                 v_vehicle_new.fn_switchTriggerOn = () => {
                     v_vehicle_new.m_trigger.fn_trigger(null, (v_threeObj, v_physicsObj) => {
-                        c_world.v_physicsWorld.addRigidBody(v_physicsObj);
+                        if (c_world.v_physicsWorld && v_physicsObj) {
+                            c_world.v_physicsWorld.addRigidBody(v_physicsObj);
+                            c_world.v_rigidBodies.push(v_threeObj);
+                        }
                         c_world.v_scene.add(v_threeObj);
-                        c_world.v_rigidBodies.push(v_threeObj);
                     });
                 };
             },

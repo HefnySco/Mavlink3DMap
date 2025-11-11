@@ -18,7 +18,7 @@ import './js/ConvexGeometry.js';
 import './js/ConvexObjectBreaker.js'; 
 
 
-function initWorld() {
+async function initWorld() {
     const sceneType = window.sceneType;
     const c_world = new C_World(0, 0);
     c_world.fn_initTHREE(document.documentElement.clientWidth / 2.1, document.documentElement.clientHeight / 2.1);
@@ -52,7 +52,7 @@ function initWorld() {
     }
 
     // Initialize physics and world
-    c_world.fn_initPhysics();
+    await c_world.fn_initPhysics();
     c_world.m_scene_env = scene; 
     c_world.m_scene_env.init(0, 0);
 
@@ -95,7 +95,7 @@ async function fn_on_ready() {
 
     // Ammo.js Initialization
     //await Ammo().then(() => {
-    const c_world = initWorld();
+    const c_world = await initWorld();
     initVehicle(c_world);
     startSimulation(c_world);
     //});

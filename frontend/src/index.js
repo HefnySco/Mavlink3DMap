@@ -25,7 +25,7 @@ const CONFIG = {
 };
 
 // Initialize the 3D world
-function initWorld() {
+async function initWorld() {
     const sceneType = window.sceneType;
     const c_world = new C_World(0, 0);
 
@@ -54,8 +54,8 @@ function initWorld() {
         scene = new CGrassWorld(c_world);
     }
 
-    // Initialize physics and world
-    c_world.fn_initPhysics();
+    // Initialize physics and world (await Ammo initialization)
+    await c_world.fn_initPhysics();
     c_world.m_scene_env = scene;
     c_world.m_scene_env.init(CONFIG.worldZero.x, CONFIG.worldZero.y);
 
@@ -96,13 +96,7 @@ function startSimulation(p_world) {
 // Main initialization function
 async function fn_on_ready() {
     try {
-        // Initialize Ammo.js
-        // await Ammo().then(() => {
-        //     const c_world = initWorld();
-        //     initVehicle(c_world);
-        //     startSimulation(c_world);
-        // });
-        const c_world = initWorld();
+        const c_world = await initWorld();
         initVehicle(c_world);
         startSimulation(c_world);
     } catch (error) {
