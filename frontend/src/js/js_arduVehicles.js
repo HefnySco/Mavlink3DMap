@@ -217,7 +217,8 @@ class c_ArduVehicles extends Vehicle {
 
             // Set a default thrower: free fall from slight below center; velocity can be customized later via fn_setBallThrower
             Me.fn_setBallThrower({
-                offset: { x: 0, y: -0.1, z: 0 },
+                //offset: { x: 0, y: -0.1, z: 0 },
+                offset: { x: 0, y: 0.0, z: 0 },
                 velocity: { x: 0, y: 0, z: 0 },
                 radius: 0.2,
                 color: 0xff5533
