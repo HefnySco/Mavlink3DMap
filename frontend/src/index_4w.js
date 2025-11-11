@@ -6,16 +6,12 @@ import './js/js_helpers.js';
 import './js/js_utilities.js'; 
 import './js/js_triggerObject.js'; 
 import './js/js_object.js';
-import './js/js_physicsObject.js'; 
 import './js/js_vehicle.js';
 import './js/js_camera.js';
 import { CGrassScene } from './js/scenes/js_green_scene.js'; 
 import { C3DMapScene } from './js/scenes/js_3d_real_blank.js';
 import {CFlatMapScene} from './js/scenes/js_map_box_scene.js';
-//import './js/objects/Water.js'; 
-import './js/ConvexHull.js'; 
-import './js/ConvexGeometry.js'; 
-import './js/ConvexObjectBreaker.js'; 
+
 
 
 async function initWorld() {
