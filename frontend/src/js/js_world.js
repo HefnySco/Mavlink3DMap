@@ -222,25 +222,17 @@ class C_World {
                 this.fn_setCameraHelperEnabled(drone_index, this.m_global_camera_helper);
             }
         }
-        else if (event.keyCode === 32) { /* Space: drop a physics ball */
-            const vehicleIds = Object.keys(this.v_drone);
-            if (vehicleIds.length > 0) {
-                let chosenId = vehicleIds[0];
-                if (this.m_scene_env && this.m_scene_env.m_default_vehicle_sid && this.v_drone[this.m_scene_env.m_default_vehicle_sid]) {
-                    chosenId = this.m_scene_env.m_default_vehicle_sid;
-                }
-                const vehicle = this.v_drone[chosenId];
-                const { x, y, z } = vehicle.fn_translateXYZ();
+        else if (event.keyCode === 32) { /* Space: trigger throw on selected drone for active view */
+            const view = this.v_selectedView;
+            if (!view) return;
+            const chosenId = view.selectedDroneId;
+            if (!chosenId) return;
+            const vehicle = this.v_drone[chosenId];
+            if (!vehicle) return;
 
-                const radius = 0.2;
-                const v0 = this.v_droneVel[chosenId] || {};
-                PhysicsBall.create(
-                    this,
-                    { x, y, z },
-                    radius,
-                    0xff5533,
-                    { vx: v0.x || 0, vy: v0.y || 0, vz: v0.z || 0 }
-                );
+            // Execute vehicle trigger (BallThrower)
+            if (vehicle.m_trigger && vehicle.m_trigger.fn_trigger) {
+                vehicle.m_trigger.fn_trigger(this);
             }
         }
 

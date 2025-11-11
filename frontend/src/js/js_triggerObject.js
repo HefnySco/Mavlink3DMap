@@ -9,30 +9,37 @@
 
 
 /*jshint esversion: 6 */
+import { BallThrower } from './js_ball_thrower.js';
 
 class Trigger {
 
+    constructor() {
+        this.vehicle = null; // c_ArduVehicles
+        this.thrower = null; // BallThrower
+    }
+
+    attach(vehicle) {
+        this.vehicle = vehicle;
+        return this;
+    }
+
     /**
-     * relative (0,0,0) to parent object
+     * Configure or replace the ball thrower.
+     * options: { offset:{x,y,z}, velocity:{x,y,z}, radius, color }
      */
-    m_relativePosition   = null;
+    setThrower(options) {
+        if (!this.vehicle) return;
+        this.thrower = new BallThrower(this.vehicle, options || {});
+    }
 
-    m_relativeTriggerVelocityDirection = null;
-
-    m_attachedObject = null;
-
-    fn_init()
-    {
-
+    /**
+     * Execute trigger: throw a ball if thrower configured.
+     */
+    fn_trigger(world) {
+        if (this.thrower && world) {
+            this.thrower.throw(world);
+        }
     };
-
-
-    fn_trigger()
-    {
-
-    };
-
 }
 
-
-export {Trigger};
+export { Trigger };

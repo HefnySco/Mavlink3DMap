@@ -6,8 +6,6 @@
 *   Date:   26 OCT 2020
 *
 *********************************************************************************** */
-
-
 import * as THREE from 'three';
 import { CameraController } from './js_camera.js';
 import Vehicle from './js_vehicle.js';
@@ -45,6 +43,15 @@ class c_ArduVehicles extends Vehicle {
 
         this.m_zero_set = false;
         this.world = null;  // Reference to C_World
+    }
+
+    /**
+     * Configure this drone's ball thrower. Options: { offset:{x,y,z}, velocity:{x,y,z}, radius, color }
+     */
+    fn_setBallThrower(options) {
+        if (this.m_trigger && this.m_trigger.setThrower) {
+            this.m_trigger.setThrower(options || {});
+        }
     }
 
 
@@ -207,6 +214,14 @@ class c_ArduVehicles extends Vehicle {
                 Me.m_cameras.push(v_cam_follow_me);  // follow-me
                 
             }
+
+            // Set a default thrower: free fall from slight below center; velocity can be customized later via fn_setBallThrower
+            Me.fn_setBallThrower({
+                offset: { x: 0, y: -0.1, z: 0 },
+                velocity: { x: 0, y: 0, z: 0 },
+                radius: 0.2,
+                color: 0xff5533
+            });
 
             Me.fn_createCustom(p_obj, function (p_mesh) {
                 p_callbackfunc(p_mesh);

@@ -60,6 +60,10 @@ class SimObject {
         this.v_qt = new THREE.Quaternion();
         const displacement = getInitialDisplacement();
         this.fn_setZeroPosition(displacement.X, displacement.Y, displacement.Alt);
+        // Attach trigger to this object by default
+        if (this.m_trigger && this.m_trigger.attach) {
+            this.m_trigger.attach(this);
+        }
     }
 
     fn_addLabel(p_label) {
