@@ -302,6 +302,17 @@ class C_View {
 
     // Render WebGL scene
     if (this.m_activeControls && this.m_activeControls.update) {
+        // If follow-me attached camera is selected, keep orbit center locked to the drone
+        const cam = this.m_view_selected_camera;
+        if (cam && cam.userData && cam.userData.m_ownerObject) {
+            const controller = cam.userData.m_ownerObject;
+            const isFollowMe = controller && controller.m_camera_tag === 'followme';
+            const owner = controller && controller.m_ownerObject;
+            if (isFollowMe && owner && this.m_activeControls.target) {
+                const { x, y, z } = owner.fn_translateXYZ();
+                this.m_activeControls.target.set(x, y, z);
+            }
+        }
         this.m_activeControls.update();
     }
     this.renderer.render(this.m_world.v_scene, this.m_view_selected_camera);
