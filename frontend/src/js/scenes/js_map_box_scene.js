@@ -5,6 +5,9 @@ import { EVENTS as js_event } from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
 import { ImageCache } from '../js_image_cache.js'
+import { PhysicalBox } from '../physical_objects/js_physicalBox.js';
+import { Building } from '../physical_objects/Building.js';
+import { Vehicle } from '../physical_objects/js_vehicle.js';
 
 const PI_div_2 = Math.PI / 2;
 
@@ -86,7 +89,7 @@ export class MapboxWorld {
 
         // Reinitialize scene with new car, buildings, and lights
         this.droneId = 'car' + uuidv4();
-        this._addCar(this.droneId, vehicleX, vehicleY, 7);
+        this._addCar(this.droneId, vehicleX, vehicleY, 37);
         this._addBuildings(vehicleX, vehicleY);
         this._addLights();
 
@@ -99,8 +102,8 @@ export class MapboxWorld {
 
     init(p_XZero, p_YZero) {
         this.droneId = 'car' + uuidv4();
-        this._addCar(this.droneId, p_XZero + 10, p_YZero, 7);
-        this._addBuildings(p_XZero, p_YZero);
+        this._addCar(this.droneId, p_XZero + 30, p_YZero, 17);
+        //this._addBuildings(p_XZero, p_YZero);
         this._addLights();
         this.updateTiles(p_XZero, p_YZero);
     }
@@ -182,9 +185,7 @@ export class MapboxWorld {
     }
 
     _addCar(p_id, p_x, p_y, p_radius) {
-        const loader = new THREE.ObjectLoader();
-        loader.load('../../models/vehicles/car1.json', (obj) => {
-            obj.rotateZ(0);
+        Vehicle.create_car( p_x, 0, p_y).then((obj) => {
             const c_robot = new SimObject(p_id, this.homeLat, this.homeLng);
             c_robot.fn_createCustom(obj);
             c_robot.fn_setPosition(p_x, p_y, 0);
@@ -214,7 +215,7 @@ export class MapboxWorld {
             c_robot.fn_setRotation(0, 0.0, 0.0);
             this.world.fn_addRobot(p_id, c_robot);
             this.world.v_scene.add(c_robot.fn_getMesh());
-        });
+        }).catch((e) => console.error('Car load failed', e));
     }
 
     async _addMapboxTile(p_XZero, p_YZero, tileX, tileY) {
@@ -283,25 +284,32 @@ export class MapboxWorld {
     }
 
     _addBuildings(p_XZero, p_YZero) {
+
+        PhysicalBox.create(this.world, { x: 20, y: 0.5, z: 0 }, { w: 20, h: 1, d: 10 }, 0xa088c8, 0x00ff00);
+
         const c_buildings = [
-            [-16, -8], [-16, -12], [-16, -16],
-            [16, 20], [16, 24], [16, 28]
+            [-160, -80], [-106, -120], [-160, -160],
+            [160, 200], [160, 240], [160, 280]
         ];
 
         for (const c_location of c_buildings) {
-            const buildingLoader = new THREE.ObjectLoader();
-            buildingLoader.load('./models/building1.json', (obj) => {
-                obj.position.set(p_XZero + c_location[0], 0.01, p_YZero + c_location[1]);
-                obj.rotateZ(0);
-                this.world.v_scene.add(obj);
+            Building.create(this.world, {
+                url: './models/building1.json',
+                position: { x: p_XZero + c_location[0], y: 0.01, z: p_YZero + c_location[1] },
+                width: 8,
+                height: 12,
+                depth: null,
+                rotationY: 0
             });
         }
 
-        const building2Loader = new THREE.ObjectLoader();
-        building2Loader.load('./models/building2.json', (obj) => {
-            obj.position.set(0.0, 0.0, p_YZero + 0);
-            obj.rotateZ(0);
-            this.world.v_scene.add(obj);
+        Building.create(this.world, {
+            url: './models/building2.json',
+            position: { x: 0.0, y: 0.0, z: p_YZero + 0 },
+            width: 10,
+            height: 15,
+            depth: null,
+            rotationY: 0
         });
     }
 

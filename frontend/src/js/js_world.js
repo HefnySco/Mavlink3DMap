@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as CANNON from 'cannon-es';
-import { PhysicsBall } from './js_ball.js';
+import { PhysicsBall } from './physical_objects/js_ball.js';
 
 import C_View from './js_view';
 
