@@ -17,7 +17,7 @@ export class C3DMapScene {
         this.tiles = new Map(); // Map to store active tiles by their grid coordinates
         this.droneId = null;
         this.textureLoader = new THREE.TextureLoader();
-        this.mapboxAccessToken = 'pk.eyJ1IjoibWhlZm55IiwiYSI6ImNrZW84Nm9rYTA2ZWgycm9mdmNscmFxYzcifQ.c-zxDjXCthXmRsErPzKhbQ';
+        this.mapboxAccessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
         this.zoomLevel = 14; // Lower zoom for larger tiles to reduce load; adjust as needed
         this.homeLat = homeLat;
         this.homeLng = homeLng;

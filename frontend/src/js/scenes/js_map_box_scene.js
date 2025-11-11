@@ -11,7 +11,7 @@ export class CFlatMapScene extends CBaseScene {
     constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
         super(worldInstance, { homeLat, homeLng, tileRange: 2 });
         this.pendingTiles = new Set(); // avoid duplicate in-flight loads
-        this.mapboxAccessToken = 'pk.eyJ1IjoiaHNhYWQiLCJhIjoiY2tqZnIwNXRuMndvdTJ4cnV0ODQ4djZ3NiJ9.LKojA3YMrG34L93jRThEGQ';
+        this.mapboxAccessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
         this.zoomLevel = 16;
     }
 
