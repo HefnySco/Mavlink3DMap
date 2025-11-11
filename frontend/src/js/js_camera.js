@@ -155,8 +155,8 @@ class CameraController {
             this.#m_elevation += p_pitchDelta;
             this.#m_azimuth -= p_yawDelta;
         } else {
-            this.#m_rollCamera += p_pitchDelta;
-            this.#m_pitchCamera += p_rollDelta;
+            this.#m_rollCamera += p_rollDelta;
+            this.#m_pitchCamera += p_pitchDelta;
             this.#m_yawCamera += p_yawDelta;
         }
     }
@@ -171,11 +171,11 @@ class CameraController {
         if (this.#m_orbitMode) {
             this.#m_bank = p_roll;
             this.#m_elevation = p_pitch;
-            this.#m_azimuth = p_yaw - PI_div_2;
+            this.#m_azimuth = p_yaw;
         } else {
-            this.#m_rollCamera = p_pitch;
-            this.#m_pitchCamera = p_roll;
-            this.#m_yawCamera = p_yaw - PI_div_2;
+            this.#m_rollCamera = p_roll;
+            this.#m_pitchCamera = p_pitch;
+            this.#m_yawCamera = p_yaw ;
         }
     }
 
@@ -242,24 +242,28 @@ class CameraController {
             c_camera.translateOnAxis(_yAxis, this.#m_positionCamera_Z);
             c_camera.translateOnAxis(_zAxis, -this.#m_positionCamera_X);
 
-            // Calculate Stabilization adjustments
-            let c_pitchCaneller = 0;
-            let c_rollCaneller = 0;
-            let c_yawCaneller = 0;
+            // Build base orientation: fully independent, yaw-only (stabilized), or full parent
+            let baseOrientation = new THREE.Quaternion();
+            if (this.#m_OwnerRotationIndependent) {
+                // Ignore parent's rotation completely
+                baseOrientation.identity();
+            } else if (this.#m_VerticalStabilizer || this.#m_HorizontalStabilizer) {
+                // Extract only parent's yaw, discard pitch/roll
+                const eul = new THREE.Euler(0, 0, 0, 'YXZ');
+                eul.setFromQuaternion(vehicleOrientation, 'YXZ');
+                const parentYaw = eul.y;
+                baseOrientation.setFromAxisAngle(_yAxis, parentYaw);
+            } else {
+                // Follow full parent orientation
+                baseOrientation.copy(vehicleOrientation);
+            }
 
+            // Optional gimbal servo effects
+            let pitchServoAdj = 0;
+            let rollServoAdj = 0;
             if (!this.#m_OwnerRotationIndependent) {
-                if (this.#m_HorizontalStabilizer) {
-                    // add horizontal sabilization angle
-                    c_rollCaneller = this.m_ownerObject.m_roll;
-                }
-
-                if (this.#m_VerticalStabilizer) {
-                    // add vertical sabilization angle
-                    c_pitchCaneller = -this.m_ownerObject.m_pitch;
-                }
-
                 if (this.#m_tilteServoChannel != null) {
-                    c_pitchCaneller -= getAngleOfPWM(
+                    pitchServoAdj -= getAngleOfPWM(
                         90 * DEG_2_RAD,
                         -45 * DEG_2_RAD,
                         this.m_ownerObject.m_servoValues[this.#m_tilteServoChannel],
@@ -267,9 +271,8 @@ class CameraController {
                         1100
                     );
                 }
-
                 if (this.#m_rollServoChannel != null) {
-                    c_rollCaneller = getAngleOfPWM(
+                    rollServoAdj += getAngleOfPWM(
                         90 * DEG_2_RAD,
                         -45 * DEG_2_RAD,
                         this.m_ownerObject.m_servoValues[this.#m_rollServoChannel],
@@ -279,13 +282,13 @@ class CameraController {
                 }
             }
 
-            // Apply rotation adjustments
-            this.v_q1.setFromAxisAngle(_yAxis, this.#m_yawCamera + c_yawCaneller);
-            this.v_q2.setFromAxisAngle(_zAxis, this.#m_pitchCamera + c_rollCaneller);
-            this.v_q3.setFromAxisAngle(_xAxis, this.#m_rollCamera + c_pitchCaneller);
-            vehicleOrientation.multiply(this.v_q1).multiply(this.v_q3).multiply(this.v_q2);
+            // Apply camera-relative yaw (Y), pitch (X), roll (Z) on top of base
+            this.v_q1.setFromAxisAngle(_yAxis, this.#m_yawCamera);
+            this.v_q2.setFromAxisAngle(_zAxis, this.#m_rollCamera + rollServoAdj);
+            this.v_q3.setFromAxisAngle(_xAxis, this.#m_pitchCamera + pitchServoAdj);
+            baseOrientation.multiply(this.v_q1).multiply(this.v_q3).multiply(this.v_q2);
 
-            c_camera.setRotationFromQuaternion(vehicleOrientation);
+            c_camera.setRotationFromQuaternion(baseOrientation);
         }
     }
 }
