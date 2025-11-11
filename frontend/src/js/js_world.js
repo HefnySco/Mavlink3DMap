@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import * as CANNON from 'cannon-es';
 
 import C_View from './js_view';
 import c_PhysicsObject from './js_physicsObject.js';
@@ -72,6 +73,12 @@ class C_World {
 
         this.v_numObjectsToRemove = 0;
 
+        // Cannon.js physics containers
+        this.cannonWorld = null;
+        this._physicsObjects = []; // { mesh, body }
+        this._fixedTimeStep = 1 / 60;
+        this._maxSubSteps = 3;
+
         // Replace jQuery with vanilla JavaScript
         const helpDlg = document.createElement('div');
         helpDlg.id = 'help_dlg';
@@ -127,16 +134,30 @@ class C_World {
     };
 
     fn_createBall(p_id, p_x, p_y, p_radius) {
-        // Create a visual-only ball (no physics)
+        // Visual mesh
         const ball = new THREE.Mesh(
-            new THREE.SphereBufferGeometry(p_radius),
+            new THREE.SphereGeometry(p_radius, 16, 12),
             new THREE.MeshPhongMaterial({ color: 0xa0afa4 })
         );
         ball.name = p_id;
-        ball.position.set(p_x, p_radius + 5, p_y);
         ball.castShadow = false;
         ball.receiveShadow = false;
-        ball.userData.m_physicsBody = null;
+
+        // Place above ground slightly
+        ball.position.set(p_x, p_radius + 5, p_y);
+
+        // Optional physics body (if world exists)
+        if (this.cannonWorld) {
+            const shape = new CANNON.Sphere(p_radius);
+            const body = new CANNON.Body({ mass: 1, shape });
+            body.position.set(ball.position.x, ball.position.y, ball.position.z);
+            this.cannonWorld.addBody(body);
+            this._physicsObjects.push({ mesh: ball, body });
+            ball.userData.m_physicsBody = body;
+        } else {
+            ball.userData.m_physicsBody = null;
+        }
+
         this.v_scene.add(ball);
     };
 
@@ -209,7 +230,7 @@ class C_World {
                 this.fn_setCameraHelperEnabled(drone_index, this.m_global_camera_helper);
             }
         }
-        else if (event.keyCode === 32) { /* Space: drop a visual ball (no physics) */
+        else if (event.keyCode === 32) { /* Space: drop a physics ball */
             const vehicleIds = Object.keys(this.v_drone);
             if (vehicleIds.length > 0) {
                 let chosenId = vehicleIds[0];
@@ -221,13 +242,29 @@ class C_World {
 
                 const radius = 0.2;
                 const ball = new THREE.Mesh(
-                    new THREE.SphereBufferGeometry(radius, 16, 12),
+                    new THREE.SphereGeometry(radius, 16, 12),
                     new THREE.MeshPhongMaterial({ color: 0xff5533 })
                 );
                 ball.position.set(x, y, z);
                 ball.castShadow = false;
                 ball.receiveShadow = false;
-                ball.userData.m_physicsBody = null;
+
+                // Create cannon body if physics enabled
+                if (this.cannonWorld) {
+                    const shape = new CANNON.Sphere(radius);
+                    const body = new CANNON.Body({ mass: 1, shape });
+                    body.position.set(x, y, z);
+                    // Give it initial velocity roughly matching the drone
+                    const v0 = this.v_droneVel[chosenId];
+                    if (v0) {
+                        body.velocity.set(v0.x || 0, v0.y || 0, v0.z || 0);
+                    }
+                    this.cannonWorld.addBody(body);
+                    this._physicsObjects.push({ mesh: ball, body });
+                    ball.userData.m_physicsBody = body;
+                } else {
+                    ball.userData.m_physicsBody = null;
+                }
                 this.v_scene.add(ball);
             }
         }
@@ -260,11 +297,33 @@ class C_World {
     }
 
     /**
-     * Initialize physics (no-op: Ammo removed)
+     * Initialize Cannon.js physics
      */
     fn_initPhysics() {
-        this.v_physicsWorld = null;
-        return Promise.resolve(null);
+        // Create world
+        this.cannonWorld = new CANNON.World({
+            gravity: new CANNON.Vec3(0, -9.82, 0)
+        });
+        this.cannonWorld.broadphase = new CANNON.SAPBroadphase(this.cannonWorld);
+        this.cannonWorld.allowSleep = true;
+
+        // Materials and contact (basic defaults)
+        const defaultMat = new CANNON.Material('default');
+        const contactMat = new CANNON.ContactMaterial(defaultMat, defaultMat, {
+            friction: 0.4,
+            restitution: 0.2
+        });
+        this.cannonWorld.defaultContactMaterial = contactMat;
+
+        // Static ground plane at y=0 (Three.js uses Y up)
+        const groundShape = new CANNON.Plane();
+        const groundBody = new CANNON.Body({ mass: 0, material: defaultMat });
+        groundBody.addShape(groundShape);
+        // Rotate to be horizontal (normal pointing up)
+        groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0, 'XYZ');
+        this.cannonWorld.addBody(groundBody);
+
+        return Promise.resolve(this.cannonWorld);
     }
 
     fn_initTHREE(p_width, p_height) {
@@ -352,7 +411,26 @@ class C_World {
     };
 
     fn_updatePhysics(p_deltaTime) {
-        return;
+        if (!this.cannonWorld) return;
+
+        // Step simulation
+        this.cannonWorld.step(this._fixedTimeStep, p_deltaTime, this._maxSubSteps);
+
+        // Sync meshes to bodies and cleanup fallen ones
+        for (let i = this._physicsObjects.length - 1; i >= 0; --i) {
+            const { mesh, body } = this._physicsObjects[i];
+            if (!mesh || !body) continue;
+
+            mesh.position.set(body.position.x, body.position.y, body.position.z);
+            mesh.quaternion.set(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w);
+
+            // Remove if far below ground to avoid leaks
+            if (body.position.y < -100) {
+                this.v_scene.remove(mesh);
+                this.cannonWorld.removeBody(body);
+                this._physicsObjects.splice(i, 1);
+            }
+        }
     };
 
     // Collision detection removed (no physics)

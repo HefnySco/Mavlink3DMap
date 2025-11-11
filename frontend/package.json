@@ -16,6 +16,7 @@
   "dependencies": {
     "jquery": "^3.7.1",
     "jspack": "^0.0.4",
+    "cannon-es": "^0.20.0",
     "three": "^0.133.0",
     "underscore": "^1.13.7",
     "uuidv4": "^6.2.13"
