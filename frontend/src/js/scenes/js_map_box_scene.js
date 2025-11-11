@@ -1,112 +1,21 @@
 import * as THREE from 'three';
-import { v4 as uuidv4 } from 'uuid';
-import SimObject from '../js_object.js';
-import { EVENTS as js_event } from '../js_eventList.js';
-import { js_eventEmitter } from '../js_eventEmitter.js';
-import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
+import { getMetersPerDegreeLng, metersPerDegreeLat, _map_lat, _map_lng } from '../js_globals.js';
 import { ImageCache } from '../js_image_cache.js'
-import { PhysicalBox } from '../physical_objects/js_physicalBox.js';
-import { Building } from '../physical_objects/Building.js';
-import { Vehicle } from '../physical_objects/js_vehicle.js';
+import { BaseWorld } from './BaseWorld.js';
 
 const PI_div_2 = Math.PI / 2;
 
 // Approximate meters per degree latitude (WGS84)
 
-export class MapboxWorld {
+export class MapboxWorld extends BaseWorld {
     constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
-        this.world = worldInstance;
-        this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
-        this.tiles = new Map(); // Map to store active tiles by their grid coordinates
+        super(worldInstance, { homeLat, homeLng, tileRange: 2 });
         this.pendingTiles = new Set(); // avoid duplicate in-flight loads
-        this.droneId = null;
-        this.textureLoader = new THREE.TextureLoader();
         this.mapboxAccessToken = 'pk.eyJ1IjoiaHNhYWQiLCJhIjoiY2tqZnIwNXRuMndvdTJ4cnV0ODQ4djZ3NiJ9.LKojA3YMrG34L93jRThEGQ';
         this.zoomLevel = 16;
-        this.homeLat = homeLat;
-        this.homeLng = homeLng;
-        const displacement = getInitialDisplacement();
-        this.displacementX = displacement.X;
-        this.displacementY = displacement.Y;
-
-        this.m_default_vehicle_sid = null;
-
-        this.refLat = null;
-        this.refLng = null;
-        this.refAlt = null;
-
-        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
-            // const location_array = vehicle.fn_getPosition();
-            // p_me.updateTiles(location_array[0], -location_array[2]);
-            if (vehicle.sid != this.m_default_vehicle_sid) return;
-            const { x, y, z } = vehicle.fn_translateXYZ();
-            p_me.updateTiles(x, -z); // Update tiles based on drone position
-        });
-
-        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, (p_me, { lat, lng, alt, vehicle }) => {
-            if (p_me.refLat === null) {
-                p_me.refLat = lat * 1E-7;  // Convert degE7 to deg
-                p_me.refLng = lng * 1E-7;
-                p_me.refAlt = alt;  // Convert mm to meters
-                p_me.loadMapFromHome(lat, lng);  // Load map only once
-            }
-        });
     }
 
-    // Load map with new home coordinates and center on vehicle position
-    loadMapFromHome(lat, lng, vehicleX = 0, vehicleY = 0) {
-        // Update home coordinates
-        this.homeLat = lat * 1E-7;
-        this.homeLng = lng * 1E-7;
-
-        // Update displacement
-        const displacement = getInitialDisplacement();
-        this.displacementX = displacement.X;
-        this.displacementY = displacement.Y;
-
-        // Clear existing tiles
-        for (const tile of this.tiles.values()) {
-            this.world.v_scene.remove(tile);
-            if (tile.material.map) tile.material.map.dispose();
-            tile.material.dispose();
-            tile.geometry.dispose();
-        }
-        this.tiles.clear();
-
-        // Remove existing car (if any) to avoid duplicates
-        if (this.droneId && this.world.fn_getRobot(this.droneId)) {
-            const robot = this.world.fn_getRobot(this.droneId);
-            this.world.v_scene.remove(robot.fn_getMesh());
-            this.world.fn_deleteRobot(this.droneId);
-            this.droneId = null;
-        }
-
-        // Remove existing buildings and lights
-        this.world.v_scene.children = this.world.v_scene.children.filter(child =>
-            !(child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry) && // Keep non-tile meshes temporarily
-            !(child instanceof THREE.AmbientLight || child instanceof THREE.DirectionalLight) // Remove lights
-        );
-
-        // Reinitialize scene with new car, buildings, and lights
-        this.droneId = 'car' + uuidv4();
-        this._addCar(this.droneId, vehicleX, vehicleY, 37);
-        this._addBuildings(vehicleX, vehicleY);
-        this._addLights();
-
-        // Update tiles around the vehicle's position
-        this.updateTiles(vehicleX, -vehicleY);
-
-        // Adjust cameras to focus on the vehicle's new position
-        this._adjustCameras(vehicleX, vehicleY);
-    }
-
-    init(p_XZero, p_YZero) {
-        this.droneId = 'car' + uuidv4();
-        this._addCar(this.droneId, p_XZero + 30, p_YZero, 17);
-        //this._addBuildings(p_XZero, p_YZero);
-        this._addLights();
-        this.updateTiles(p_XZero, p_YZero);
-    }
+    // init and loadMapFromHome are inherited from BaseWorld
 
     updateTiles(droneX, droneY) {
         const adjustedX = droneX - this.displacementX;
@@ -184,40 +93,6 @@ export class MapboxWorld {
         }
     }
 
-    _addCar(p_id, p_x, p_y, p_radius) {
-        Vehicle.create_car( p_x, 0, p_y).then((obj) => {
-            const c_robot = new SimObject(p_id, this.homeLat, this.homeLng);
-            c_robot.fn_createCustom(obj);
-            c_robot.fn_setPosition(p_x, p_y, 0);
-            c_robot.fn_castShadow(false);
-
-            let c_y_deg_step = 0.01;
-            let c_y_deg = 0.0;
-            let c_deg = Math.random() * Math.PI;
-
-            c_robot.fn_setAnimate(() => {
-                c_y_deg += c_y_deg_step;
-                if (c_y_deg >= 1.1) {
-                    c_y_deg_step = -0.01;
-                    c_y_deg = 1.1;
-                } else if (c_y_deg <= -1.1) {
-                    c_y_deg_step = 0.01;
-                    c_y_deg = -1.1;
-                }
-                const newX = p_radius * Math.cos(c_deg) + p_x;
-                const newY = p_radius * Math.sin(c_deg) + p_y;
-                c_robot.fn_setPosition(newX, newY, 0);
-                c_deg = (c_deg + 0.01) % (2 * Math.PI);
-                c_robot.fn_setRotation(0, 0, -c_deg - PI_div_2);
-            });
-
-            this.world.fn_registerCamerasOfObject(c_robot);
-            c_robot.fn_setRotation(0, 0.0, 0.0);
-            this.world.fn_addRobot(p_id, c_robot);
-            this.world.v_scene.add(c_robot.fn_getMesh());
-        }).catch((e) => console.error('Car load failed', e));
-    }
-
     async _addMapboxTile(p_XZero, p_YZero, tileX, tileY) {
         const adjustedX = p_XZero + this.displacementX;
         const adjustedY = p_YZero + this.displacementY;
@@ -283,41 +158,5 @@ export class MapboxWorld {
         this.world.v_scene.add(tile);
     }
 
-    _addBuildings(p_XZero, p_YZero) {
-
-        PhysicalBox.create(this.world, { x: 20, y: 0.5, z: 0 }, { w: 20, h: 1, d: 10 }, 0xa088c8, 0x00ff00);
-
-        const c_buildings = [
-            [-160, -80], [-106, -120], [-160, -160],
-            [160, 200], [160, 240], [160, 280]
-        ];
-
-        for (const c_location of c_buildings) {
-            Building.create(this.world, {
-                url: './models/building1.json',
-                position: { x: p_XZero + c_location[0], y: 0.01, z: p_YZero + c_location[1] },
-                width: 8,
-                height: 12,
-                depth: null,
-                rotationY: 0
-            });
-        }
-
-        Building.create(this.world, {
-            url: './models/building2.json',
-            position: { x: 0.0, y: 0.0, z: p_YZero + 0 },
-            width: 10,
-            height: 15,
-            depth: null,
-            rotationY: 0
-        });
-    }
-
-    _addLights() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        this.world.v_scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        this.world.v_scene.add(directionalLight);
-    }
+    
 }
