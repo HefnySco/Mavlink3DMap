@@ -48,6 +48,9 @@ class C_View {
         this.m_main_camera.m_controls.enabled = true;
         this.m_activeControls = this.m_main_camera.m_controls;
 
+        // Per-view selected drone (set when user presses 1..9 while this view is active)
+        this.selectedDroneId = null;
+
 
         // Add CSS2DRenderer for this view
         this.labelRenderer = new CSS2DRenderer();
@@ -163,8 +166,18 @@ class C_View {
 
         const speed = 0.5; // Adjust this for faster/slower movement
 
-        const c_keyLength = this.m_world.m_objects_attached_cameras.length;
+        const allCams = this.m_world.m_objects_attached_cameras;
+        const c_keyLength = allCams.length;
         if (c_keyLength == 0) return;
+
+        // Build the list to cycle: either cameras of selected drone, or all
+        let cycleList = allCams;
+        const selectedId = this.selectedDroneId;
+        if (selectedId && this.m_world.v_drone && this.m_world.v_drone[selectedId]) {
+            const selectedVehicle = this.m_world.v_drone[selectedId];
+            cycleList = allCams.filter(ctrl => ctrl && ctrl.m_ownerObject === selectedVehicle);
+            if (cycleList.length === 0) cycleList = allCams; // fallback if no attached cams found
+        }
 
         switch (event.keyCode) {
             case 65: /*A*/
@@ -196,24 +209,29 @@ class C_View {
                 break;
 
             case 79: /*O*/
-                this.v_droneIndex += 1;
-                this.v_droneIndex = this.v_droneIndex % c_keyLength;
-                if (this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree != null) {
-                    this.fn_setSelectedCamera(this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree);
-                    this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, true);
-                } else {
-                    this.fn_setSelectedCamera(this.m_world.m_objects_attached_cameras[this.v_droneIndex]);
+                if (cycleList.length === 0) break;
+                this.v_droneIndex = (this.v_droneIndex + 1) % cycleList.length;
+                {
+                    const ctrl = cycleList[this.v_droneIndex];
+                    if (ctrl.m_cameraThree != null) {
+                        this.fn_setSelectedCamera(ctrl.m_cameraThree);
+                    } else {
+                        this.fn_setSelectedCamera(ctrl);
+                    }
                 }
                 break;
 
             case 80: /*P*/
-                this.v_droneIndex -= 1;
-                if (this.v_droneIndex < 0) this.v_droneIndex = c_keyLength - 1;
-                if (this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree != null) {
-                    this.fn_setSelectedCamera(this.m_world.m_objects_attached_cameras[this.v_droneIndex].m_cameraThree);
-                    this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, true);
-                } else {
-                    this.fn_setSelectedCamera(this.m_world.m_objects_attached_cameras[this.v_droneIndex]);
+                if (cycleList.length === 0) break;
+                this.v_droneIndex = (this.v_droneIndex - 1);
+                if (this.v_droneIndex < 0) this.v_droneIndex = cycleList.length - 1;
+                {
+                    const ctrl = cycleList[this.v_droneIndex];
+                    if (ctrl.m_cameraThree != null) {
+                        this.fn_setSelectedCamera(ctrl.m_cameraThree);
+                    } else {
+                        this.fn_setSelectedCamera(ctrl);
+                    }
                 }
                 break;
 

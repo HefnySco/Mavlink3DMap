@@ -78,18 +78,22 @@ class C_World {
         this._fixedTimeStep = 1 / 60;
         this._maxSubSteps = 3;
 
+        // Track last globally selected drone (via 1..9)
+        this.v_selectedDroneId = null;
+
         // Replace jQuery with vanilla JavaScript
         const helpDlg = document.createElement('div');
         helpDlg.id = 'help_dlg';
         helpDlg.innerHTML = `
             <ul>
                 <li>F1: Help Toggle</li>
-                <li>'P , O' Switch Cameras</li>
-                <li>'W A S D Q E' Change Camera View for Vehicles</li>
-                <li>'L' Goto First Drone</li>
-                <li>'T' Toggle Camera Trace
                 <li>'1-9' Goto Drone by Index</li>
+                <li>'O' next / 'P' previous camera (selected drone)</li>
+                <li>'W A S D Q E' Change Camera View for Vehicles</li>
+                <li>'L' Toggle Drone Labels</li>
+                <li>'T' Toggle Camera Trace
                 <li>'R' Reset Camera View</li>
+                <li>'+ -' Change Drones Scale</li>
             </ul>
         `;
         document.getElementById('mav3dmap').appendChild(helpDlg);
@@ -172,7 +176,14 @@ class C_World {
             }
 
             this.v_selectedView.fn_selectWorldCamera();
-            const vehicle = this.v_drone[vehicleIds[drone_index]];
+            const chosenId = vehicleIds[drone_index];
+            // Set selection on the active view (per-view selection)
+            if (this.v_selectedView) {
+                this.v_selectedView.selectedDroneId = chosenId;
+                // Reset camera cycle index when selecting a different drone
+                this.v_selectedView.v_droneIndex = 0;
+            }
+            const vehicle = this.v_drone[chosenId];
             if (!vehicle) {
                 console.warn(`Drone at index ${drone_index} is undefined.`);
                 return;
