@@ -222,6 +222,15 @@ class C_View {
                     } else {
                         this.fn_setSelectedCamera(ctrl);
                     }
+                    try {
+                        const cam = this.m_view_selected_camera;
+                        if (cam === this.m_main_camera) {
+                            this.fn_displayMessage('<b>Camera:</b> World', 1000);
+                        } else {
+                            const tag = cam?.userData?.m_ownerObject?.m_camera_tag || 'attached';
+                            this.fn_displayMessage(`<b>Drone:</b>${this.selectedDroneId}<b>   Camera:</b>${tag}`, 1000);
+                        }
+                    } catch (_) { }
                 }
                 break;
 
@@ -236,6 +245,15 @@ class C_View {
                     } else {
                         this.fn_setSelectedCamera(ctrl);
                     }
+                    try {
+                        const cam = this.m_view_selected_camera;
+                        if (cam === this.m_main_camera) {
+                            this.fn_displayMessage('<b>Camera:</b> World', 1000);
+                        } else {
+                            const tag = cam?.userData?.m_ownerObject?.m_camera_tag || 'attached';
+                            this.fn_displayMessage(`<b>Drone:</b>${this.selectedDroneId}<b>   Camera:</b>${tag}`, 1000);
+                        }
+                    } catch (_) { }
                 }
                 break;
 
@@ -475,6 +493,66 @@ C_View.prototype.dispose = function () {
     // Null references to help GC
     this.m_activeControls = null;
     this.m_view_selected_camera = null;
+};
+
+// Show a temporary, centered message overlay within this view's container
+// HTML_TEXT can include simple HTML; duration is in ms (default 2000)
+C_View.prototype.fn_displayMessage = function (HTML_TEXT, duration = 2000) {
+    try {
+        const container = this.m_canvas && this.m_canvas.parentNode ? this.m_canvas.parentNode : null;
+        if (!container) return;
+
+        // Create overlay element lazily
+        if (!this.messageOverlay) {
+            const el = document.createElement('div');
+            el.className = 'view-message-overlay';
+            // Basic centered overlay styling
+            el.style.position = 'absolute';
+            el.style.top = '50%';
+            el.style.left = '50%';
+            el.style.transform = 'translate(-50%, -50%)';
+            el.style.padding = '10px 14px';
+            el.style.background = 'rgba(0,0,0,0.7)';
+            el.style.color = '#fff';
+            el.style.borderRadius = '6px';
+            el.style.fontSize = '13px';
+            el.style.textAlign = 'center';
+            el.style.pointerEvents = 'none';
+            el.style.zIndex = '1000';
+            el.style.opacity = '0';
+            el.style.transition = 'opacity 200ms ease';
+            container.appendChild(el);
+            this.messageOverlay = el;
+        }
+
+        // Update content and show
+        this.messageOverlay.innerHTML = HTML_TEXT || '';
+        this.messageOverlay.style.opacity = '1';
+        this.messageOverlay.style.visibility = 'visible';
+
+        // Clear existing timers
+        if (this.messageHideTimer) {
+            clearTimeout(this.messageHideTimer);
+            this.messageHideTimer = null;
+        }
+        if (this.messageCleanupTimer) {
+            clearTimeout(this.messageCleanupTimer);
+            this.messageCleanupTimer = null;
+        }
+
+        // Schedule hide
+        const hideAfter = Math.max(0, Number(duration) || 0);
+        this.messageHideTimer = setTimeout(() => {
+            if (!this.messageOverlay) return;
+            this.messageOverlay.style.opacity = '0';
+            // After transition, hide visibility to avoid focus issues
+            this.messageCleanupTimer = setTimeout(() => {
+                if (this.messageOverlay) {
+                    this.messageOverlay.style.visibility = 'hidden';
+                }
+            }, 220);
+        }, hideAfter);
+    } catch (_) { }
 };
 
 export default C_View;

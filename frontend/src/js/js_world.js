@@ -161,6 +161,7 @@ class C_World {
         try {
             localStorage.setItem(LAYOUT_KEY, JSON.stringify(payload));
             console.log('Layout saved');
+            try { this.v_selectedView?.fn_displayMessage('<b>Layout saved</b>', 1200); } catch (_) { }
         } catch (e) {
             console.warn('Failed to save layout:', e);
         }
@@ -196,6 +197,7 @@ class C_World {
             views[i].selectedDroneId = null;
         }
         console.log('Layout restored');
+        try { this.v_selectedView?.fn_displayMessage('<b>Layout restored</b>', 1200); } catch (_) { }
     }
 
     // Clear saved layout and reset all views to defaults
@@ -208,6 +210,7 @@ class C_World {
             v.selectedDroneId = null;
         }
         console.log('Layout reset');
+        try { this.v_selectedView?.fn_displayMessage('<b>Layout reset</b>', 1200); } catch (_) { }
     }
 
     // Helper: apply a saved config to a view with fallbacks if drone/camera missing
@@ -316,6 +319,7 @@ class C_World {
                 this.v_selectedView.selectedDroneId = chosenId;
                 // Reset camera cycle index when selecting a different drone
                 this.v_selectedView.v_droneIndex = 0;
+                try { this.v_selectedView.fn_displayMessage(`<b>Drone ${chosenId}</b> selected`, 1200); } catch (_) { }
             }
             const vehicle = this.v_drone[chosenId];
             if (!vehicle) {
