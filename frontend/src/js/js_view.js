@@ -393,6 +393,21 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
     const isAttached = !!(camera.userData && camera.userData.m_ownerObject);
     const isFollowMe = isAttached && camera.userData.m_ownerObject.m_camera_tag === 'followme';
 
+    // Ensure selectedDroneId is aligned with the attached camera's owner vehicle
+    if (isAttached) {
+        try {
+            const controller = camera.userData.m_ownerObject;
+            const owner = controller && controller.m_ownerObject;
+            if (owner && this.m_world && this.m_world.v_drone) {
+                const ids = Object.keys(this.m_world.v_drone);
+                const foundId = ids.find(k => this.m_world.v_drone[k] === owner);
+                if (foundId) {
+                    this.selectedDroneId = foundId;
+                }
+            }
+        } catch (_) { }
+    }
+
     // Main (world) camera uses its own dedicated controls
     if (camera === this.m_main_camera) {
         if (!this.m_main_camera.m_controls) {

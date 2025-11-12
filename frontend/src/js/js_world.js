@@ -147,14 +147,37 @@ class C_World {
                 // Determine camera mode and tag
                 let mode = 'world';
                 let tag = null;
+                let world = null;
+                // Resolve a robust selectedDroneId: prefer view.selectedDroneId; if missing and attached camera selected, derive from owner
+                let selectedDroneId = v.selectedDroneId || null;
                 if (v.m_view_selected_camera && v.m_view_selected_camera !== v.m_main_camera) {
                     mode = 'attached';
                     const ctrl = v.m_view_selected_camera.userData && v.m_view_selected_camera.userData.m_ownerObject;
                     tag = ctrl && ctrl.m_camera_tag ? ctrl.m_camera_tag : null;
+                    try {
+                        if (!selectedDroneId && ctrl && ctrl.m_ownerObject && this.v_drone) {
+                            const ids = Object.keys(this.v_drone);
+                            const foundId = ids.find(k => this.v_drone[k] === ctrl.m_ownerObject);
+                            if (foundId) selectedDroneId = foundId;
+                        }
+                    } catch (_) { }
+                } else {
+                    // Persist world camera pose and controls target
+                    const cam = v.m_main_camera;
+                    const pos = cam && cam.position ? [cam.position.x, cam.position.y, cam.position.z] : [5, 5, 0];
+                    const fov = cam && typeof cam.fov === 'number' ? cam.fov : 75;
+                    let target = [0, 0, 0];
+                    try {
+                        if (cam && cam.m_controls && cam.m_controls.target) {
+                            const t = cam.m_controls.target;
+                            target = [t.x, t.y, t.z];
+                        }
+                    } catch (_) { }
+                    world = { pos, target, fov };
                 }
                 return {
-                    selectedDroneId: v.selectedDroneId || null,
-                    camera: { mode, tag }
+                    selectedDroneId: selectedDroneId,
+                    camera: { mode, tag, world }
                 };
             })
         };
@@ -227,6 +250,25 @@ class C_World {
         if (mode === 'world' || !vehicle) {
             view.fn_selectWorldCamera();
             view.selectedDroneId = vehicle ? id : null; // keep if valid, else null
+
+            // Apply saved world camera pose/target/fov if present
+            const w = cameraCfg.world;
+            if (w && view.m_main_camera) {
+                try {
+                    const cam = view.m_main_camera;
+                    if (Array.isArray(w.pos) && w.pos.length === 3) {
+                        cam.position.set(w.pos[0], w.pos[1], w.pos[2]);
+                    }
+                    if (typeof w.fov === 'number') {
+                        cam.fov = w.fov;
+                        cam.updateProjectionMatrix();
+                    }
+                    if (Array.isArray(w.target) && w.target.length === 3 && cam.m_controls && cam.m_controls.target) {
+                        cam.m_controls.target.set(w.target[0], w.target[1], w.target[2]);
+                        cam.m_controls.update?.();
+                    }
+                } catch (_) { }
+            }
             return;
         }
 
