@@ -45,6 +45,9 @@ class C_View {
         this.m_main_camera.position.set(5, 5, 0);
         this.m_main_camera.lookAt(new THREE.Vector3(p_XZero + 0, 0, p_YZero + 0));
         this.m_main_camera.m_controls = new OrbitControls(this.m_main_camera, p_canvas);
+        if (this.m_main_camera.m_controls) {
+            this.fn_configureControls(this.m_main_camera.m_controls);
+        }
         this.m_main_camera.m_controls.enabled = true;
         this.m_activeControls = this.m_main_camera.m_controls;
 
@@ -412,6 +415,7 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
     if (camera === this.m_main_camera) {
         if (!this.m_main_camera.m_controls) {
             this.m_main_camera.m_controls = new OrbitControls(this.m_main_camera, this.m_canvas);
+            this.fn_configureControls(this.m_main_camera.m_controls);
         }
         this.m_main_camera.m_controls.enabled = true;
         this.m_activeControls = this.m_main_camera.m_controls;
@@ -420,6 +424,7 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
         let ctrl = this.controlsByCamera.get(camera);
         if (!ctrl) {
             ctrl = new OrbitControls(camera, this.m_canvas);
+            this.fn_configureControls(ctrl);
             this.controlsByCamera.set(camera, ctrl);
         }
 
@@ -448,6 +453,16 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
     }
 
     this.m_view_selected_camera = camera;
+};
+
+C_View.prototype.fn_configureControls = function (ctrl) {
+    try {
+        ctrl.enableDamping = true;
+        ctrl.dampingFactor = 0.075;
+        ctrl.enablePan = true;
+        ctrl.touches.ONE = THREE.TOUCH.ROTATE;
+        ctrl.touches.TWO = THREE.TOUCH.DOLLY_PAN;
+    } catch (_) { }
 };
 
 // Dispose per-view resources to avoid leaks and cross-view interference
