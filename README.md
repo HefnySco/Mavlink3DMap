@@ -22,6 +22,24 @@ The visualization supports multiple vehicle types, camera views, physics simulat
 - **Simulation Extras**: Animated objects (e.g., cars, buildings), lights, and shadows.
 - **Modular Architecture**: Separate modules for world, views, vehicles, physics, and communication.
 
+## Quickstart (Monorepo)
+
+This repo is a monorepo with `frontend` and `backend` workspaces. Use the root scripts:
+
+```bash
+npm install
+
+# Start UDP bridge + frontend (no camera stream)
+npm run dev
+
+# Start UDP bridge + camera streaming pipeline + frontend
+npm run devall
+```
+
+Notes:
+- `dev` launches `backend` UDP bridge and the `frontend` dev server.
+- `devall` also launches the streaming pipeline: `websocket_streaming.js | ffmpeg` to a virtual video device (Linux).
+
 ## Requirements
 
 - **Node.js**: v12+ (for running the UDP-WebSocket bridge).
@@ -37,6 +55,10 @@ The visualization supports multiple vehicle types, camera views, physics simulat
 - **Optional**: Mapbox access token for satellite maps (set in `js_map_box_scene.js`).
 - **SITL Simulator**: ArduPilot SITL or similar, configured to send UDP telemetry.
 
+For camera streaming on Linux, ensure:
+- `ffmpeg` is installed.
+- A virtual video device exists (e.g., via `v4l2loopback`). The backend auto-detects the first device under `/sys/devices/virtual/video4linux/`.
+
 ## Installation
 
 1. Clone the repository:
@@ -45,9 +67,9 @@ The visualization supports multiple vehicle types, camera views, physics simulat
    cd MAVLink-3D-Visualizer
    ```
 
-2. Install Node.js dependencies (for the bridge):
+2. Install dependencies (root workspaces):
    ```bash
-   npm install commander ws dgram
+   npm install
    ```
 
 3. (Optional) For Mapbox integration, replace the placeholder access token in `js_map_box_scene.js` with your own:
@@ -59,6 +81,15 @@ The visualization supports multiple vehicle types, camera views, physics simulat
 4. Ensure models and assets are in place (e.g., JSON models in `./models/vehicles/`).
 
 ## Usage
+
+### Map Modes
+
+- **Continuous tiles (Mapbox)**: `frontend/index_4w_map_box.html`
+  - Satellite imagery tiles for continuous map coverage.
+- **3D mapping (DEM terrain)**: `frontend/index_4w_real_map.html`
+  - Real-world elevation and 3D terrain.
+- **Custom images**: `frontend/index_4w.html`
+  - Use your own ground image as the map background.
 
 ### Running the UDP-WebSocket Bridge
 
@@ -110,6 +141,11 @@ The bridge listens for UDP packets from the SITL simulator and forwards them via
 - **Cameras (`js_camera.js`)**: Attachable cameras with independent rotations.
 
 Vehicles appear dynamically based on MAVLink HEARTBEAT messages. Positions update via LOCAL_POSITION_NED, attitudes via ATTITUDE.
+
+## Why this simulator
+
+- **See drone location in real time**: Visualize pose and movement on continuous or 3D maps to validate navigation and control algorithms.
+- **Stream camera for tracking**: The camera streaming pipeline helps develop and test tracking/vision algorithms by writing frames to a virtual video device.
 
 ## Configuration
 
