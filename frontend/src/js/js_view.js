@@ -417,6 +417,66 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
     this.m_view_selected_camera = camera;
 };
 
+// Dispose per-view resources to avoid leaks and cross-view interference
+C_View.prototype.dispose = function () {
+    // Disable and dispose world camera controls
+    if (this.m_main_camera && this.m_main_camera.m_controls) {
+        this.m_main_camera.m_controls.enabled = false;
+        if (this.m_main_camera.m_controls.dispose) {
+            this.m_main_camera.m_controls.dispose();
+        }
+    }
+
+    // Disable and dispose attached camera controls for this view
+    if (this.controlsByCamera) {
+        for (const [cam, ctrl] of this.controlsByCamera.entries()) {
+            if (ctrl) {
+                ctrl.enabled = false;
+                if (ctrl.dispose) ctrl.dispose();
+            }
+        }
+        this.controlsByCamera.clear();
+    }
+
+    // Decrement manual control refs if selected camera is follow-me
+    const prevCam = this.m_view_selected_camera;
+    if (prevCam && prevCam.userData && prevCam.userData.m_ownerObject) {
+        const ownerCtrl = prevCam.userData.m_ownerObject;
+        if (ownerCtrl && ownerCtrl.m_camera_tag === 'followme') {
+            const ud = prevCam.userData;
+            ud.manualControlRefs = (ud.manualControlRefs || 0) - 1;
+            if (ud.manualControlRefs < 0) ud.manualControlRefs = 0;
+            ud.manualControl = ud.manualControlRefs > 0;
+        }
+    }
+
+    // Remove event listeners
+    if (this.m_canvas && this.fn_onMouseDown) {
+        this.m_canvas.removeEventListener('click', this.fn_onMouseDown, false);
+    }
+    if (this.m_canvas && this.fn_onMouseDoubleClick) {
+        this.m_canvas.removeEventListener('dblclick', this.fn_onMouseDoubleClick, false);
+    }
+
+    // Remove CSS2DRenderer element
+    if (this.labelRenderer && this.labelRenderer.domElement && this.labelRenderer.domElement.parentNode) {
+        this.labelRenderer.domElement.parentNode.removeChild(this.labelRenderer.domElement);
+    }
+    this.labelRenderer = null;
+
+    // Close streaming websocket if open
+    try {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.close();
+        }
+    } catch (_) { }
+    this.ws = null;
+
+    // Null references to help GC
+    this.m_activeControls = null;
+    this.m_view_selected_camera = null;
+};
+
 export default C_View;
 
 
