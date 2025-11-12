@@ -70,7 +70,7 @@ For camera streaming on Linux, ensure:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/MAVLink-3D-Visualizer.git
+   git clone https://github.com/HefnySco/MAVLink-3D-Visualizer.git
    cd MAVLink-3D-Visualizer
    ```
 
@@ -84,6 +84,13 @@ For camera streaming on Linux, ensure:
    this.mapboxAccessToken = 'your-mapbox-token-here';
    ```
    Get a free token from [Mapbox](https://account.mapbox.com/access-tokens/).
+
+   Alternatively, you can store the token in a frontend `.env` file (preferred):
+   - Create `frontend/.env` with:
+     ```env
+     VITE_MAPBOX_ACCESS_TOKEN=your-mapbox-token-here
+     ```
+   - The frontend reads it via `import.meta.env.VITE_MAPBOX_ACCESS_TOKEN` (used by scenes like `js_map_box_scene.js` and `js_3d_real_blank.js`).
 
 4. Ensure models and assets are in place (e.g., JSON models in `./models/vehicles/`).
 
