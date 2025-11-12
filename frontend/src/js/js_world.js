@@ -136,6 +136,118 @@ class C_World {
         }
     };
 
+    // Persist multi-view layout (per-view selected drone/camera) to localStorage
+    fn_saveLayoutToLocalStorage() {
+        const LAYOUT_KEY = 'm3d_layout_v1';
+        const views = this.v_views || [];
+        const payload = {
+            version: 1,
+            savedAt: Date.now(),
+            views: views.map(v => {
+                // Determine camera mode and tag
+                let mode = 'world';
+                let tag = null;
+                if (v.m_view_selected_camera && v.m_view_selected_camera !== v.m_main_camera) {
+                    mode = 'attached';
+                    const ctrl = v.m_view_selected_camera.userData && v.m_view_selected_camera.userData.m_ownerObject;
+                    tag = ctrl && ctrl.m_camera_tag ? ctrl.m_camera_tag : null;
+                }
+                return {
+                    selectedDroneId: v.selectedDroneId || null,
+                    camera: { mode, tag }
+                };
+            })
+        };
+        try {
+            localStorage.setItem(LAYOUT_KEY, JSON.stringify(payload));
+            console.log('Layout saved');
+        } catch (e) {
+            console.warn('Failed to save layout:', e);
+        }
+    }
+
+    // Restore multi-view layout from localStorage with safe fallbacks
+    fn_restoreLayoutFromLocalStorage() {
+        const LAYOUT_KEY = 'm3d_layout_v1';
+        let data = null;
+        try {
+            const raw = localStorage.getItem(LAYOUT_KEY);
+            if (!raw) {
+                console.warn('No saved layout to restore');
+                return;
+            }
+            data = JSON.parse(raw);
+        } catch (e) {
+            console.warn('Failed to parse saved layout:', e);
+            return;
+        }
+
+        if (!data || !Array.isArray(data.views)) return;
+
+        const views = this.v_views || [];
+        const count = Math.min(views.length, data.views.length);
+        for (let i = 0; i < count; i++) {
+            const cfg = data.views[i] || {};
+            this.#fn_applyViewConfigSafely(views[i], cfg);
+        }
+        // Extra existing views without saved config => default
+        for (let i = count; i < views.length; i++) {
+            views[i].fn_selectWorldCamera();
+            views[i].selectedDroneId = null;
+        }
+        console.log('Layout restored');
+    }
+
+    // Clear saved layout and reset all views to defaults
+    fn_resetLayout() {
+        const LAYOUT_KEY = 'm3d_layout_v1';
+        try { localStorage.removeItem(LAYOUT_KEY); } catch (_) { }
+        const views = this.v_views || [];
+        for (const v of views) {
+            v.fn_selectWorldCamera();
+            v.selectedDroneId = null;
+        }
+        console.log('Layout reset');
+    }
+
+    // Helper: apply a saved config to a view with fallbacks if drone/camera missing
+    #fn_applyViewConfigSafely(view, cfg) {
+        if (!view) return;
+        const cameraCfg = cfg.camera || {};
+        const mode = cameraCfg.mode || 'world';
+        const tag = cameraCfg.tag || null;
+        const id = cfg.selectedDroneId || null;
+
+        // Validate drone
+        const vehicle = id && this.v_drone ? this.v_drone[id] : null;
+
+        if (mode === 'world' || !vehicle) {
+            view.fn_selectWorldCamera();
+            view.selectedDroneId = vehicle ? id : null; // keep if valid, else null
+            return;
+        }
+
+        // Attached camera: try to find matching tag first
+        const cams = (vehicle && Array.isArray(vehicle.m_cameras)) ? vehicle.m_cameras : [];
+        let found = null;
+        if (tag) {
+            found = cams.find(c => c && c.m_camera_tag === tag);
+        }
+        // Fallback: pick first available attached camera
+        if (!found) {
+            found = cams.length > 0 ? cams[0] : null;
+        }
+
+        if (found && found.m_cameraThree) {
+            view.selectedDroneId = id;
+            view.fn_setSelectedCamera(found.m_cameraThree);
+        } else {
+            // Final fallback: world camera
+            view.fn_selectWorldCamera();
+            view.selectedDroneId = id; // store even if no cam; still a valid drone selection
+        }
+    }
+
     fn_createBall(p_id, p_x, p_y, p_radius) {
         const { mesh } = PhysicsBall.create(
             this,
@@ -150,6 +262,28 @@ class C_World {
     * Send event to selected view to handle keydown logic.
     */
     fn_onKeyDown(event) {
+        // Global shortcuts: Save/Restore/Reset layout
+        try {
+            const key = (event.key || '').toLowerCase();
+            if (event.ctrlKey && !event.altKey && !event.metaKey) {
+                if (key === 's') { // Ctrl+S => Save layout
+                    event.preventDefault();
+                    this.fn_saveLayoutToLocalStorage();
+                    return;
+                }
+                if (key === 'r' && !event.shiftKey) { // Ctrl+R => Restore layout
+                    event.preventDefault();
+                    this.fn_restoreLayoutFromLocalStorage();
+                    return;
+                }
+                if (key === 'r' && event.shiftKey) { // Ctrl+Shift+R => Reset layout
+                    event.preventDefault();
+                    this.fn_resetLayout();
+                    return;
+                }
+            }
+        } catch (_) { }
+
         if (event.key == '-') {
             const vehicleIds = Object.keys(this.v_drone);
 
@@ -253,6 +387,38 @@ class C_World {
         const c_view = new C_View(this, p_canvas, this.v_XZero, this.v_YZero, isStreamable);
         this.v_views.push(c_view);
         this.v_selectedView = c_view;
+    };
+
+    // Remove a canvas/view and dispose its resources
+    fn_removeCanvas(p_canvas) {
+        const idx = this.v_views.findIndex(v => v.m_canvas === p_canvas);
+        if (idx >= 0) {
+            const view = this.v_views[idx];
+            try {
+                if (view && typeof view.dispose === 'function') {
+                    view.dispose();
+                }
+            } catch (e) { }
+            this.v_views.splice(idx, 1);
+            if (this.v_selectedView === view) {
+                this.v_selectedView = this.v_views.length > 0 ? this.v_views[0] : null;
+            }
+        }
+    };
+
+    // Dispose all views (e.g., on scene teardown)
+    fn_disposeAllViews() {
+        if (this.v_views && this.v_views.length) {
+            for (const view of this.v_views) {
+                try {
+                    if (view && typeof view.dispose === 'function') {
+                        view.dispose();
+                    }
+                } catch (e) { }
+            }
+            this.v_views = [];
+        }
+        this.v_selectedView = null;
     };
 
     removeDebris(object) {
