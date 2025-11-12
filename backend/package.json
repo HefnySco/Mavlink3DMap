@@ -7,5 +7,13 @@
     "jspack": "^0.0.4",
     "underscore": "^1.13.7",
     "ws": "^8.18.3"
+  },
+  "scripts": {
+    "dev:udp": "node ./src/udp2websocket.js",
+    "dev:stream": "sh -c 'DEV=$(ls /sys/devices/virtual/video4linux/ | head -n 1); if [ -z \"$DEV\" ]; then echo \"Error: No virtual video devices found in /sys/devices/virtual/video4linux/\"; exit 1; fi; VIDEO_DEVICE=\"/dev/$DEV\"; node ./src/websocket_streaming.js | ffmpeg -framerate 30 -f image2pipe -vcodec mjpeg -s 940x486 -i - -pix_fmt yuv420p -f v4l2 \"$VIDEO_DEVICE\"'",
+    "dev": "npm run dev:udp & npm run dev:stream",
+    "start": "npm run dev",
+    "build": "echo \"no build step for backend\"",
+    "lint": "echo \"no lint configured for backend\""
   }
 }

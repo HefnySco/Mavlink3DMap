@@ -1,1 +1,13 @@
-{}
+{
+  "name": "mavlink3dmap-monorepo",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run -w backend dev & npm run -w frontend dev",
+    "build": "npm run -ws build",
+    "lint": "npm run -ws lint || true"
+  }
+}
