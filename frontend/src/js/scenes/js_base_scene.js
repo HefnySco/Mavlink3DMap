@@ -16,6 +16,7 @@ export class CBaseScene {
         this.tiles = new Map();
         this.droneId = null;
         this.textureLoader = new THREE.TextureLoader();
+        this._objectsByTag = new Map();
 
         this.homeLat = homeLat;
         this.homeLng = homeLng;
@@ -161,6 +162,7 @@ export class CBaseScene {
     }
 
     _addBuildings(p_XZero, p_YZero) {
+        const tag = `${p_XZero},${p_YZero}`;
         const c_buildings = [
             [-160, -80], [-106, -120], [-160, -160],
             [160, 200], [160, 240], [160, 280]
@@ -173,7 +175,9 @@ export class CBaseScene {
                 width: 8,
                 height: 12,
                 depth: null,
-                rotationY: 0
+                rotationY: 0,
+                tag,
+                onLoaded: (obj) => this._registerObjects(obj, tag)
             });
         }
 
@@ -183,7 +187,9 @@ export class CBaseScene {
             width: 10,
             height: 15,
             depth: null,
-            rotationY: 0
+            rotationY: 0,
+            tag,
+            onLoaded: (obj) => this._registerObjects(obj, tag)
         });
     }
 
@@ -193,5 +199,32 @@ export class CBaseScene {
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
         this.world.v_scene.add(directionalLight);
+    }
+
+    fn_onNewTileCreated(x, y) {
+        if (typeof this._addBuildings === 'function') {
+            this._addBuildings(x, y);
+        }
+    }
+
+    fn_onTileRemoved(x, y) {
+        this._removeObjectsByTag(`${x},${y}`);
+    }
+
+    _registerObjects(obj, tag) {
+        if (!tag || !obj) return;
+        const list = this._objectsByTag.get(tag) || [];
+        list.push(obj);
+        this._objectsByTag.set(tag, list);
+    }
+
+    _removeObjectsByTag(tag) {
+        const list = this._objectsByTag.get(tag);
+        if (!list || list.length === 0) return;
+        for (const obj of list) {
+            this._disposeNode(obj);
+            this.world?.v_scene?.remove(obj);
+        }
+        this._objectsByTag.delete(tag);
     }
 }

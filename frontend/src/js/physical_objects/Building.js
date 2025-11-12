@@ -13,7 +13,7 @@ import * as THREE from 'three';
  *   })
  */
 export class Building {
-  static create(world, { url, position = {}, width = null, height = null, depth = null, rotationY = 0 } = {}) {
+  static create(world, { url, position = {}, width = null, height = null, depth = null, rotationY = 0, tag = null, onLoaded = null } = {}) {
     const { x = 0, y = 0, z = 0 } = position;
 
     const loader = new THREE.ObjectLoader();
@@ -39,7 +39,11 @@ export class Building {
         obj.scale.multiply(new THREE.Vector3(sx, sy, sz));
       }
 
+      if (!obj.userData) obj.userData = {};
+      if (tag != null) obj.userData.m_buildingTag = tag;
+
       world?.v_scene?.add(obj);
+      if (typeof onLoaded === 'function') onLoaded(obj);
     });
   }
 }

@@ -167,6 +167,8 @@ export class C3DMapScene {
         // Remove tiles outside the current range
         for (const [key, tile] of this.tiles) {
             if (!newTiles.has(key)) {
+                const centerX = tile?.position?.x ?? 0;
+                const centerY = tile?.position?.z ?? 0;
                 this.world.v_scene.remove(tile);
                 if (tile.userData.m_physicsBody) {
                     this.world.v_physicsWorld.removeRigidBody(tile.userData.m_physicsBody);
@@ -179,6 +181,9 @@ export class C3DMapScene {
                     }
                 });
                 this.tiles.delete(key);
+                if (typeof this.fn_onTileRemoved === 'function') {
+                    this.fn_onTileRemoved(centerX, centerY);
+                }
             }
         }
     }
@@ -321,7 +326,18 @@ export class C3DMapScene {
             // texture.image = cachedImage;
             // texture.needsUpdate = true;
 
-            const texture = this.textureLoader.load(satelliteUrl);
+            const texture = this.textureLoader.load(
+                satelliteUrl,
+                () => {
+                    if (typeof this.fn_onNewTileCreated === 'function') {
+                        this.fn_onNewTileCreated(tileCenterX, tileCenterZ);
+                    }
+                },
+                undefined,
+                (error) => {
+                    console.error('Failed to load satellite texture', satelliteUrl, error);
+                }
+            );
 
             // Create material and mesh
             const material = new THREE.MeshLambertMaterial({ map: texture });
@@ -341,6 +357,8 @@ export class C3DMapScene {
             // Store in tiles map
             const tileKey = `${tileX},${tileY}`;
             this.tiles.set(tileKey, tileGroup);
+
+            
 
         } catch (error) {
             console.error(`Failed to load terrain tile ${tileX},${tileY}:`, error);

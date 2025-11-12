@@ -46,11 +46,16 @@ export class CFlatMapScene extends CBaseScene {
             const [x, y] = key.split(',').map(Number);
             if (Math.abs(x - gridTileX) > maxRange || Math.abs(y - gridTileY) > maxRange) {
                 const tile = this.tiles.get(key);
+                const centerX = tile?.position?.x ?? 0;
+                const centerY = tile?.position?.z ?? 0;
                 this.world.v_scene.remove(tile);
-                if (tile.material.map) tile.material.map.dispose();
-                tile.material.dispose();
-                tile.geometry.dispose();
+                if (tile.material?.map) tile.material.map.dispose();
+                tile.material?.dispose?.();
+                tile.geometry?.dispose?.();
                 this.tiles.delete(key);
+                if (typeof this.fn_onTileRemoved === 'function') {
+                    this.fn_onTileRemoved(centerX, centerY);
+                }
             }
         }
 
@@ -156,6 +161,9 @@ export class CFlatMapScene extends CBaseScene {
         }
         this.tiles.set(tileKey, tile);
         this.world.v_scene.add(tile);
+        if (typeof this.fn_onNewTileCreated === 'function') {
+            this.fn_onNewTileCreated(p_XZero, p_YZero);
+        }
     }
 
     

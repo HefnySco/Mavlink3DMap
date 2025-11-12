@@ -44,11 +44,16 @@ export class CGrassScene extends CBaseScene {
             const [x, y] = key.split(',').map(Number);
             if (Math.abs(x - gridTileX) > maxRange || Math.abs(y - gridTileY) > maxRange) {
                 const tile = this.tiles.get(key);
+                const centerX = tile?.position?.x ?? 0;
+                const centerY = tile?.position?.z ?? 0;
                 this.world.v_scene.remove(tile);
-                if (tile.material.map) tile.material.map.dispose();
-                tile.material.dispose();
-                tile.geometry.dispose();
+                if (tile.material?.map) tile.material.map.dispose();
+                tile.material?.dispose?.();
+                tile.geometry?.dispose?.();
                 this.tiles.delete(key);
+                if (typeof this.fn_onTileRemoved === 'function') {
+                    this.fn_onTileRemoved(centerX, centerY);
+                }
             }
         }
 
@@ -109,14 +114,25 @@ export class CGrassScene extends CBaseScene {
         const tileUrl = `../../models/images/${this.m_env_name}/${this.m_env_name}_${x}_${y}.png?${this.zoomLevel}`;
 
         const geometry = new THREE.PlaneGeometry(tileWidth, tileHeight);
-        const material = new THREE.MeshBasicMaterial({ map: this.textureLoader.load(tileUrl), side: THREE.DoubleSide });
-
-        const tile = new THREE.Mesh(geometry, material);
-        tile.position.set(p_XZero, -0.01, p_YZero);
-        tile.rotation.x = -PI_div_2;
-        tile.rotation.z = -PI_div_2;
-        const tileKey = `${tileX},${tileY}`;
-        this.tiles.set(tileKey, tile);
-        this.world.v_scene.add(tile);
+        this.textureLoader.load(
+            tileUrl,
+            (loadedTexture) => {
+                const material = new THREE.MeshBasicMaterial({ map: loadedTexture, side: THREE.DoubleSide });
+                const tile = new THREE.Mesh(geometry, material);
+                tile.position.set(p_XZero, -0.01, p_YZero);
+                tile.rotation.x = -PI_div_2;
+                tile.rotation.z = -PI_div_2;
+                const tileKey = `${tileX},${tileY}`;
+                this.tiles.set(tileKey, tile);
+                this.world.v_scene.add(tile);
+                if (typeof this.fn_onNewTileCreated === 'function') {
+                    this.fn_onNewTileCreated(p_XZero, p_YZero);
+                }
+            },
+            undefined,
+            (error) => {
+                console.error('Failed to load green scene tile texture', tileUrl, error);
+            }
+        );
     }
 }
