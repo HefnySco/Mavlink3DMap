@@ -4,6 +4,7 @@ import * as CANNON from 'cannon-es';
 import { PhysicsBall } from './physical_objects/js_ball.js';
 
 import C_View from './js_view';
+import { HELP_SHORTCUTS_HTML } from './help_text.js';
 
 const STATE = { DISABLE_DEACTIVATION: 4 };
 const FLAGS = { CF_KINEMATIC_OBJECT: 2 };
@@ -84,18 +85,7 @@ class C_World {
         // Replace jQuery with vanilla JavaScript
         const helpDlg = document.createElement('div');
         helpDlg.id = 'help_dlg';
-        helpDlg.innerHTML = `
-            <ul>
-                <li>F1: Help Toggle</li>
-                <li>'1-9' Goto Drone by Index</li>
-                <li>'O' next / 'P' previous camera (selected drone)</li>
-                <li>'W A S D Q E' Change Camera View for Vehicles</li>
-                <li>'L' Toggle Drone Labels</li>
-                <li>'T' Toggle Camera Trace
-                <li>'R' Reset Camera View</li>
-                <li>'+ -' Change Drones Scale</li>
-            </ul>
-        `;
+        helpDlg.innerHTML = HELP_SHORTCUTS_HTML;
         document.getElementById('mav3dmap').appendChild(helpDlg);
         helpDlg.style.display = 'none'; // Initially hidden
 
