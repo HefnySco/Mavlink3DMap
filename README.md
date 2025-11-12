@@ -1,10 +1,17 @@
 # MAVLink 3D Visualizer
 
+[![App Logo](resources/app_logo.png)](resources/app_logo.png)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This project provides a bridge between a Software-In-The-Loop (SITL) simulator (e.g., ArduPilot SITL) and a web-based 3D visualization tool. It enables real-time rendering of MAVLink-enabled vehicles (drones, planes, VTOLs) in a 3D environment using Three.js for graphics, Ammo.js for physics, and MAVLink for telemetry parsing. The bridge converts UDP packets from the simulator to WebSocket messages for the browser, allowing interactive 3D maps with optional real-world terrain (via Mapbox or Three-Geo).
 
 The visualization supports multiple vehicle types, camera views, physics simulations, and dynamic terrain loading based on vehicle position.
+
+## Documentation
+
+- Project Wiki: [wiki/](wiki/)  
+  This folder contains developer and user docs. Link here stays stable as docs evolve.
 
 ## Features
 
