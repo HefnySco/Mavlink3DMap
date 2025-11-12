@@ -61,6 +61,8 @@ class C_View {
         // Follow-me orbit defaults (distance constraints)
         this.followMinDist = 1.0;
         this.followMaxDist = 15.0;
+        // Per-view follow-me offset (camera.position - target) preserved across drone motion
+        this.followOffset = null;
 
 
         // Add CSS2DRenderer for this view
@@ -338,11 +340,32 @@ class C_View {
             const isFollowMe = controller && controller.m_camera_tag === 'followme';
             const owner = controller && controller.m_ownerObject;
             if (isFollowMe && owner && this.m_activeControls.target) {
+                // Preserve previous offset before target moves
+                try {
+                    const prevTarget = this.m_activeControls.target;
+                    if (!this.followOffset) {
+                        this.followOffset = new THREE.Vector3().subVectors(cam.position, prevTarget);
+                    } else {
+                        this.followOffset.copy(new THREE.Vector3().subVectors(cam.position, prevTarget));
+                    }
+                } catch (_) { }
+
                 const { x, y, z } = owner.fn_translateXYZ();
                 this.m_activeControls.target.set(x, y, z);
+
+                // Apply preserved offset so camera moves with the drone maintaining constant radius and angle
+                try {
+                    cam.position.set(x + this.followOffset.x, y + this.followOffset.y, z + this.followOffset.z);
+                } catch (_) { }
             }
         }
         this.m_activeControls.update();
+        // After update, refresh stored offset for next frame (captures user rotate/zoom)
+        try {
+            if (this.followOffset && this.m_view_selected_camera && this.m_activeControls && this.m_activeControls.target) {
+                this.followOffset.copy(new THREE.Vector3().subVectors(this.m_view_selected_camera.position, this.m_activeControls.target));
+            }
+        } catch (_) { }
     }
     this.renderer.render(this.m_world.v_scene, this.m_view_selected_camera);
 
@@ -441,6 +464,8 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
             // Configure follow-me constraints: no pan; rotate/zoom around moving drone target
             try {
                 ctrl.enablePan = false;
+                // Turn off damping to avoid camera lagging behind the moving target
+                ctrl.enableDamping = false;
                 if (typeof this.followMaxDist === 'number') ctrl.maxDistance = this.followMaxDist;
             } catch (_) { }
             try {
@@ -449,6 +474,10 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
                 if (owner && this.m_activeControls && this.m_activeControls.target) {
                     const { x, y, z } = owner.fn_translateXYZ();
                     this.m_activeControls.target.set(x, y, z);
+                    // Initialize follow offset if missing
+                    if (!this.followOffset) {
+                        this.followOffset = new THREE.Vector3().subVectors(camera.position, this.m_activeControls.target);
+                    }
                 }
             } catch (_) { }
         } else {
