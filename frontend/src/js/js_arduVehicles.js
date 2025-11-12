@@ -12,7 +12,7 @@ import Vehicle from './js_vehicle.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat } from './js_globals.js';
 import { EVENTS as js_event } from './js_eventList.js'
 import { js_eventEmitter } from './js_eventEmitter.js';
-import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { CSS2DObject} from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
 const FRAME_TYPE_PLUS = 0;
 const FRAME_TYPE_PLANE = 1;

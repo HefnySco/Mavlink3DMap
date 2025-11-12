@@ -11,7 +11,6 @@ import { CameraController } from './js_camera.js';
 import { Trigger } from './js_triggerObject.js';
 import { FRAME_TYPE_UNKNOWN, _xAxis, _yAxis, _zAxis, DEG_2_RAD } from './js_globals.js'; // Assumes js_globals.js provides these
 import { getInitialDisplacement } from './js_globals.js';
-import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
 // Stub for getAngleOfPWM (used in fn_apply_attached_units)
 function getAngleOfPWM(maxAngle, minAngle, pwmValue, maxPWM, minPWM) {
