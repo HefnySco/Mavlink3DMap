@@ -48,6 +48,10 @@ class C_View {
         this.m_main_camera.m_controls.enabled = true;
         this.m_activeControls = this.m_main_camera.m_controls;
 
+        // Per-view controls map for shared attached cameras (by THREE.Camera reference)
+        // This prevents different views from enabling/disabling the same shared controls instance.
+        this.controlsByCamera = new Map();
+
         // Per-view selected drone (set when user presses 1..9 while this view is active)
         this.selectedDroneId = null;
 
@@ -345,27 +349,53 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
     if (!camera) return;
 
     // Disable previous controls if any
-    if (this.m_view_selected_camera && this.m_view_selected_camera.m_controls) {
-        this.m_view_selected_camera.m_controls.enabled = false;
+    if (this.m_view_selected_camera) {
+        if (this.m_view_selected_camera === this.m_main_camera) {
+            if (this.m_main_camera.m_controls) this.m_main_camera.m_controls.enabled = false;
+        } else {
+            const prevCtrl = this.controlsByCamera.get(this.m_view_selected_camera);
+            if (prevCtrl) prevCtrl.enabled = false;
+        }
     }
 
-    // If previous camera was an attached helper, clear manual control flag
+    // If previous camera was an attached helper follow-me, decrement manual control ref count
     if (this.m_view_selected_camera && this.m_view_selected_camera.userData && this.m_view_selected_camera.userData.m_ownerObject) {
-        this.m_view_selected_camera.userData.manualControl = false;
+        const prevCtrlOwner = this.m_view_selected_camera.userData.m_ownerObject;
+        const wasFollowMe = prevCtrlOwner && prevCtrlOwner.m_camera_tag === 'followme';
+        if (wasFollowMe) {
+            const ud = this.m_view_selected_camera.userData;
+            ud.manualControlRefs = (ud.manualControlRefs || 0) - 1;
+            if (ud.manualControlRefs < 0) ud.manualControlRefs = 0;
+            ud.manualControl = ud.manualControlRefs > 0;
+        } else {
+            this.m_view_selected_camera.userData.manualControl = false;
+        }
     }
 
     const isAttached = !!(camera.userData && camera.userData.m_ownerObject);
     const isFollowMe = isAttached && camera.userData.m_ownerObject.m_camera_tag === 'followme';
 
-    if (!camera.m_controls) {
-        camera.m_controls = new OrbitControls(camera, this.m_canvas);
-    }
+    // Main (world) camera uses its own dedicated controls
+    if (camera === this.m_main_camera) {
+        if (!this.m_main_camera.m_controls) {
+            this.m_main_camera.m_controls = new OrbitControls(this.m_main_camera, this.m_canvas);
+        }
+        this.m_main_camera.m_controls.enabled = true;
+        this.m_activeControls = this.m_main_camera.m_controls;
+    } else {
+        // Attached drone cameras: keep OrbitControls per view
+        let ctrl = this.controlsByCamera.get(camera);
+        if (!ctrl) {
+            ctrl = new OrbitControls(camera, this.m_canvas);
+            this.controlsByCamera.set(camera, ctrl);
+        }
 
-    if (camera === this.m_main_camera || isFollowMe) {
-        camera.m_controls.enabled = true;
-        this.m_activeControls = camera.m_controls;
         if (isFollowMe) {
-            camera.userData.manualControl = true;
+            ctrl.enabled = true;
+            this.m_activeControls = ctrl;
+            const ud = camera.userData;
+            ud.manualControlRefs = (ud.manualControlRefs || 0) + 1;
+            ud.manualControl = ud.manualControlRefs > 0;
             try {
                 const controller = camera.userData.m_ownerObject;
                 const owner = controller && controller.m_ownerObject;
@@ -374,12 +404,13 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
                     this.m_activeControls.target.set(x, y, z);
                 }
             } catch (_) { }
-        }
-    } else {
-        camera.m_controls.enabled = false;
-        this.m_activeControls = null;
-        if (isAttached) {
-            camera.userData.manualControl = false;
+        } else {
+            // Front/down cameras: no mouse orbital control in this view
+            ctrl.enabled = false;
+            this.m_activeControls = null;
+            if (isAttached) {
+                camera.userData.manualControl = false;
+            }
         }
     }
 
