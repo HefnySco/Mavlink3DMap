@@ -340,30 +340,30 @@ class C_View {
             const isFollowMe = controller && controller.m_camera_tag === 'followme';
             const owner = controller && controller.m_ownerObject;
             if (isFollowMe && owner && this.m_activeControls.target) {
-                // Preserve previous offset before target moves
+                // 1) Preserve offset BEFORE changing the target
+                let preservedOffset = null;
                 try {
                     const prevTarget = this.m_activeControls.target;
-                    if (!this.followOffset) {
-                        this.followOffset = new THREE.Vector3().subVectors(cam.position, prevTarget);
-                    } else {
-                        this.followOffset.copy(new THREE.Vector3().subVectors(cam.position, prevTarget));
-                    }
+                    preservedOffset = new THREE.Vector3().subVectors(cam.position, prevTarget);
+                    this.followOffset = preservedOffset.clone();
                 } catch (_) { }
 
+                // 2) Move target to the drone, and place camera once using preserved offset
                 const { x, y, z } = owner.fn_translateXYZ();
                 this.m_activeControls.target.set(x, y, z);
-
-                // Apply preserved offset so camera moves with the drone maintaining constant radius and angle
                 try {
-                    cam.position.set(x + this.followOffset.x, y + this.followOffset.y, z + this.followOffset.z);
+                    if (preservedOffset) {
+                        cam.position.set(x + preservedOffset.x, y + preservedOffset.y, z + preservedOffset.z);
+                    }
                 } catch (_) { }
             }
         }
+        // 3) Apply user input (rotate/zoom) once
         this.m_activeControls.update();
-        // After update, refresh stored offset for next frame (captures user rotate/zoom)
+        // 4) Refresh stored offset for next frame
         try {
-            if (this.followOffset && this.m_view_selected_camera && this.m_activeControls && this.m_activeControls.target) {
-                this.followOffset.copy(new THREE.Vector3().subVectors(this.m_view_selected_camera.position, this.m_activeControls.target));
+            if (this.m_activeControls && this.m_activeControls.target) {
+                this.followOffset = new THREE.Vector3().subVectors(this.m_view_selected_camera.position, this.m_activeControls.target);
             }
         } catch (_) { }
     }
