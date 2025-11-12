@@ -338,6 +338,14 @@ class c_ArduVehicles extends Vehicle {
                 Me.m_cameras.push(v_cam_follow_me);  // follow-me
             }
 
+            Me.fn_setBallThrower({
+                //offset: { x: 0, y: -0.1, z: 0 },
+                offset: { x: 0, y: 0.0, z: 0 },
+                velocity: { x: 0, y: 0, z: 0 },
+                radius: 0.2,
+                color: 0x5533ff
+            });
+              
             Me.fn_createCustom(p_obj, p_callbackfunc);
         });
     }
