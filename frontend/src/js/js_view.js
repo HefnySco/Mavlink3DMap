@@ -58,6 +58,10 @@ class C_View {
         // Per-view selected drone (set when user presses 1..9 while this view is active)
         this.selectedDroneId = null;
 
+        // Follow-me orbit defaults (distance constraints)
+        this.followMinDist = 1.0;
+        this.followMaxDist = 15.0;
+
 
         // Add CSS2DRenderer for this view
         this.labelRenderer = new CSS2DRenderer();
@@ -434,6 +438,11 @@ C_View.prototype.fn_setSelectedCamera = function (camera) {
             const ud = camera.userData;
             ud.manualControlRefs = (ud.manualControlRefs || 0) + 1;
             ud.manualControl = ud.manualControlRefs > 0;
+            // Configure follow-me constraints: no pan; rotate/zoom around moving drone target
+            try {
+                ctrl.enablePan = false;
+                if (typeof this.followMaxDist === 'number') ctrl.maxDistance = this.followMaxDist;
+            } catch (_) { }
             try {
                 const controller = camera.userData.m_ownerObject;
                 const owner = controller && controller.m_ownerObject;
