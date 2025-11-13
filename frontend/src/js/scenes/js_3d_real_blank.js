@@ -7,48 +7,18 @@ import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map
 import { ImageCache } from '../js_image_cache.js'
 import { Vehicle } from '../physical_objects/js_vehicle.js';
 import { Building } from '../physical_objects/Building.js';
+import { CBaseScene } from './js_base_scene.js';
 
 const PI_div_2 = Math.PI / 2;
 
-export class C3DMapScene {
+export class C3DMapScene extends CBaseScene {
     constructor(worldInstance, homeLat = _map_lat, homeLng = _map_lng) {
-        this.world = worldInstance;
-        this.tileRange = 2; // Number of tiles in each direction (e.g., 2 means 5x5 grid)
-        this.tiles = new Map(); // Map to store active tiles by their grid coordinates
-        this.droneId = null;
-        this.textureLoader = new THREE.TextureLoader();
+        super(worldInstance, { homeLat, homeLng, tileRange: 2 });
         this.mapboxAccessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
         this.zoomLevel = 14; // Lower zoom for larger tiles to reduce load; adjust as needed
-        this.homeLat = homeLat;
-        this.homeLng = homeLng;
-        const displacement = getInitialDisplacement();
-        this.displacementX = displacement.X;
-        this.displacementY = displacement.Y;
-
-        this.m_default_vehicle_sid = null;
-
-        this.refLat = null;
-        this.refLng = null;
-        this.refAlt = null;
-
         this.baseHeight = 0; // Will be set to terrain height at home
         this.heightScale = 1.0; // Controllable height exaggeration (resolution/scale factor)
         this.terrainResolution = 255; // Controllable mesh resolution (e.g., 255 for full, 127 for half)
-
-        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
-            if (vehicle.sid != this.m_default_vehicle_sid) return;
-            const { x, y, z } = vehicle.fn_translateXYZ();
-            p_me.updateTiles(x, -z); // Update tiles based on drone position
-        });
-
-        js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_HOME_CHANGED, this, async (p_me, { lat, lng, alt, vehicle }) => {
-            if (p_me.refLat === null) {
-                p_me.refLat = lat * 1E-7;  // Convert degE7 to deg
-                p_me.refLng = lng * 1E-7;
-                p_me.refAlt = alt;  // Convert mm to meters
-                await p_me.loadMapFromHome(lat, lng);  // Load map only once
-            }
-        });
     }
 
     // Setter to control height scale (exaggeration)
@@ -95,13 +65,7 @@ export class C3DMapScene {
         }
         this.tiles.clear();
 
-        // Remove existing car (if any) to avoid duplicates
-        if (this.droneId && this.world.fn_getRobot(this.droneId)) {
-            const robot = this.world.fn_getRobot(this.droneId);
-            this.world.v_scene.remove(robot.fn_getMesh());
-            this.world.fn_deleteRobot(this.droneId);
-            this.droneId = null;
-        }
+
 
         // Remove existing buildings and lights
         this.world.v_scene.children = this.world.v_scene.children.filter(child =>
@@ -109,10 +73,6 @@ export class C3DMapScene {
             !(child instanceof THREE.AmbientLight || child instanceof THREE.DirectionalLight) // Remove lights
         );
 
-        // Reinitialize scene with new car, buildings, and lights
-        this.droneId = 'car' + uuidv4();
-        this._addCar(this.droneId, vehicleX, vehicleY, 7);
-        this._addBuildings(vehicleX, vehicleY);
         this._addLights();
 
         // Update tiles around the vehicle's position
@@ -123,9 +83,6 @@ export class C3DMapScene {
     }
 
     init(p_XZero, p_YZero) {
-        this.droneId = 'car' + uuidv4();
-        this._addCar(this.droneId, p_XZero + 10, p_YZero, 7);
-        this._addBuildings(p_XZero, p_YZero);
         this._addLights();
         this.updateTiles(p_XZero + 10, p_YZero);
     }
@@ -418,41 +375,5 @@ export class C3DMapScene {
             this.world.fn_addRobot(p_id, c_robot);
             this.world.v_scene.add(c_robot.fn_getMesh());
         }).catch((e) => console.error('Car load failed', e));
-    }
-
-    _addBuildings(p_XZero, p_YZero) {
-        const c_buildings = [
-            [-160, -80], [-106, -120], [-160, -160],
-            [160, 200], [160, 240], [160, 280]
-        ];
-
-        for (const c_location of c_buildings) {
-            Building.create(this.world, {
-                url: './models/building1.json',
-                position: { x: p_XZero + c_location[0], y: 0.01, z: p_YZero + c_location[1] },
-                width: 8,
-                height: 12,
-                depth: null,
-                rotationY: 0
-            });
-        }
-
-        Building.create(this.world, {
-            url: './models/building2.json',
-            position: { x: 0.0, y: 0.0, z: p_YZero + 0 },
-            width: 10,
-            height: 15,
-            depth: null,
-            rotationY: 0
-        });
-    }
-
-    _addLights() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        this.world.v_scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        directionalLight.position.set(1, 1, 0.5);
-        this.world.v_scene.add(directionalLight);
     }
 }
