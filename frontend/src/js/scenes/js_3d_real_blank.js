@@ -82,8 +82,8 @@ export class C3DMapScene extends CBaseScene {
         this._adjustCameras(vehicleX, vehicleY);
     }
 
+    // override init
     init(p_XZero, p_YZero) {
-        this._addLights();
         this.updateTiles(p_XZero + 10, p_YZero);
     }
 

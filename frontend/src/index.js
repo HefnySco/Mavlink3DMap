@@ -60,28 +60,6 @@ async function initWorld() {
     return c_world;
 }
 
-// Initialize a sample vehicle (commented out as in original)
-function initVehicle(c_world) {
-    /*
-    const v_vehicle = new c_ArduVehicles();
-    v_vehicle.fn_createVehicle(1, true, null, () => {
-        v_vehicle.fn_setPosition(0, 0, 3);
-        v_vehicle.fn_castShadow(false);
-        c_world.v_scene.add(v_vehicle.fn_getMesh());
-        c_world.v_drone['x'] = v_vehicle;
-        c_world.fn_registerCamerasOfObject(v_vehicle);
-
-        v_vehicle.fn_switchTriggerOn = () => {
-            v_vehicle.m_trigger.fn_trigger(null, (v_threeObj, v_physicsObj) => {
-                c_world.v_physicsWorld.addRigidBody(v_physicsObj);
-                c_world.v_scene.add(v_threeObj);
-                c_world.v_rigidBodies.push(v_threeObj);
-            });
-        };
-    });
-    */
-}
-
 // Start the simulation
 function startSimulation(p_world) {
     p_world.fn_animate();
@@ -95,7 +73,6 @@ function startSimulation(p_world) {
 async function fn_on_ready() {
     try {
         const c_world = await initWorld();
-        initVehicle(c_world);
         startSimulation(c_world);
     } catch (error) {
         console.error("Error during simulation initialization:", error);

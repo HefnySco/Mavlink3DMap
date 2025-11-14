@@ -57,25 +57,6 @@ async function initWorld() {
     return c_world;
 }
 
-function initVehicle(p_world) {
-    // Sample add a plane here
-    // var v_vehicle = new c_ArduVehicles();
-    // v_vehicle.fn_createVehicle(1, true, null, function () {
-    //     v_vehicle.fn_setPosition(0, 0, 3);
-    //     v_vehicle.fn_castShadow(false);
-    //     c_world.v_scene.add(v_vehicle.fn_getMesh());
-    //     c_world.v_drone['x'] = v_vehicle;
-    //     c_world.fn_registerCamerasOfObject(v_vehicle);
-    //     v_vehicle.fn_switchTriggerOn = function () {
-    //         v_vehicle.m_trigger.fn_trigger(null, function (v_threeObj, v_physicsObj) {
-    //             c_world.v_physicsWorld.addRigidBody(v_physicsObj);
-    //             c_world.v_scene.add(v_threeObj);
-    //             c_world.v_rigidBodies.push(v_threeObj);
-    //         });
-    //     };
-    // });
-}
-
 function startSimulation(p_world) {
     p_world.fn_animate();
 
@@ -92,7 +73,6 @@ async function fn_on_ready() {
     // Ammo.js Initialization
     //await Ammo().then(() => {
     const c_world = await initWorld();
-    initVehicle(c_world);
     startSimulation(c_world);
     //});
 }

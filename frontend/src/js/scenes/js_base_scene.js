@@ -51,6 +51,7 @@ export class CBaseScene {
     }
 
     // Default init: spawn car, buildings, lights, and initial tiles
+    // called form c_world.m_scene_env.init(0, 0);
     init(p_XZero, p_YZero) {
         this.droneId = 'car' + uuidv4();
         this._addCar(this.droneId, p_XZero, p_YZero, 7);
@@ -78,7 +79,6 @@ export class CBaseScene {
         // Reinitialize scene with new car, buildings, and lights
         this.droneId = 'car' + uuidv4();
         this._addCar(this.droneId, vehicleX, vehicleY, 7);
-        this._addBuildings(vehicleX, vehicleY);
         this._addLights();
 
         if (typeof this.updateTiles === 'function') {
@@ -180,30 +180,20 @@ export class CBaseScene {
                 onLoaded: (obj) => this._registerObjects(obj, tag)
             });
         }
-
-        Building.create(this.world, {
-            url: './models/building2.json',
-            position: { x: 0.0, y: 0.0, z: p_YZero + 0 },
-            width: 10,
-            height: 15,
-            depth: null,
-            rotationY: 0,
-            tag,
-            onLoaded: (obj) => this._registerObjects(obj, tag)
-        });
     }
 
     _addLights() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
         this.world.v_scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        this.world.v_scene.add(directionalLight);
     }
 
     fn_onNewTileCreated(x, y) {
         if (typeof this._addBuildings === 'function') {
-            this._addBuildings(x, y);
+            const buildingsPerTile = import.meta.env.VITE_BUILDINGS_PER_TILE;
+            if (buildingsPerTile=== 'true')
+            {
+                this._addBuildings(x, y);
+            }
         }
     }
 
