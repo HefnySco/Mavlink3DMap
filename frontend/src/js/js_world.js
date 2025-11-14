@@ -335,6 +335,16 @@ class C_World {
                 vehicle.fn_changeScaleByDelta(+2, +2, +2);
             }
         }
+        // Handle key '0' => switch to world camera and clear selection
+        else if (event.keyCode === 48) { /* 0 */
+            if (this.v_selectedView) {
+                try { this.v_selectedView.fn_selectWorldCamera(); } catch (_) { }
+                this.v_selectedView.selectedDroneId = null;
+                this.v_selectedView.v_droneIndex = 0;
+                try { this.v_selectedView.fn_displayMessage('<b>Camera:</b> World', 1000); } catch (_) { }
+            }
+            return;
+        }
         // Handle number keys 1-9 (keyCodes 49 to 57)
         else if (event.keyCode >= 49 && event.keyCode <= 57) {
             const drone_index = event.keyCode - 49; // Convert keyCode to 0-based index (49='1', 50='2', etc.)
@@ -344,8 +354,15 @@ class C_World {
                 return;
             }
 
-            this.v_selectedView.fn_selectWorldCamera();
             const chosenId = vehicleIds[drone_index];
+            if (this.v_selectedView) {
+                if (this.v_selectedView.selectedDroneId === chosenId) {
+                    this.v_selectedView.fn_iterateAttachedCameras();
+                    return;
+                }
+            }
+
+            this.v_selectedView.fn_selectWorldCamera();
             // Set selection on the active view (per-view selection)
             if (this.v_selectedView) {
                 this.v_selectedView.selectedDroneId = chosenId;

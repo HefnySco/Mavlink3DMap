@@ -175,6 +175,41 @@ class C_View {
         this.fn_setSelectedCamera(this.m_main_camera);
     }
 
+    fn_iterateAttachedCameras() {
+        const allCams = this.m_world.m_objects_attached_cameras;
+        const c_keyLength = allCams.length;
+        if (c_keyLength == 0) return;
+
+        // Build the list to cycle: either cameras of selected drone, or all
+        let cycleList = allCams;
+        const selectedId = this.selectedDroneId;
+        if (selectedId && this.m_world.v_drone && this.m_world.v_drone[selectedId]) {
+            const selectedVehicle = this.m_world.v_drone[selectedId];
+            cycleList = allCams.filter(ctrl => ctrl && ctrl.m_ownerObject === selectedVehicle);
+            if (cycleList.length === 0) cycleList = allCams; // fallback if no attached cams found
+        }
+
+        this.v_droneIndex = (this.v_droneIndex - 1);
+        if (this.v_droneIndex < 0) this.v_droneIndex = cycleList.length - 1;
+        {
+            const ctrl = cycleList[this.v_droneIndex];
+            if (ctrl.m_cameraThree != null) {
+                this.fn_setSelectedCamera(ctrl.m_cameraThree);
+            } else {
+                this.fn_setSelectedCamera(ctrl);
+            }
+            try {
+                const cam = this.m_view_selected_camera;
+                if (cam === this.m_main_camera) {
+                    this.fn_displayMessage('<b>Camera:</b> World', 1000);
+                } else {
+                    const tag = cam?.userData?.m_ownerObject?.m_camera_tag || 'attached';
+                    this.fn_displayMessage(`<b>Drone:</b>${this.selectedDroneId}<b>   Camera:</b>${tag}`, 1000);
+                }
+            } catch (_) { }
+        }
+    }
+
     fn_handleCameraSwitch(event) {
 
         const speed = 0.5; // Adjust this for faster/slower movement
@@ -243,29 +278,6 @@ class C_View {
                 }
                 break;
 
-            case 80: /*P*/
-                if (cycleList.length === 0) break;
-                this.v_droneIndex = (this.v_droneIndex - 1);
-                if (this.v_droneIndex < 0) this.v_droneIndex = cycleList.length - 1;
-                {
-                    const ctrl = cycleList[this.v_droneIndex];
-                    if (ctrl.m_cameraThree != null) {
-                        this.fn_setSelectedCamera(ctrl.m_cameraThree);
-                    } else {
-                        this.fn_setSelectedCamera(ctrl);
-                    }
-                    try {
-                        const cam = this.m_view_selected_camera;
-                        if (cam === this.m_main_camera) {
-                            this.fn_displayMessage('<b>Camera:</b> World', 1000);
-                        } else {
-                            const tag = cam?.userData?.m_ownerObject?.m_camera_tag || 'attached';
-                            this.fn_displayMessage(`<b>Drone:</b>${this.selectedDroneId}<b>   Camera:</b>${tag}`, 1000);
-                        }
-                    } catch (_) { }
-                }
-                break;
-
             case 81: /*Q*/
                 if (this.m_view_selected_camera === this.m_main_camera) {
                     this.m_main_camera.position.set(5, 5, 0);
@@ -309,87 +321,87 @@ class C_View {
 
     // Render method (call this per frame from C_World.fn_animate)
     fn_render() {
-    if (!this.renderer) {
-        console.error('Renderer is undefined in C_View.fn_render');
-        return;
-    }
-
-    const canvas = this.m_canvas;
-    const container = canvas.parentNode;
-
-    // Set viewport and scissor for WebGL
-    const width = canvas.clientWidth * window.devicePixelRatio;
-    const height = canvas.clientHeight * window.devicePixelRatio;
-    this.renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
-    this.renderer.setScissor(0, 0, canvas.clientWidth, canvas.clientHeight);
-    this.renderer.setScissorTest(true);
-
-    // Resize if needed
-    if (this.fn_resizeRendererToDisplaySize()) {
-        this.m_view_selected_camera.aspect = canvas.clientWidth / canvas.clientHeight;
-        this.m_view_selected_camera.updateProjectionMatrix();
-        this.labelRenderer.setSize(container.clientWidth, container.clientHeight);
-    }
-
-    // Render WebGL scene
-    if (this.m_activeControls && this.m_activeControls.update) {
-        // If follow-me attached camera is selected, keep orbit center locked to the drone
-        const cam = this.m_view_selected_camera;
-        if (cam && cam.userData && cam.userData.m_ownerObject) {
-            const controller = cam.userData.m_ownerObject;
-            const isFollowMe = controller && controller.m_camera_tag === 'followme';
-            const owner = controller && controller.m_ownerObject;
-            if (isFollowMe && owner && this.m_activeControls.target) {
-                // 1) Preserve offset BEFORE changing the target
-                let preservedOffset = null;
-                try {
-                    const prevTarget = this.m_activeControls.target;
-                    preservedOffset = new THREE.Vector3().subVectors(cam.position, prevTarget);
-                    this.followOffset = preservedOffset.clone();
-                } catch (_) { }
-
-                // 2) Move target to the drone, and place camera once using preserved offset
-                const { x, y, z } = owner.fn_translateXYZ();
-                this.m_activeControls.target.set(x, y, z);
-                try {
-                    if (preservedOffset) {
-                        cam.position.set(x + preservedOffset.x, y + preservedOffset.y, z + preservedOffset.z);
-                    }
-                } catch (_) { }
-            }
+        if (!this.renderer) {
+            console.error('Renderer is undefined in C_View.fn_render');
+            return;
         }
-        // 3) Apply user input (rotate/zoom) once
-        this.m_activeControls.update();
-        // 4) Refresh stored offset for next frame
-        try {
-            if (this.m_activeControls && this.m_activeControls.target) {
-                this.followOffset = new THREE.Vector3().subVectors(this.m_view_selected_camera.position, this.m_activeControls.target);
+
+        const canvas = this.m_canvas;
+        const container = canvas.parentNode;
+
+        // Set viewport and scissor for WebGL
+        const width = canvas.clientWidth * window.devicePixelRatio;
+        const height = canvas.clientHeight * window.devicePixelRatio;
+        this.renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+        this.renderer.setScissor(0, 0, canvas.clientWidth, canvas.clientHeight);
+        this.renderer.setScissorTest(true);
+
+        // Resize if needed
+        if (this.fn_resizeRendererToDisplaySize()) {
+            this.m_view_selected_camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            this.m_view_selected_camera.updateProjectionMatrix();
+            this.labelRenderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Render WebGL scene
+        if (this.m_activeControls && this.m_activeControls.update) {
+            // If follow-me attached camera is selected, keep orbit center locked to the drone
+            const cam = this.m_view_selected_camera;
+            if (cam && cam.userData && cam.userData.m_ownerObject) {
+                const controller = cam.userData.m_ownerObject;
+                const isFollowMe = controller && controller.m_camera_tag === 'followme';
+                const owner = controller && controller.m_ownerObject;
+                if (isFollowMe && owner && this.m_activeControls.target) {
+                    // 1) Preserve offset BEFORE changing the target
+                    let preservedOffset = null;
+                    try {
+                        const prevTarget = this.m_activeControls.target;
+                        preservedOffset = new THREE.Vector3().subVectors(cam.position, prevTarget);
+                        this.followOffset = preservedOffset.clone();
+                    } catch (_) { }
+
+                    // 2) Move target to the drone, and place camera once using preserved offset
+                    const { x, y, z } = owner.fn_translateXYZ();
+                    this.m_activeControls.target.set(x, y, z);
+                    try {
+                        if (preservedOffset) {
+                            cam.position.set(x + preservedOffset.x, y + preservedOffset.y, z + preservedOffset.z);
+                        }
+                    } catch (_) { }
+                }
             }
-        } catch (_) { }
+            // 3) Apply user input (rotate/zoom) once
+            this.m_activeControls.update();
+            // 4) Refresh stored offset for next frame
+            try {
+                if (this.m_activeControls && this.m_activeControls.target) {
+                    this.followOffset = new THREE.Vector3().subVectors(this.m_view_selected_camera.position, this.m_activeControls.target);
+                }
+            } catch (_) { }
+        }
+        this.renderer.render(this.m_world.v_scene, this.m_view_selected_camera);
+
+        // Render CSS2D labels
+        this.labelRenderer.render(this.m_world.v_scene, this.m_view_selected_camera);
+
+        this.v_context.drawImage(this.renderer.domElement, 0, 0);
+
+        this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, this.m_world.m_global_camera_helper);
+
+        // Stream if enabled
+        this.m_skip++;
+        if (this.m_skip % this.sendInterval === 0 && this.isStreamable && this.ws?.readyState === WebSocket.OPEN) {
+            this.v_context.canvas.toBlob((blob) => {
+                if (blob) {
+                    const reader = new FileReader();
+                    reader.onload = () => this.ws.send(reader.result);
+                    reader.readAsArrayBuffer(blob);
+                }
+            }, 'image/jpeg', 0.8);
+        }
+
+        this.renderer.setScissorTest(false);
     }
-    this.renderer.render(this.m_world.v_scene, this.m_view_selected_camera);
-
-    // Render CSS2D labels
-    this.labelRenderer.render(this.m_world.v_scene, this.m_view_selected_camera);
-
-    this.v_context.drawImage(this.renderer.domElement, 0, 0);
-
-    this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, this.m_world.m_global_camera_helper);
-
-    // Stream if enabled
-    this.m_skip++;
-    if (this.m_skip % this.sendInterval === 0 && this.isStreamable && this.ws?.readyState === WebSocket.OPEN) {
-        this.v_context.canvas.toBlob((blob) => {
-            if (blob) {
-                const reader = new FileReader();
-                reader.onload = () => this.ws.send(reader.result);
-                reader.readAsArrayBuffer(blob);
-            }
-        }, 'image/jpeg', 0.8);
-    }
-
-    this.renderer.setScissorTest(false);
-}
 }
 
 // Enable OrbitControls for the selected camera and disable them for the previously selected one
