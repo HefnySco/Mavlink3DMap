@@ -29,45 +29,51 @@
     </style>
     <link rel="stylesheet" href="/src/css/styles.css">
 </head>
-<body>
+  <body>
     <main style="max-width: 900px; margin: 40px auto; padding: 0 16px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; line-height: 1.5;">
-        <div class="top-row">
-            <div class="left-col">
-                <h1 style="margin: 0 0 12px;">Mavlink 3D Map</h1>
-                <p style="margin: 0 0 24px; color: #555;">Choose a demo layout:</p>
-                <ul class="demo-links">
-                    <li><a href="./index_4w_map_box.html">4 views — Mapbox world</a></li>
-                    <li><a href="./index_4w_real_map.html">4 views — Real map world</a></li>
-                    <li><a href="./index_4w.html">4 views — Green/grass world</a></li>
-                </ul>
-            </div>
-            <img id="app-logo" src="/app_logo.png" alt="App Logo" />
+      <div class="top-row">
+        <div class="left-col">
+          <h1 style="margin: 0 0 12px;">Mavlink 3D Map</h1>
+          <p style="margin: 0 0 24px; color: #555;">Choose a demo layout:</p>
+          <ul class="demo-links">
+            <li><a href="./index_4w_map_box.html">4 views — Mapbox world</a></li>
+            <li><a href="./index_4w_real_map.html">4 views — Real map world</a></li>
+            <li><a href="./index_4w.html">4 views — Green/grass world</a></li>
+          </ul>
         </div>
+        <img id="app-logo" src="/app_logo.png" alt="App Logo" />
+      </div>
 
-        <section style="margin: 28px 0;">
-            <h2 style="margin: 0 0 8px; font-size: 1.25rem;">How to run</h2>
-            <div>
-                <p style="margin: 0 0 6px;">From the repository root (monorepo):</p>
-                <pre style="background:#3881ca; padding:12px; border-radius:6px; overflow:auto; margin: 8px 0 0;">npm start   # backend UDP bridge + frontend
-# or
-npm run devall   # adds camera streaming pipeline</pre>
-                <p style="margin: 16px 0 6px;">Frontend-only (inside <code>frontend</code>):</p>
-                <pre style="background:#3881ca; padding:12px; border-radius:6px; overflow:auto; margin: 8px 0 0;">npm run dev      # Vite dev server
-npm run preview  # Vite preview (after build)</pre>
-            </div>
-        </section>
-  
-        <section style="margin: 28px 0;">
-            <h2 style="margin: 0 0 8px; font-size: 1.25rem;">Keyboard shortcuts</h2>
-            <div>
-                <div id="shortcuts_list" style="margin: 0 0 12px 20px;"></div>
-            </div>
-        </section>
+      <section style="margin: 28px 0;">
+        <h2 style="margin: 0 0 8px; font-size: 1.25rem;">How to run</h2>
+        <div>
+          <p style="margin: 0 0 6px;">Using the published package (no install):</p>
+          <pre style="background:#3881ca; padding:12px; border-radius:6px; overflow:auto; margin: 8px 0 0;">npx mavlink3dmap serve -p 8080
+npx mavlink3dmap udp2ws --udp-port 16450
+# Linux-only streaming
+npx mavlink3dmap stream
+# All-in-one
+npx mavlink3dmap up --port 8080 --udp-port 16450 --stream
+# Query Video Device Number
+npx mavlink3dmap video-number</pre>
+          <p style="margin: 16px 0 6px;">Monorepo development shortcuts:</p>
+          <pre style="background:#44d33f; padding:12px; border-radius:6px; overflow:auto; margin: 8px 0 0;">npm run dev         # backend UDP bridge + frontend dev server
+npm run devall      # adds camera streaming pipeline (Linux)
+npm run start:web   # preview built frontend</pre>
+        </div>
+      </section>
+
+      <section style="margin: 28px 0;">
+        <h2 style="margin: 0 0 8px; font-size: 1.25rem;">Keyboard shortcuts</h2>
+        <div>
+          <div id="shortcuts_list" style="margin: 0 0 12px 20px;"></div>
+        </div>
+      </section>
     </main>
     <script type="module">
-        import { HELP_SHORTCUTS_HTML } from '/src/js/help_text.js';
-        const el = document.getElementById('shortcuts_list');
-        if (el) el.innerHTML = HELP_SHORTCUTS_HTML;
+      import { HELP_SHORTCUTS_HTML } from '/src/js/help_text.js';
+      const el = document.getElementById('shortcuts_list');
+      if (el) el.innerHTML = HELP_SHORTCUTS_HTML;
     </script>
-</body>
+  </body>
 </html>

@@ -70,8 +70,8 @@ program
         console.error("--stream is Linux-only");
         return;
       }
-      const cmd = `TARGET_LABEL=SIM-CAM1; DEV=$(grep -l "^$TARGET_LABEL$" /sys/class/video4linux/*/name 2>/dev/null | head -n 1 | sed -E "s#.*/(video[0-9]+)/name#\\1#"); if [ -z "$DEV" ]; then echo "Error: Device with label $TARGET_LABEL not found"; exit 1; fi; VIDEO_DEVICE="/dev/$DEV"; node ./src/websocket_streaming.js | ffmpeg -framerate 30 -f image2pipe -vcodec mjpeg -s 940x486 -i - -pix_fmt yuv420p -f v4l2 "$VIDEO_DEVICE"`;
-      spawn("sh", ["-c", cmd], { stdio: "inherit", cwd: path.resolve(__dirname, "..") });
+      // Reuse the same streaming pipeline as the backend dev:stream script
+      spawn("npm", ["run", "dev:stream"], { stdio: "inherit", cwd: path.resolve(__dirname, "..") });
     }
   });
 

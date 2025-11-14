@@ -14,6 +14,7 @@
     "start:web": "npm run -w frontend preview",
     "start:udp": "npm run -w backend dev:udp",
     "start:stream:linux": "node -e \"if (process.platform!=='linux'){console.error('Error: streaming is Linux-only');process.exit(1)}\" && npm run -w backend dev:stream",
-    "serve": "npm run build && npm run -w frontend preview"
+    "serve": "npm run build && npm run -w frontend preview",
+    "video-number": "npm run -w backend video-number"
   }
 }

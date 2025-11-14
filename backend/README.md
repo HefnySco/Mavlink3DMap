@@ -5,21 +5,24 @@ Single-package CLI that serves the MAVLink 3D Map web UI, runs the UDP→WebSock
 ## Install
 
 - npx (no install):
-  - `npx mavlink3dmap mav3d serve -p 8080`
+  - `npx mavlink3dmap up --port 8080 --udp-port 16450`
+  - `npx mavlink3dmap serve -p 8080`
 - or global:
   - `npm i -g mavlink3dmap`
 
 ## Commands
 
-- `mav3d serve [-p 8080]`
+- `npx mavlink3dmap serve [-p 8080]`
   - Serves the built web UI (default port 8080)
-- `mav3d udp2ws [--udp-port 16450]`
+- `npx mavlink3dmap udp2ws [--udp-port 16450]`
   - Runs the UDP→WebSocket bridge (websocket at 8811)
-- `mav3d stream`
+- `npx mavlink3dmap stream`
   - Linux only. Starts streaming WS (8081) and pipes frames to v4l2loopback via ffmpeg
   - First time, create the virtual device: `sudo bash backend/src/create_virtual_video_linux.sh`
-- `mav3d up [--port 8080] [--udp-port 16450] [--stream]`
+- `npx mavlink3dmap up [--port 8080] [--udp-port 16450] [--stream]`
   - Starts web UI and UDP bridge together; with `--stream` also starts streaming on Linux.
+
+Aliases (after global install): you can use `mav3d ...` instead of `npx mavlink3dmap ...`.
 
 ## Ports
 
