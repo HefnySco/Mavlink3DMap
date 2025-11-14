@@ -6,6 +6,9 @@
 
 This project provides a bridge between a Software-In-The-Loop (SITL) simulator (e.g., ArduPilot SITL) and a web-based 3D visualization tool. It enables real-time rendering of MAVLink-enabled vehicles (drones, planes, VTOLs) in a 3D environment using Three.js for graphics, Ammo.js for physics, and MAVLink for telemetry parsing. The bridge converts UDP packets from the simulator to WebSocket messages for the browser, allowing interactive 3D maps with optional real-world terrain (via Mapbox or Three-Geo).
 
+
+[![Mavlink3DMap Demo](https://img.youtube.com/vi/bCMPW9wn-Js/0.jpg)](https://youtu.be/bCMPW9wn-Js)
+
 The visualization supports multiple vehicle types, camera views, physics simulations, and dynamic terrain loading based on vehicle position.
 
 ## Documentation
@@ -13,178 +16,357 @@ The visualization supports multiple vehicle types, camera views, physics simulat
 - Project Wiki: [wiki/](wiki/)  
   This folder contains developer and user docs. Link here stays stable as docs evolve.
 
+# Mavlink3DMap
+
+Mavlink3DMap is a Node.js‑based tool for visualizing MAVLink telemetry on an interactive 3D map in the browser.  
+It provides:
+
+- **Backend**: Bridges MAVLink data received over UDP into WebSocket streams.
+- **Frontend**: A WebGL/3D scene that renders the vehicle and environment in real time.
+- **SITL Helpers**: Convenience scripts for running ArduPilot SITL (plane / quad / VTOL) with preconfigured parameters.
+
+> This README describes the project based on the current repository structure and script names.  
+> If your local setup differs, adjust paths/commands accordingly.
+
+---
+
 ## Features
 
-- **UDP to WebSocket Bridge**: Bi-directional communication between UDP (from SITL) and WebSocket (for the browser).
-- **MAVLink Parsing**: Handles MAVLink v2 messages (e.g., HEARTBEAT, ATTITUDE, LOCAL_POSITION_NED, RC_CHANNELS, SERVO_OUTPUT_RAW).
-- **3D Rendering**: Uses Three.js to render vehicles, scenes, and cameras in multiple canvas views.
-- **Physics Simulation**: Integrates Ammo.js for rigid body physics, collisions, and breakable objects.
-- **Vehicle Support**: Custom models for quadcopters (X/Plus frames), planes, VTOL planes, and unknown types.
-- **Camera Controls**: Multiple attachable cameras with switching (e.g., via keys: P/O for switch, W/A/S/D/Q/E/R for adjustments).
-- **Dynamic Maps**: 
-  - Green grass scene.
-  - Real map integration with Three-Geo (DEM-based terrain).
-  - Mapbox satellite imagery for tiled ground textures.
-- **Event System**: Custom event emitter for vehicle position changes and other updates.
-- **Simulation Extras**: Animated objects (e.g., cars, buildings), lights, and shadows.
-- **Modular Architecture**: Separate modules for world, views, vehicles, physics, and communication.
+- **UDP → WebSocket bridge**  
+  - Backend listens to MAVLink‑compatible UDP telemetry.
+  - Forwards selected data to browser clients via WebSocket.
 
-## Quickstart (Monorepo)
+- **3D visualization in the browser**  
+  - Frontend uses JavaScript 3D scenes (under `frontend/src/js/scenes`) to render:
+    - Vehicle attitude and position.
+    - World reference / environment objects (depending on chosen scene).
 
-This repo is a monorepo with `frontend` and `backend` workspaces. Use the root scripts:
+- **Multiple scenes / views**  
+  - Modular scene files in `frontend/src/js/scenes`.
+  - View controller in `frontend/src/js/js_view.js`.
+  - World / environment logic in `frontend/src/js/js_world.js`.
 
-```bash
-npm install
+- **Streaming utilities**  
+  - `backend/src/udp2websocket.js`: Bridge for UDP → WebSocket.
+  - `backend/src/websocket_streaming.js`: Manages streaming data to clients.
 
-# Start UDP bridge + frontend (no camera stream)
-npm run dev
+- **SITL integration helpers**  
+  - Root scripts like:
+    - `runSITLPlane.sh`
+    - `runSITLQuad.sh`
+  - Parameter files:
+    - `VTOL_TRI.parm`
+    - `quadPlus_2.parm`
 
-# Start UDP bridge + camera streaming pipeline + frontend
-npm run devall
+- **Simple local run scripts**  
+  - `run_web.sh` to start the web frontend.
+  - `run.sh` as a generic entry point (depending on how you use it).
+
+---
+
+## Project Structure
+
+High‑level overview:
+
+```text
+.
+├── backend/
+│   ├── public/
+│   ├── scripts/
+│   │   └── prepack.js
+│   ├── src/
+│   │   ├── cli.js
+│   │   ├── mavlink.js
+│   │   ├── udp2websocket.js
+│   │   └── websocket_streaming.js
+│   └── package.json   (backend dependencies)
+├── frontend/
+│   ├── public/
+│   │   ├── models/
+│   │   ├── app_logo.png
+│   │   └── favicon.ico
+│   ├── src/
+│   │   ├── index.js
+│   │   ├── index_4w.js
+│   │   ├── css/
+│   │   ├── js/
+│   │   │   ├── js_view.js
+│   │   │   ├── js_world.js
+│   │   │   └── scenes/
+│   │   │       └── ... (3D scene definitions)
+│   │   └── textures/
+│   ├── index.html
+│   └── package.json   (frontend dependencies, if present)
+├── resources/
+│   ├── app_logo.png
+│   └── fav.ico
+├── wiki/
+│   ├── DEV_DATAFLOW.md
+│   └── SCENES_GUIDE.md
+├── run.sh
+├── run_web.sh
+├── runSITLPlane.sh
+├── runSITLQuad.sh
+├── VTOL_TRI.parm
+├── quadPlus_2.parm
+└── package.json       (root metadata / scripts)
 ```
 
-Notes:
-- `dev` launches `backend` UDP bridge and the `frontend` dev server.
-- `devall` also launches the streaming pipeline: `websocket_streaming.js | ffmpeg` to a virtual video device (Linux).
+Key pieces:
+
+- **Backend** (`backend/src`): MAVLink parsing and streaming utilities.
+- **Frontend** (`frontend/src`): 3D visualization logic and UI.
+- **Wiki** (`wiki/`): Additional developer documentation (dataflow, scenes).
+- **Scripts** (root): Helper scripts for running SITL and the web server.
+
+---
 
 ## Requirements
 
-- **Node.js**: v12+ (for running the UDP-WebSocket bridge).
-- **Browser**: Modern browser with WebGL support (e.g., Chrome, Firefox).
-- **Dependencies**:
-  - Three.js (included via imports).
-  - Ammo.js (for physics; loaded asynchronously).
-  - UUID (for unique IDs).
-  - Commander (for CLI options in bridge).
-  - WS (WebSocket server).
-  - Dgram (UDP handling).
-  - Other libs: jQuery, ConvexHull, etc. (bundled in the JS files).
-- **Optional**: Mapbox access token for satellite maps (set in `js_map_box_scene.js`).
-- **SITL Simulator**: ArduPilot SITL or similar, configured to send UDP telemetry.
+- **OS**: Linux (scripts are `.sh` and project is developed/tested on Linux).
+- **Node.js**: LTS version (e.g. 18.x or later).
+- **npm** or **yarn**.
+- **MAVLink data source**:
+  - ArduPilot SITL or a real autopilot streaming MAVLink over UDP.
 
-For camera streaming on Linux, ensure:
-- `ffmpeg` is installed.
-- A virtual video device exists (e.g., via `v4l2loopback`). The backend auto-detects the first device under `/sys/devices/virtual/video4linux/`.
+---
 
-## Installation
+## Using via npm (CLI)
 
-1. Clone the repository:
+You can run Mavlink3DMap without cloning the repository by using the published npm package `mavlink3dmap`.  
+This single CLI package can:
+
+- Serve the web UI
+- Run the UDP → WebSocket bridge
+- (Linux only) Stream video frames to a `v4l2loopback` virtual camera via `ffmpeg`
+
+### Quick usage (no install)
+
+Use `npx` to run directly:
+
+```bash
+# Start everything: web UI + UDP→WS bridge
+npx mavlink3dmap up --port 8080 --udp-port 16450
+
+# Serve the built web UI only
+npx mavlink3dmap serve -p 8080
+
+# Run only the UDP→WebSocket bridge (WS on 8811)
+npx mavlink3dmap udp2ws --udp-port 16450
+```
+
+### Install globally
+
+```bash
+npm i -g mavlink3dmap
+```
+
+### Usage
+
+```bash
+# Start everything: web UI + UDP→WS bridge
+mavlink3dmap up --port 8080 --udp-port 16450
+
+# Serve the built web UI only
+mavlink3dmap serve -p 8080
+
+# Run only the UDP→WebSocket bridge (WS on 8811)
+mavlink3dmap udp2ws --udp-port 16450
+```
+
+---
+
+## Code Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/HefnySco/Mavlink3DMap.git
+cd Mavlink3DMap
+```
+
+### 2. Install backend dependencies
+
+If the backend has its own `package.json`:
+
+```bash
+cd backend
+npm install
+# or
+yarn install
+```
+
+### 3. Install frontend dependencies
+
+If the frontend has its own `package.json`:
+
+```bash
+cd ../frontend
+npm install
+# or
+yarn install
+```
+
+If there is a root‑level dependency setup, follow the scripts defined in the root `package.json`.
+
+---
+
+## Running the Backend
+
+The backend typically:
+
+- Listens on a UDP port for MAVLink telemetry.
+- Opens a WebSocket server for browser clients.
+
+From the `backend` directory (or using root scripts if provided):
+
+```bash
+cd backend
+npm start
+# or a specific script, e.g.
+# node src/udp2websocket.js
+# node src/websocket_streaming.js
+```
+
+Check `backend/package.json` for the exact script names (`start`, `dev`, etc.), and adjust the command accordingly.
+
+Configuration such as UDP port and WebSocket port is usually defined either:
+
+- In environment variables, or  
+- In the backend source files (e.g. `udp2websocket.js`, `websocket_streaming.js`).
+
+---
+
+## Running the Frontend
+
+From the `frontend` directory:
+
+```bash
+cd frontend
+npm start
+# or
+npm run dev
+# or
+npm run build && npm run serve
+```
+
+Refer to `frontend/package.json` for the exact commands.
+
+Alternatively, you may use the provided root script (if configured that way):
+
+```bash
+cd <project-root>
+./run_web.sh
+```
+
+This script typically:
+
+- Builds/serves the frontend.
+- Optionally starts a static server.
+
+---
+
+## Using with SITL (ArduPilot)
+
+The repository includes convenience scripts and parameter files for SITL:
+
+- **Scripts**:
+  - `runSITLPlane.sh`
+  - `runSITLQuad.sh`
+
+- **Parameter files**:
+  - `VTOL_TRI.parm`
+  - `quadPlus_2.parm`
+
+A typical workflow:
+
+1. **Start SITL** with one of the provided scripts:
+
    ```bash
-   git clone https://github.com/HefnySco/MAVLink-3D-Visualizer.git
-   cd MAVLink-3D-Visualizer
+   ./runSITLPlane.sh
+   # or
+   ./runSITLQuad.sh
    ```
 
-2. Install dependencies (root workspaces):
-   ```bash
-   npm install
-   ```
+2. **Ensure SITL is configured** to stream MAVLink telemetry to the UDP port expected by `udp2websocket.js`.
 
-3. (Optional) For Mapbox integration, replace the placeholder access token in `js_map_box_scene.js` with your own:
-   ```javascript
-   this.mapboxAccessToken = 'your-mapbox-token-here';
-   ```
-   Get a free token from [Mapbox](https://account.mapbox.com/access-tokens/).
+3. **Start the backend** (UDP → WebSocket bridge).
 
-   Alternatively, you can store the token in a frontend `.env` file (preferred):
-   - Create `frontend/.env` with:
-     ```env
-     VITE_MAPBOX_ACCESS_TOKEN=your-mapbox-token-here
-     ```
-   - The frontend reads it via `import.meta.env.VITE_MAPBOX_ACCESS_TOKEN` (used by scenes like `js_map_box_scene.js` and `js_3d_real_blank.js`).
+4. **Start the frontend** and open it in a browser.
 
-4. Ensure models and assets are in place (e.g., JSON models in `./models/vehicles/`).
+If needed, adjust SITL parameters and UDP endpoints so that the backend receives the telemetry.
 
-## Usage
+---
 
-### Map Modes
+## Frontend Scenes and Views
 
-- **Continuous tiles (Mapbox)**: `frontend/index_4w_map_box.html`
-  - Satellite imagery tiles for continuous map coverage.
-- **3D mapping (DEM terrain)**: `frontend/index_4w_real_map.html`
-  - Real-world elevation and 3D terrain.
-- **Custom images**: `frontend/index_4w.html`
-  - Use your own ground image as the map background.
+The 3D visualization is broken into several components:
 
-### Running the UDP-WebSocket Bridge
+- `frontend/src/js/js_view.js`  
+  Manages overall view logic, initializing the renderer, handling WebSocket connections, and orchestrating scenes.
 
-The bridge listens for UDP packets from the SITL simulator and forwards them via WebSocket to the browser.
+- `frontend/src/js/js_world.js`  
+  Contains world/environment‑level objects (ground, axes, skybox, etc., depending on scene implementation).
 
-1. Start the bridge:
-   ```bash
-   node udp2websocket.js --udp_target_port 16450
-   ```
-   - `--udp_target_port`: UDP port for SITL (default: 16450).
-   - WebSocket listens on `ws://127.0.0.1:8811` (configurable in `udp2websocket.js`).
+- `frontend/src/js/scenes/`  
+  Contains specific 3D scene definitions. Each file typically:
+  - Sets up cameras, lights, and meshes.
+  - Defines update loops for vehicle pose and telemetry.
 
-2. Configure your SITL simulator (e.g., ArduPilot):
-   - Set UDP output to `127.0.0.1:16450` (or the bridge's UDP port).
-   - Example: Run ArduPilot SITL with `sim_vehicle.py --console --map` and enable UDP telemetry.
+For more details, consult:
 
-### Running the Web Visualizer
+- `wiki/DEV_DATAFLOW.md` – data flow and architecture.
+- `wiki/SCENES_GUIDE.md` – information about each scene and how to add new ones.
 
-1. Open `index_4w_map_box.html` in a browser (or serve it via a local server for better performance):
-   ```bash
-   # Using Python's simple server
-   python -m http.server 8000
-   ```
-   Then visit `http://localhost:8000/index_4w_map_box.html`.
+---
 
-2. URL Parameters (optional):
-   - `?sceneType=greengrass`: Use a simple grass scene.
-   - `?sceneType=realmap`: Use DEM-based real map (requires Three-Geo).
-   - `?sceneType=map_box`: Use Mapbox satellite tiles (default).
-   - `?lat=30.3632621&lng=30.165230`: Set initial map center (for real maps).
-   - `?vtol=true`: Enable VTOL plane mode.
+## Development Notes
 
-3. Controls:
-   - **F1**: Toggle help dialog.
-   - **P/O**: Switch between cameras.
-   - **W/A/S/D/Q/E**: Adjust camera orientation (for vehicle-attached cameras).
-   - **R**: Reset camera view.
-   - Mouse: Orbit controls for free cameras.
-   - Double-click canvas: Download screenshot.
+- **Code style**:
+  - Plain JavaScript in both frontend and backend.
+  - Scenes are modular under `frontend/src/js/scenes`.
 
-### How It Works
+- **Extending the viewer**:
+  - Add new scenes under `frontend/src/js/scenes`.
+  - Add new telemetry fields into `mavlink.js` and forward them via `websocket_streaming.js` and frontend WebSocket handlers.
+  - Modify `js_view.js` / `js_world.js` to integrate new visual elements.
 
-- **Bridge (`udp2websocket.js`, `websocket.js`, `udpclient.js`)**: Converts UDP MAVLink packets to WebSocket binary messages and vice versa.
-- **Web Client (`index_4w.js`, `js_websocket.js`)**: Connects to WebSocket, parses MAVLink, updates vehicle positions/rotations.
-- **3D World (`js_world.js`, `js_view.js`)**: Manages Three.js scene, multiple canvas views, physics loop.
-- **Vehicles (`js_arduVehicles.js`, `js_vehicle.js`)**: Loads JSON models, handles RC/servo inputs, animations.
-- **Physics (`js_physicsObject.js`)**: Creates rigid bodies, handles collisions/breakables.
-- **Scenes (`js_real_map.js`, `js_map_box_scene.js`, `js_green_scene.js`)**: Dynamic terrain loading, Mapbox tiles, or simple grass.
-- **Cameras (`js_camera.js`)**: Attachable cameras with independent rotations.
+- **Logging & debugging**:
+  - Use browser DevTools for frontend console logs and network/WebSocket inspection.
+  - Use `console.log` (or your logger of choice) in backend scripts for telemetry and connection debugging.
 
-Vehicles appear dynamically based on MAVLink HEARTBEAT messages. Positions update via LOCAL_POSITION_NED, attitudes via ATTITUDE.
-
-## Why this simulator
-
-- **See drone location in real time**: Visualize pose and movement on continuous or 3D maps to validate navigation and control algorithms.
-- **Stream camera for tracking**: The camera streaming pipeline helps develop and test tracking/vision algorithms by writing frames to a virtual video device.
-
-## Configuration
-
-- **Ports/IPs**: Edit `udp2websocket.js` for UDP/WebSocket ports (default: UDP 16450, WS 8811).
-- **Vehicle Models**: Add/edit JSON models in `./models/vehicles/`.
-- **Map Settings**: Adjust `tileSize`, `tileRange`, `zoomLevel` in `js_map_box_scene.js`.
-- **Physics**: Tune margins, masses in `js_physicsObject.js`.
-- **Custom Scenes**: Extend `initWorld` in `index_4w.js` for new scene types.
+---
 
 ## Troubleshooting
 
-- **No Connection**: Ensure bridge is running and SITL sends to correct UDP port. Check console for WebSocket errors.
-- **No Models**: Verify JSON files load (CORS issues if not served via server).
-- **Performance**: Reduce `tileRange` or zoom level for slower devices.
-- **Mapbox Errors**: Invalid token? Sign up for a free Mapbox account.
-- **Physics Issues**: Ammo.js must load before simulation starts (handled in `index_4w.js`).
+- **No data in the 3D view**:
+  - Verify SITL or flight controller is sending MAVLink to the correct UDP port.
+  - Check that `udp2websocket.js` is running and that the WebSocket server is reachable.
+  - Confirm the frontend is connecting to the correct WebSocket URL (hostname, port, protocol).
 
-## Contributing
+- **Frontend cannot connect to WebSocket**:
+  - Check backend logs for errors.
+  - Ensure ports are open and not blocked by firewall.
+  - Confirm that the URL used in `js_view.js` or related config matches the backend address.
 
-Contributions welcome! Fork the repo, create a branch, and submit a PR. Focus areas:
-- More vehicle types (e.g., rovers, boats).
-- Better map integrations (e.g., OpenStreetMap).
-- Multi-vehicle support improvements.
-- Mobile optimizations.
+- **Performance issues**:
+  - Reduce the number of rendered objects in the active scene.
+  - Throttle update frequency from backend if very high.
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software and any derivative works, for any purpose, including commercial and non‑commercial use.
+
+The only conditions are:
+
+- **Attribution**:  
+  Any use, redistribution, or derivative work must clearly mention the original project and author, for example:  
+  “Based on the Mavlink3DMap project by Mohammad Hefny(mhefny@github.com).”
+
+- **No Liability / No Warranty**:  
+  This software is provided “as is”, without any warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non‑infringement.  
+  In no event shall the author or copyright holder be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+
+By using this software, you agree that the author is **not responsible** for how you use this system or for any consequences of its use.
