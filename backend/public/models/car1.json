@@ -1,0 +1,175 @@
+{
+	"metadata": {
+		"version": 4.5,
+		"type": "Object",
+		"generator": "Object3D.toJSON"
+	},
+	"geometries": [
+		{
+			"uuid": "AD4CE54D-3701-482D-A35C-BFB15BC67528",
+			"type": "RingBufferGeometry",
+			"innerRadius": 0.5,
+			"outerRadius": 1,
+			"thetaSegments": 8,
+			"phiSegments": 1,
+			"thetaStart": 0,
+			"thetaLength": 6.283185
+		},
+		{
+			"uuid": "22875429-FE78-417D-9E07-EEC095DB85C2",
+			"type": "BoxBufferGeometry",
+			"width": 1,
+			"height": 1,
+			"depth": 1,
+			"widthSegments": 1,
+			"heightSegments": 1,
+			"depthSegments": 1
+		},
+		{
+			"uuid": "26CB9495-2936-40B4-B1F6-7D8D60E118DB",
+			"type": "TorusBufferGeometry",
+			"radius": 1,
+			"tube": 0.4,
+			"radialSegments": 8,
+			"tubularSegments": 6,
+			"arc": 6.283185
+		}],
+	"materials": [
+		{
+			"uuid": "42D21435-50CE-4C7C-9CD0-182AEBCFC158",
+			"type": "MeshStandardMaterial",
+			"color": 1968907,
+			"roughness": 1,
+			"metalness": 0,
+			"emissive": 0,
+			"depthFunc": 3,
+			"depthTest": true,
+			"depthWrite": true,
+			"stencilWrite": false,
+			"stencilWriteMask": 255,
+			"stencilFunc": 519,
+			"stencilRef": 0,
+			"stencilFuncMask": 255,
+			"stencilFail": 7680,
+			"stencilZFail": 7680,
+			"stencilZPass": 7680
+		},
+		{
+			"uuid": "06E926AE-D3B9-4ABD-A915-F389E5BC57B5",
+			"type": "MeshStandardMaterial",
+			"name": "Body",
+			"color": 15792906,
+			"roughness": 1,
+			"metalness": 0,
+			"emissive": 0,
+			"depthFunc": 3,
+			"depthTest": true,
+			"depthWrite": true,
+			"stencilWrite": false,
+			"stencilWriteMask": 255,
+			"stencilFunc": 519,
+			"stencilRef": 0,
+			"stencilFuncMask": 255,
+			"stencilFail": 7680,
+			"stencilZFail": 7680,
+			"stencilZPass": 7680
+		},
+		{
+			"uuid": "AD105A36-FD34-4A2A-AC6C-118BB6B69ADF",
+			"type": "MeshStandardMaterial",
+			"color": 16777215,
+			"roughness": 1,
+			"metalness": 0,
+			"emissive": 16777215,
+			"depthFunc": 3,
+			"depthTest": true,
+			"depthWrite": true,
+			"stencilWrite": false,
+			"stencilWriteMask": 255,
+			"stencilFunc": 519,
+			"stencilRef": 0,
+			"stencilFuncMask": 255,
+			"stencilFail": 7680,
+			"stencilZFail": 7680,
+			"stencilZPass": 7680
+		}],
+	"object": {
+		"uuid": "99B8D790-4422-485B-92BF-35865400780A",
+		"type": "Group",
+		"name": "Car",
+		"layers": 1,
+		"matrix": [0.564241,0,0,0,0,0.692889,0,0,0,0,0.692889,0,0,0,0,1],
+		"children": [
+			{
+				"uuid": "46FBCDE7-8528-4CEF-96E5-95A8F8F6F888",
+				"type": "Mesh",
+				"name": "Ring",
+				"layers": 1,
+				"matrix": [-0.141968,0,-0.007528,0,0,0.198289,0,0,0.066514,0,-1.254383,0,-1.184371,0.38266,-0.586722,1],
+				"geometry": "AD4CE54D-3701-482D-A35C-BFB15BC67528",
+				"material": "42D21435-50CE-4C7C-9CD0-182AEBCFC158"
+			},
+			{
+				"uuid": "A0089ECC-5045-4ECD-A08C-9E51F023433C",
+				"type": "Mesh",
+				"name": "Ring",
+				"layers": 1,
+				"matrix": [-0.141968,0,-0.007528,0,0,0.198289,0,0,0.066514,0,-1.254383,0,0.337877,0.38266,-0.586722,1],
+				"geometry": "AD4CE54D-3701-482D-A35C-BFB15BC67528",
+				"material": "42D21435-50CE-4C7C-9CD0-182AEBCFC158"
+			},
+			{
+				"uuid": "80C87768-0F9F-414D-BFAC-FD270E5BE061",
+				"type": "Mesh",
+				"name": "Ring",
+				"layers": 1,
+				"matrix": [0.142168,0,0,0,0,0.198289,0,0,0,0,1.256146,0,0.337877,0.38266,0.580359,1],
+				"geometry": "AD4CE54D-3701-482D-A35C-BFB15BC67528",
+				"material": "42D21435-50CE-4C7C-9CD0-182AEBCFC158"
+			},
+			{
+				"uuid": "7ECB667F-3D55-492F-959B-107240A55A61",
+				"type": "Mesh",
+				"name": "Ring",
+				"layers": 1,
+				"matrix": [0.142168,0,0,0,0,0.198289,0,0,0,0,1.256146,0,-1.154909,0.38266,0.580359,1],
+				"geometry": "AD4CE54D-3701-482D-A35C-BFB15BC67528",
+				"material": "42D21435-50CE-4C7C-9CD0-182AEBCFC158"
+			},
+			{
+				"uuid": "ED891C43-B70C-4A01-AFF8-2FC885EE7D5E",
+				"type": "Mesh",
+				"name": "Box",
+				"layers": 1,
+				"matrix": [2.084216,0,0,0,0,0.309294,0,0,0,0,1.149015,0,-0.397719,0.476581,0,1],
+				"geometry": "22875429-FE78-417D-9E07-EEC095DB85C2",
+				"material": "06E926AE-D3B9-4ABD-A915-F389E5BC57B5"
+			},
+			{
+				"uuid": "9ABC8CA2-761E-40BF-9DBD-704F86F66FD1",
+				"type": "Group",
+				"name": "Lights",
+				"layers": 1,
+				"matrix": [1,0,0,0,0,1,0,0,0,0,1,0,0.309195,0.149182,0,1],
+				"children": [
+					{
+						"uuid": "BE30B212-8034-4205-8094-6F9159561A4A",
+						"type": "Mesh",
+						"name": "Torus",
+						"layers": 1,
+						"matrix": [0.000331,0,0.049156,0,0,0.04358,0,0,-0.035968,0,0.000242,0,0.377927,0.329,-0.239755,1],
+						"geometry": "26CB9495-2936-40B4-B1F6-7D8D60E118DB",
+						"material": "AD105A36-FD34-4A2A-AC6C-118BB6B69ADF"
+					},
+					{
+						"uuid": "502C98FC-E23F-406B-9D0B-155511BFA539",
+						"type": "Mesh",
+						"name": "Torus",
+						"layers": 1,
+						"matrix": [0.000331,0,0.049156,0,0,0.04358,0,0,-0.035968,0,0.000242,0,0.366401,0.329,0.27117,1],
+						"geometry": "26CB9495-2936-40B4-B1F6-7D8D60E118DB",
+						"material": "AD105A36-FD34-4A2A-AC6C-118BB6B69ADF"
+					}]
+			}]
+	}
+}

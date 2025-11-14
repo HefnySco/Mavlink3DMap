@@ -1,19 +1,57 @@
 {
-  "version": "1.0.0",
+  "name": "mavlink3dmap",
+  "version": "1.0.3",
   "author": "Mohammad Hefny <mohammad.hefny@gmail.com>",
-
+  "description": "MAVLink 3D Map: single-package CLI to serve the web UI, run UDP→WebSocket bridge (8811), and optional Linux-only streaming (8081).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HefnySco/Mavlink3DMap.git"
+  },
+  "homepage": "https://github.com/HefnySco/Mavlink3DMap#readme",
+  "bugs": {
+    "url": "https://github.com/HefnySco/Mavlink3DMap/issues"
+  },
+  "keywords": [
+    "mavlink",
+    "uav",
+    "drone",
+    "3d",
+    "threejs",
+    "simulator",
+    "telemetry",
+    "websocket",
+    "udp",
+    "v4l2loopback"
+  ],
   "dependencies": {
+    "express": "^4.19.2",
     "commander": "^14.0.0",
     "jspack": "^0.0.4",
     "underscore": "^1.13.7",
     "ws": "^8.18.3"
   },
+  "bin": {
+    "mav3d-udp2ws": "./src/udp2websocket.js",
+    "mav3d-stream": "./src/websocket_streaming.js",
+    "mav3d": "./src/cli.js",
+    "mavlink3dmap": "./src/cli.js"
+  },
+  "files": [
+    "src/*.js",
+    "public/**",
+    "scripts/prepack.js",
+    "package.json",
+    "README.md"
+  ],
   "scripts": {
     "dev:udp": "node ./src/udp2websocket.js",
-    "dev:stream": "sh -c 'TARGET_LABEL=SIM-CAM1; DEV=$(grep -l \"^$TARGET_LABEL$\" /sys/class/video4linux/*/name 2>/dev/null | head -n 1 | sed -E \"s#.*/(video[0-9]+)/name#\\1#\"); if [ -z \"$DEV\" ]; then echo \"Error: Device with label $TARGET_LABEL not found in /sys/class/video4linux/*/name\"; exit 1; fi; VIDEO_DEVICE=\"/dev/$DEV\"; node ./src/websocket_streaming.js | ffmpeg -framerate 30 -f image2pipe -vcodec mjpeg -s 940x486 -i - -pix_fmt yuv420p -f v4l2 \"$VIDEO_DEVICE\"'",
+    "dev:stream": "sh -c 'BOLD=$(tput bold 2>/dev/null || true); GREEN=$(tput setaf 2 2>/dev/null || true); YELLOW=$(tput setaf 3 2>/dev/null || true); RESET=$(tput sgr0 2>/dev/null || true); TARGET_LABEL=SIM-CAM1; DEV=$(grep -l \"^$TARGET_LABEL$\" /sys/class/video4linux/*/name 2>/dev/null | head -n 1 | sed -E \"s#.*/(video[0-9]+)/name#\\1#\"); if [ -z \"$DEV\" ]; then printf \"Error: Device with label %s not found in /sys/class/video4linux/*/name\\n\" \"$TARGET_LABEL\"; exit 1; fi; VIDEO_DEVICE=\"/dev/$DEV\"; printf \"=======\\n\"; printf \"%s%s[mav3d] WebSocket streaming on ws://localhost:8081 -> %s%s\\n\" \"$BOLD\" \"$GREEN\" \"$VIDEO_DEVICE\" \"$RESET\"; printf \"%s%s[mav3d] View with: ffplay %s%s\\n\" \"$BOLD\" \"$YELLOW\" \"$VIDEO_DEVICE\" \"$RESET\"; printf \"=======\\n\"; node ./src/websocket_streaming.js | ffmpeg -framerate 30 -f image2pipe -vcodec mjpeg -s 940x486 -i - -pix_fmt yuv420p -f v4l2 \"$VIDEO_DEVICE\"'",
+    "video-number": "sh -c 'BOLD=$(tput bold 2>/dev/null || true); GREEN=$(tput setaf 2 2>/dev/null || true); YELLOW=$(tput setaf 3 2>/dev/null || true); RESET=$(tput sgr0 2>/dev/null || true); TARGET_LABEL=SIM-CAM1; DEV=$(grep -l \"^$TARGET_LABEL$\" /sys/class/video4linux/*/name 2>/dev/null | head -n 1 | sed -E \"s#.*/(video[0-9]+)/name#\\1#\"); if [ -z \"$DEV\" ]; then printf \"Error: Device with label %s not found in /sys/class/video4linux/*/name\\n\" \"$TARGET_LABEL\"; exit 1; fi; VIDEO_DEVICE=\"/dev/$DEV\"; printf \"=======\\n\"; printf \"%s%s[mav3d] Detected device: %s%s\\n\" \"$BOLD\" \"$GREEN\" \"$VIDEO_DEVICE\" \"$RESET\"; printf \"%s%s[mav3d] View with: ffplay %s%s\\n\" \"$BOLD\" \"$YELLOW\" \"$VIDEO_DEVICE\" \"$RESET\"; printf \"=======\\n\"'",
     "dev": "npm run dev:udp & npm run dev:stream",
     "start": "npm run dev",
     "build": "echo \"no build step for backend\"",
-    "lint": "echo \"no lint configured for backend\""
+    "lint": "echo \"no lint configured for backend\"",
+    "prepack": "node ./scripts/prepack.js"
   }
 }

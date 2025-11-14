@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mavlink 3D Map - Desert</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+  <script type="module" crossorigin src="/assets/help_text-DRJrZ7Ao.js"></script>
+  <script type="module" crossorigin src="/assets/index_4w-B6JOsFt6.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/help_text-CPAePmj2.css">
+</head>
+<body>
+    <div id='mav3dmap'>
+        <div class="row">
+            <div class="column4">
+                <canvas id='map3D_1'></canvas>
+            </div>
+            <div class="column4">
+                <canvas id='map3D_2'></canvas>
+            </div>
+            <div class="column4">
+                <canvas id='map3D_3'></canvas>
+            </div>
+            <div class="column4">
+                <canvas id='map3D_4'></canvas>
+            </div>
+        </div>
+    </div>
+    <script>
+        window.sceneType = 'realmap';
+    </script>
+</body>
+</html>

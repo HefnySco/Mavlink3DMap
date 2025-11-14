@@ -10,6 +10,10 @@
     "dev": "npm run -w backend dev:udp & npm run -w frontend dev",
     "devall": "npm run -w backend dev & npm run -w frontend dev",
     "build": "npm run -ws build",
-    "lint": "npm run -ws lint || true"
+    "lint": "npm run -ws lint || true",
+    "start:web": "npm run -w frontend preview",
+    "start:udp": "npm run -w backend dev:udp",
+    "start:stream:linux": "node -e \"if (process.platform!=='linux'){console.error('Error: streaming is Linux-only');process.exit(1)}\" && npm run -w backend dev:stream",
+    "serve": "npm run build && npm run -w frontend preview"
   }
 }

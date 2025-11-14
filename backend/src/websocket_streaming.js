@@ -1,3 +1,9 @@
+#!/usr/bin/env node
+if (process.platform !== 'linux') {
+    console.error('Error: mav3d-stream is supported only on Linux.');
+    process.exit(1);
+}
+
 //node ./websocket_streaming.js | ffmpeg -framerate 30 -f image2pipe -vcodec mjpeg -s 801x600 -i - -pix_fmt yuv420p -f v4l2 /dev/video1
 
 const WebSocket = require('ws');
