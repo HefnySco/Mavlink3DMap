@@ -22,8 +22,6 @@ var m_MAVLinkProcessor = new MAVLink20Processor();
 
 program
   .version(pjson.version)
-  //.option('-h --html_port <port>', 'port number that your html code will connect to',8811)
-  //.option('-u --udp_ip <ip address>', 'IP of UDP Listener', '0.0.0.0')
   .option('-p --udp_target_port <port number>', 'Mission Planner UDP Port', 16450)
   .parse(process.argv);
 
