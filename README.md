@@ -48,6 +48,7 @@ It provides:
 
 - **Streaming utilities**  
   - `backend/src/udp2websocket.js`: Bridge for UDP → WebSocket.
+  - `backend/src/websocket_bridge.js`: WebSocket ↔ WebSocket bridge between two WS ports suitable for DroneENgage Webclient.
   - `backend/src/websocket_streaming.js`: Manages streaming data to clients.
 
 - **SITL integration helpers**  

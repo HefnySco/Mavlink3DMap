@@ -16,6 +16,8 @@ Single-package CLI that serves the MAVLink 3D Map web UI, runs the UDP→WebSock
   - Serves the built web UI (default port 8080)
 - `npx mavlink3dmap udp2ws [--udp-port 16450]`
   - Runs the UDP→WebSocket bridge (websocket at 8811)
+- `npx mavlink3dmap ws2ws [--port-a 8811] [--port-b 8812]`
+  - Runs the WebSocket↔WebSocket bridge between two WS ports (defaults 8811 and 8812)
 - `npx mavlink3dmap stream`
   - Linux only. Starts streaming WS (8081) and pipes frames to v4l2loopback via ffmpeg
   - First time, create the virtual device: `sudo bash backend/src/create_virtual_video_linux.sh`
@@ -28,6 +30,7 @@ Aliases (after global install): you can use `mav3d ...` instead of `npx mavlink3
 
 - Web server: 8080
 - WebSocket bridge (udp2ws): 8811
+- WebSocket bridge (ws2ws): 8811 (A) and 8812 (B) by default
 - Streaming WS: 8081 (Linux only)
 
 ## Environment

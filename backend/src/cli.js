@@ -31,6 +31,24 @@ program
   });
 
 program
+  .command("ws2ws")
+  .description("Run WebSocket-to-WebSocket bridge (default ports 8811 and 8812)")
+  .option("--port-a <port>", "WebSocket server A port", "8811")
+  .option("--port-b <port>", "WebSocket server B port", "8812")
+  .action((opts) => {
+    const portA = String(opts.portA || opts.porta || opts["port-a"] || "8811");
+    const portB = String(opts.portB || opts.portb || opts["port-b"] || "8812");
+    const args = [
+      "./src/websocket_bridge.js",
+      "-a",
+      portA,
+      "-b",
+      portB,
+    ];
+    spawn(process.execPath, args, { stdio: "inherit", cwd: path.resolve(__dirname, "..") });
+  });
+
+program
   .command("stream")
   .description("Run streaming WebSocket (8081) and pipe frames to v4l2loopback using ffmpeg (Linux only)")
   .option("--width <w>", "Frame width", "940")
