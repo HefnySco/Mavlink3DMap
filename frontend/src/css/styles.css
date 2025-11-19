@@ -92,3 +92,30 @@ canvas
     pointer-events: none;
     position: absolute;
 }
+
+/* Streaming status label (top-left overlay on each view, not drawn on canvas) */
+.view-stream-status {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 900;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+}
+
+.view-stream-status-on {
+    color: red;
+    visibility: visible;
+}
+
+.view-stream-status-off {
+    color: gray;
+    visibility: visible;
+}
+
+.view-stream-status-hidden {
+    visibility: hidden;
+}

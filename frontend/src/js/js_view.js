@@ -11,7 +11,7 @@ class C_View {
         this.v_droneIndex = 0;
         this.m_view_selected_camera = null;
         this.isStreamable = isStreamable;
-        this.ws = null;
+        this.streaming_wsocket = null;
 
         this.m_skip = 0;
         this.targetFps = targetFps; // Target streaming FPS
@@ -77,6 +77,11 @@ class C_View {
         container.appendChild(this.labelRenderer.domElement);
         console.log(`Initialized CSS2DRenderer for canvas ${p_canvas.id}, container size: ${container.clientWidth}x${container.clientHeight}`);
 
+        // Streaming status overlay (HTML only, not drawn on canvas)
+        this.streamingStatusEl = document.createElement('div');
+        this.streamingStatusEl.className = 'view-stream-status';
+        container.appendChild(this.streamingStatusEl);
+
         // Event listeners
         this.fn_onMouseDown = this.fn_onMouseDown.bind(this);
         this.fn_onMouseDoubleClick = this.fn_onMouseDoubleClick.bind(this);
@@ -96,18 +101,18 @@ class C_View {
 
     initWebSocket() {
         try {
-            this.ws = new WebSocket('ws://localhost:8081');
-            this.ws.binaryType = 'arraybuffer';
+            this.streaming_wsocket = new WebSocket('ws://localhost:8081');
+            this.streaming_wsocket.binaryType = 'arraybuffer';
 
-            this.ws.onopen = () => {
+            this.streaming_wsocket.onopen = () => {
                 console.log('Streaming WebSocket connected');
             };
 
-            this.ws.onclose = () => {
+            this.streaming_wsocket.onclose = () => {
                 console.log('Streaming WebSocket closed');
             };
 
-            this.ws.onerror = (error) => {
+            this.streaming_wsocket.onerror = (error) => {
                 console.error('Streaming WebSocket error:', error);
             };
         }
@@ -390,15 +395,32 @@ class C_View {
 
         // Stream if enabled
         this.m_skip++;
-        if (this.m_skip % this.sendInterval === 0 && this.isStreamable && this.ws?.readyState === WebSocket.OPEN) {
+        if (this.m_skip % this.sendInterval === 0 && this.isStreamable && this.streaming_wsocket?.readyState === WebSocket.OPEN) {
             this.v_context.canvas.toBlob((blob) => {
                 if (blob) {
                     const reader = new FileReader();
-                    reader.onload = () => this.ws.send(reader.result);
+                    reader.onload = () => this.streaming_wsocket.send(reader.result);
                     reader.readAsArrayBuffer(blob);
                 }
             }, 'image/jpeg', 0.8);
         }
+
+        // Update streaming status overlay (HTML-only, not part of the canvas)
+        try {
+            if (this.streamingStatusEl) {
+                const isOpen = !!(this.streaming_wsocket && this.streaming_wsocket.readyState === WebSocket.OPEN);
+                if (this.isStreamable && isOpen) {
+                    this.streamingStatusEl.textContent = 'STREAMING';
+                    this.streamingStatusEl.className = 'view-stream-status view-stream-status-on';
+                } else if (this.isStreamable && !isOpen) {
+                    this.streamingStatusEl.textContent = 'STREAM-OFF';
+                    this.streamingStatusEl.className = 'view-stream-status view-stream-status-off';
+                } else {
+                    this.streamingStatusEl.textContent = '';
+                    this.streamingStatusEl.className = 'view-stream-status view-stream-status-hidden';
+                }
+            }
+        } catch (_) { }
 
         this.renderer.setScissorTest(false);
     }
@@ -564,11 +586,11 @@ C_View.prototype.dispose = function () {
 
     // Close streaming websocket if open
     try {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.close();
+        if (this.streaming_wsocket && this.streaming_wsocket.readyState === WebSocket.OPEN) {
+            this.streaming_wsocket.close();
         }
     } catch (_) { }
-    this.ws = null;
+    this.streaming_wsocket = null;
 
     // Null references to help GC
     this.m_activeControls = null;
