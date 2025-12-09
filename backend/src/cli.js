@@ -93,4 +93,35 @@ program
     }
   });
 
+
+program
+  .command("de")
+  .description(
+    "Serve the web UI and run WebSocket-to-WebSocket bridge (default ports 8811 and 8812)"
+  )
+  .option("-p, --port <port>", "Web server port", "8080")
+  .option("--port-a <port>", "WebSocket server A port", "8811")
+  .option("--port-b <port>", "WebSocket server B port", "8812")
+  .action((opts) => {
+    // Start HTTP server (same as `serve`)
+    const port = parseInt(opts.port, 10) || 8080;
+    startServer({ port });
+
+    // Start WS-to-WS bridge (same as `ws2ws`)
+    const portA = String(opts.portA || opts.porta || opts["port-a"] || "8811");
+    const portB = String(opts.portB || opts.portb || opts["port-b"] || "8812");
+    const args = [
+      "./src/websocket_bridge.js",
+      "-a",
+      portA,
+      "-b",
+      portB,
+    ];
+    spawn(process.execPath, args, {
+      stdio: "inherit",
+      cwd: path.resolve(__dirname, ".."),
+    });
+  });
+
+
 program.parse(process.argv);

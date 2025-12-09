@@ -1,12 +1,15 @@
 # mavlink3dmap
 
-Single-package CLI that serves the MAVLink 3D Map web UI, runs the UDP→WebSocket bridge, and (optionally, Linux-only) forwards video frames to a v4l2loopback device using ffmpeg.
+Single-package CLI that serves the MAVLink 3D Map web UI, runs the UDP→WebSocket bridge, runs the WebSocket↔WebSocket bridge, and (optionally, Linux-only) forwards video frames to a v4l2loopback device using ffmpeg.
+
+It also provides a `de` command that starts the web UI together with the WebSocket↔WebSocket bridge, suitable for DroneEngage-style setups.
 
 ## Install
 
 - npx (no install):
   - `npx mavlink3dmap up --port 8080 --udp-port 16450`
   - `npx mavlink3dmap serve -p 8080`
+  - `npx mavlink3dmap de --port 8080 --port-a 8811 --port-b 8812`
 - or global:
   - `npm i -g mavlink3dmap`
 
@@ -23,6 +26,9 @@ Single-package CLI that serves the MAVLink 3D Map web UI, runs the UDP→WebSock
   - First time, create the virtual device: `sudo bash backend/src/create_virtual_video_linux.sh`
 - `npx mavlink3dmap up [--port 8080] [--udp-port 16450] [--stream]`
   - Starts web UI and UDP bridge together; with `--stream` also starts streaming on Linux.
+- `npx mavlink3dmap de [--port 8080] [--port-a 8811] [--port-b 8812]`
+  - Starts the web UI and WebSocket↔WebSocket bridge together (no UDP bridge).
+  - Internally equivalent to running `serve` and `ws2ws` with the same port options.
 
 Aliases (after global install): you can use `mav3d ...` instead of `npx mavlink3dmap ...`.
 
@@ -30,7 +36,7 @@ Aliases (after global install): you can use `mav3d ...` instead of `npx mavlink3
 
 - Web server: 8080
 - WebSocket bridge (udp2ws): 8811
-- WebSocket bridge (ws2ws): 8811 (A) and 8812 (B) by default
+- WebSocket bridge (ws2ws / de): 8811 (A) and 8812 (B) by default
 - Streaming WS: 8081 (Linux only)
 
 ## Environment
