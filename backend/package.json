@@ -1,6 +1,6 @@
 {
   "name": "mavlink3dmap",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "author": "Mohammad Hefny <mohammad.hefny@gmail.com>",
   "description": "MAVLink 3D Map: single-package CLI to serve the web UI, run UDP→WebSocket bridge (8811), and optional Linux-only streaming (8081).",
   "license": "MIT",
