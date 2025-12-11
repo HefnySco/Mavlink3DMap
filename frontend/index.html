@@ -49,6 +49,14 @@
           <input type="checkbox" id="toggle_buildings">
           <span>Draw buildings</span>
         </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:8px;">
+          <input type="checkbox" id="toggle_vehicles">
+          <span>Create vehicles</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:8px;">
+          <input type="checkbox" id="toggle_physics">
+          <span>Enable physics (balls & collisions)</span>
+        </label>
       </section>
 
       <section style="margin: 28px 0;">
@@ -95,19 +103,48 @@ npm run start:web   # preview built frontend</pre>
     </script>
     <script type="module">
       import { HELP_SHORTCUTS_HTML } from '/src/js/help_text.js';
-      import { getBuildingsPerTileFlag, setBoolInStorage } from '/src/js/js_storage.js';
+      import { getBuildingsPerTileFlag, getPhysicsEnabledFlag, setBoolInStorage } from '/src/js/js_storage.js';
 
-      const toggle = document.getElementById('toggle_buildings');
-      if (toggle) {
+      
+      const toggleVehicles = document.getElementById('toggle_vehicles');
+      if (toggleVehicles) {
         try {
-          toggle.checked = getBuildingsPerTileFlag();
+          toggleVehicles.checked = getRandomVehiclesEnabledFlag();
         } catch (e) {
-          toggle.checked = true;
+          toggleVehicles.checked = true;
         }
 
-        toggle.addEventListener('change', () => {
-          const checked = !!toggle.checked;
+        toggleVehicles.addEventListener('change', () => {
+          const checked = !!toggleVehicles.checked;
+          setBoolInStorage('RANDOM_VEHICLES_ENABLED', checked);
+        });
+      }
+
+      const toggleBuildings = document.getElementById('toggle_buildings');
+      if (toggleBuildings) {
+        try {
+          toggleBuildings.checked = getBuildingsPerTileFlag();
+        } catch (e) {
+          toggleBuildings.checked = true;
+        }
+
+        toggleBuildings.addEventListener('change', () => {
+          const checked = !!toggleBuildings.checked;
           setBoolInStorage('BUILDINGS_PER_TILE', checked);
+        });
+      }
+
+      const togglePhysics = document.getElementById('toggle_physics');
+      if (togglePhysics) {
+        try {
+          togglePhysics.checked = getPhysicsEnabledFlag();
+        } catch (e) {
+          togglePhysics.checked = false;
+        }
+
+        togglePhysics.addEventListener('change', () => {
+          const checked = !!togglePhysics.checked;
+          setBoolInStorage('PHYSICS_ENABLED', checked);
         });
       }
 

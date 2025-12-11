@@ -49,3 +49,13 @@ export function getBuildingsPerTileFlag() {
   // default is true (keep existing behavior)
   return getBoolFromStorage('BUILDINGS_PER_TILE', true);
 }
+
+
+export function getRandomVehiclesEnabledFlag() {
+  // default is false (keep existing behavior)
+  return getBoolFromStorage('RANDOM_VEHICLES_ENABLED', false);
+}
+export function getPhysicsEnabledFlag() {
+  // default is false: physics/ball throwing off unless explicitly enabled
+  return getBoolFromStorage('PHYSICS_ENABLED', false);
+}

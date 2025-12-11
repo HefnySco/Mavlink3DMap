@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PhysicsBall } from './physical_objects/js_ball.js';
+import { getPhysicsEnabledFlag } from './js_storage.js';
 
 /**
  * BallThrower attaches to a vehicle and spawns balls with configured
@@ -36,6 +37,9 @@ export class BallThrower {
    */
   throw(world) {
     if (!this.vehicle || !world) return;
+
+    // Physics disabled: do not spawn balls or touch cannon-es
+    if (!getPhysicsEnabledFlag()) return;
 
     // Vehicle world position and orientation
     const { x, y, z } = this.vehicle.fn_translateXYZ();

@@ -6,7 +6,7 @@ import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
 import { Vehicle } from '../physical_objects/js_vehicle.js';
 import { Building } from '../physical_objects/js_building.js';
-import { getBuildingsPerTileFlag } from '../js_storage.js';
+import { getBuildingsPerTileFlag, getRandomVehiclesEnabledFlag } from '../js_storage.js';
 
 const PI_div_2 = Math.PI / 2;
 
@@ -75,8 +75,8 @@ export class CBaseScene {
         if (typeof this.onBeforeReload === 'function') this.onBeforeReload();
 
         // Reinitialize scene with new car, buildings, and lights
-        const buildingsPerTile = getBuildingsPerTileFlag();
-        if (buildingsPerTile) {
+        const randomVehicles = getRandomVehiclesEnabledFlag();
+        if (randomVehicles) {
             this.droneId = 'car' + uuidv4();
             this._addCar(this.droneId, vehicleX, vehicleY, 7);
         }
@@ -135,25 +135,27 @@ export class CBaseScene {
             c_robot.fn_setPosition(p_x, p_y, 0);
             c_robot.fn_castShadow(false);
 
-            let c_y_deg_step = 0.01;
-            let c_y_deg = 0.0;
-            let c_deg = Math.random() * Math.PI;
+            if (p_radius !== 0) {
+                let c_y_deg_step = 0.01;
+                let c_y_deg = 0.0;
+                let c_deg = Math.random() * Math.PI;
 
-            c_robot.fn_setAnimate(() => {
-                c_y_deg += c_y_deg_step;
-                if (c_y_deg >= 1.1) {
-                    c_y_deg_step = -0.01;
-                    c_y_deg = 1.1;
-                } else if (c_y_deg <= -1.1) {
-                    c_y_deg_step = 0.01;
-                    c_y_deg = -1.1;
-                }
-                const newX = p_radius * Math.cos(c_deg) + p_x;
-                const newY = p_radius * Math.sin(c_deg) + p_y;
-                c_robot.fn_setPosition(newX, newY, 0);
-                c_deg = (c_deg + 0.01) % (2 * Math.PI);
-                c_robot.fn_setRotation(0, 0, -c_deg - PI_div_2);
-            });
+                c_robot.fn_setAnimate(() => {
+                    c_y_deg += c_y_deg_step;
+                    if (c_y_deg >= 1.1) {
+                        c_y_deg_step = -0.01;
+                        c_y_deg = 1.1;
+                    } else if (c_y_deg <= -1.1) {
+                        c_y_deg_step = 0.01;
+                        c_y_deg = -1.1;
+                    }
+                    const newX = p_radius * Math.cos(c_deg) + p_x;
+                    const newY = p_radius * Math.sin(c_deg) + p_y;
+                    c_robot.fn_setPosition(newX, newY, 0);
+                    c_deg = (c_deg + 0.01) % (2 * Math.PI);
+                    c_robot.fn_setRotation(0, 0, -c_deg - PI_div_2);
+                });
+            }
 
             this.world.fn_registerCamerasOfObject(c_robot);
             c_robot.fn_setRotation(0, 0.0, 0.0);
@@ -196,6 +198,16 @@ export class CBaseScene {
                 this._addBuildings(x, y);
             }
         }
+
+
+        if (typeof this._addCar === 'function') {
+            const randomVehicles = getRandomVehiclesEnabledFlag();
+            if (randomVehicles) {
+                this.droneId = 'car' + uuidv4();
+                this._addCar(this.droneId, x, y, 0);
+            }
+        }
+        
     }
 
     fn_onTileRemoved(x, y) {
