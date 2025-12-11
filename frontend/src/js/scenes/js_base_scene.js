@@ -5,7 +5,7 @@ import { EVENTS as js_event } from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
 import { Vehicle } from '../physical_objects/js_vehicle.js';
-import { Building } from '../physical_objects/Building.js';
+import { Building } from '../physical_objects/js_building.js';
 import { getBuildingsPerTileFlag } from '../js_storage.js';
 
 const PI_div_2 = Math.PI / 2;
