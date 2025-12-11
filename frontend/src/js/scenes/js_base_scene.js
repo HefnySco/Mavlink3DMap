@@ -6,6 +6,7 @@ import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
 import { Vehicle } from '../physical_objects/js_vehicle.js';
 import { Building } from '../physical_objects/Building.js';
+import { getBuildingsPerTileFlag } from '../js_storage.js';
 
 const PI_div_2 = Math.PI / 2;
 
@@ -53,9 +54,6 @@ export class CBaseScene {
     // Default init: spawn car, buildings, lights, and initial tiles
     // called form c_world.m_scene_env.init(0, 0);
     init(p_XZero, p_YZero) {
-        this.droneId = 'car' + uuidv4();
-        this._addCar(this.droneId, p_XZero, p_YZero, 7);
-        this._addBuildings(p_XZero, p_YZero);
         this._addLights();
         if (typeof this.updateTiles === 'function') {
             this.updateTiles(p_XZero, p_YZero);
@@ -77,8 +75,11 @@ export class CBaseScene {
         if (typeof this.onBeforeReload === 'function') this.onBeforeReload();
 
         // Reinitialize scene with new car, buildings, and lights
-        this.droneId = 'car' + uuidv4();
-        this._addCar(this.droneId, vehicleX, vehicleY, 7);
+        const buildingsPerTile = getBuildingsPerTileFlag();
+        if (buildingsPerTile) {
+            this.droneId = 'car' + uuidv4();
+            this._addCar(this.droneId, vehicleX, vehicleY, 7);
+        }
         this._addLights();
 
         if (typeof this.updateTiles === 'function') {
@@ -189,9 +190,9 @@ export class CBaseScene {
 
     fn_onNewTileCreated(x, y) {
         if (typeof this._addBuildings === 'function') {
-            const buildingsPerTile = import.meta.env.VITE_BUILDINGS_PER_TILE;
-            if (buildingsPerTile=== 'true')
-            {
+            const buildingsPerTile = getBuildingsPerTileFlag();
+
+            if (buildingsPerTile) {
                 this._addBuildings(x, y);
             }
         }

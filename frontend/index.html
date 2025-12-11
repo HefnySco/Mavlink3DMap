@@ -45,6 +45,13 @@
       </div>
 
       <section style="margin: 28px 0;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="toggle_buildings">
+          <span>Draw buildings</span>
+        </label>
+      </section>
+
+      <section style="margin: 28px 0;">
         <h2 style="margin: 0 0 8px; font-size: 1.25rem;">How to run</h2>
         <div>
           <p style="margin: 0 0 6px;">Using the published package (no install):</p>
@@ -70,8 +77,40 @@ npm run start:web   # preview built frontend</pre>
         </div>
       </section>
     </main>
+    <script>
+      (function() {
+        const KEY = 'BUILDINGS_PER_TILE';
+        const DEFAULT_VALUE = 'false';
+
+        try {
+          const current = window.localStorage.getItem(KEY);
+          if (current === null) {
+            window.localStorage.setItem(KEY, DEFAULT_VALUE);
+          }
+          window.BUILDINGS_PER_TILE = window.localStorage.getItem(KEY) || DEFAULT_VALUE;
+        } catch (e) {
+          window.BUILDINGS_PER_TILE = DEFAULT_VALUE;
+        }
+      })();
+    </script>
     <script type="module">
       import { HELP_SHORTCUTS_HTML } from '/src/js/help_text.js';
+      import { getBuildingsPerTileFlag, setBoolInStorage } from '/src/js/js_storage.js';
+
+      const toggle = document.getElementById('toggle_buildings');
+      if (toggle) {
+        try {
+          toggle.checked = getBuildingsPerTileFlag();
+        } catch (e) {
+          toggle.checked = true;
+        }
+
+        toggle.addEventListener('change', () => {
+          const checked = !!toggle.checked;
+          setBoolInStorage('BUILDINGS_PER_TILE', checked);
+        });
+      }
+
       const el = document.getElementById('shortcuts_list');
       if (el) el.innerHTML = HELP_SHORTCUTS_HTML;
     </script>
