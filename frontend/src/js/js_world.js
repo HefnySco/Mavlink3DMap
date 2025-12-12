@@ -107,10 +107,12 @@ class C_World {
     }
 
     /*
-     * Add cameras of a vehicle to all available views.
+     * An object can have cameras attached to it.
+     * In case this object has an attached camera(s) then
+     * we need to add each camera to all views.
      */
-    fn_registerCamerasOfObject(p_vehicle) {
-        let cameras = p_vehicle.fn_getCamera();
+    fn_registerCamerasOfObject(p_object) {
+        let cameras = p_object.fn_getCamera();
         for (let i = 0; i < cameras.length; ++i) {
             let v_camera = cameras[i];
 
