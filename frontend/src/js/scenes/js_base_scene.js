@@ -167,6 +167,24 @@ export class CBaseScene {
         }).catch((e) => console.error('Car load failed', e));
     }
 
+     _addTank(p_id, p_x, p_y, p_radius) {
+        Vehicle.create_tank(0, 0, 0).then((obj) => {
+            const c_robot = new SimObject(p_id, this.homeLat, this.homeLng);
+            c_robot.fn_createCustom(obj);
+            c_robot.fn_setPosition(p_x, p_y, 10);
+            c_robot.fn_castShadow(false);
+
+            if (p_radius !== 0) {
+                this._setCircularAnimation(c_robot, p_x, p_y, p_radius, 0);
+            }
+
+            this.world.fn_registerCamerasOfObject(c_robot);
+            c_robot.fn_setRotation(0, 0.0, 0.0);
+            this.world.fn_addRobot(p_id, c_robot);
+            this.world.v_scene.add(c_robot.fn_getMesh());
+        }).catch((e) => console.error('Car load failed', e));
+    }
+
     _setCircularAnimation(c_robot, p_centerX, p_centerY, p_radius, p_altitude = 0) {
         if (!p_radius) return;
 

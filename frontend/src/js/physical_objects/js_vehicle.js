@@ -62,6 +62,20 @@ export class Vehicle {
     });
   }
 
+
+
+  static create_tank (p_x, p_y, p_z)
+  {
+    const factor = 3.0;
+    return Vehicle.load({
+      url: '../../models/vehicles/tank/model.json',
+      position: { x: p_x, y: p_y, z: p_z },
+      rotationZ: 0,
+      size: { length: 4.5*factor, width: 1.8*factor, height: 1.4*factor }
+    });
+  }
+
+
   static create_plane (p_x, p_y, p_z)
   {
     return Vehicle.load({
