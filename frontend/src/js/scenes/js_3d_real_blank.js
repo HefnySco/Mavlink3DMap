@@ -343,37 +343,5 @@ export class C3DMapScene extends CBaseScene {
         }
     }
 
-    _addCar(p_id, p_x, p_y, p_radius) {
-        Vehicle.create_car( p_x, 0, p_y).then((obj) => {
-            const c_robot = new SimObject(p_id, this.homeLat, this.homeLng);
-            c_robot.fn_createCustom(obj);
-            c_robot.fn_setPosition(p_x, p_y, 0);
-            c_robot.fn_castShadow(false);
 
-            let c_y_deg_step = 0.01;
-            let c_y_deg = 0.0;
-            let c_deg = Math.random() * Math.PI;
-
-            c_robot.fn_setAnimate(() => {
-                c_y_deg += c_y_deg_step;
-                if (c_y_deg >= 1.1) {
-                    c_y_deg_step = -0.01;
-                    c_y_deg = 1.1;
-                } else if (c_y_deg <= -1.1) {
-                    c_y_deg_step = 0.01;
-                    c_y_deg = -1.1;
-                }
-                const newX = p_radius * Math.cos(c_deg) + p_x;
-                const newY = p_radius * Math.sin(c_deg) + p_y;
-                c_robot.fn_setPosition(newX, newY, 0);
-                c_deg = (c_deg + 0.01) % (2 * Math.PI);
-                c_robot.fn_setRotation(0, 0, -c_deg - PI_div_2);
-            });
-
-            this.world.fn_registerCamerasOfObject(c_robot);
-            c_robot.fn_setRotation(0, 0.0, 0.0);
-            this.world.fn_addRobot(p_id, c_robot);
-            this.world.v_scene.add(c_robot.fn_getMesh());
-        }).catch((e) => console.error('Car load failed', e));
-    }
 }
