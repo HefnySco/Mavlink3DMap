@@ -4,7 +4,7 @@ import { js_eventEmitter } from './js_eventEmitter.js';
 
 class CMavlinkMessageHandler {
 
-    handleHeartbeat(src, v_droneInProgress, c_world, c_mavlinkMessage) {
+    handleHeartbeatNewID(src, v_droneInProgress, c_world, c_mavlinkMessage) {
 
         v_droneInProgress.add(src);
 
