@@ -78,7 +78,10 @@ export class CBaseScene {
         const randomVehicles = getRandomVehiclesEnabledFlag();
         if (randomVehicles) {
             this.droneId = 'car' + uuidv4();
-            this._addCar(this.droneId, vehicleX, vehicleY, 7);
+            this._addCar(this.droneId, vehicleX+10, vehicleY+20, 7);
+            this.droneId = 'drone' + uuidv4();
+            this._addPlane(this.droneId, vehicleX+10, vehicleY, 0, 7);
+
         }
         this._addLights();
 
@@ -128,33 +131,33 @@ export class CBaseScene {
         }
     }
 
-    _addCar(p_id, p_x, p_y, p_radius) {
-        Vehicle.create_car(p_x, 0, p_y).then((obj) => {
+    _addPlane(p_id, p_x, p_y,p_hight, p_radius) {
+        Vehicle.create_plane(0, 0, 0).then((obj) => {
             const c_robot = new SimObject(p_id, this.homeLat, this.homeLng);
             c_robot.fn_createCustom(obj);
-            c_robot.fn_setPosition(p_x, p_y, 0);
+            c_robot.fn_setPosition(p_x, p_y, p_hight);
             c_robot.fn_castShadow(false);
 
             if (p_radius !== 0) {
-                let c_y_deg_step = 0.01;
-                let c_y_deg = 0.0;
-                let c_deg = Math.random() * Math.PI;
+                this._setCircularAnimation(c_robot, p_x, p_y, p_radius, p_hight);
+            }
 
-                c_robot.fn_setAnimate(() => {
-                    c_y_deg += c_y_deg_step;
-                    if (c_y_deg >= 1.1) {
-                        c_y_deg_step = -0.01;
-                        c_y_deg = 1.1;
-                    } else if (c_y_deg <= -1.1) {
-                        c_y_deg_step = 0.01;
-                        c_y_deg = -1.1;
-                    }
-                    const newX = p_radius * Math.cos(c_deg) + p_x;
-                    const newY = p_radius * Math.sin(c_deg) + p_y;
-                    c_robot.fn_setPosition(newX, newY, 0);
-                    c_deg = (c_deg + 0.01) % (2 * Math.PI);
-                    c_robot.fn_setRotation(0, 0, -c_deg - PI_div_2);
-                });
+            this.world.fn_registerCamerasOfObject(c_robot);
+            c_robot.fn_setRotation(0.0, 0.0, 0.0);
+            this.world.fn_addRobot(p_id, c_robot);
+            this.world.v_scene.add(c_robot.fn_getMesh());
+        }).catch((e) => console.error('Car load failed', e));
+    }
+
+    _addCar(p_id, p_x, p_y, p_radius) {
+        Vehicle.create_car(0, 0, 0).then((obj) => {
+            const c_robot = new SimObject(p_id, this.homeLat, this.homeLng);
+            c_robot.fn_createCustom(obj);
+            c_robot.fn_setPosition(p_x, p_y, 10);
+            c_robot.fn_castShadow(false);
+
+            if (p_radius !== 0) {
+                this._setCircularAnimation(c_robot, p_x, p_y, p_radius, 0);
             }
 
             this.world.fn_registerCamerasOfObject(c_robot);
@@ -164,12 +167,52 @@ export class CBaseScene {
         }).catch((e) => console.error('Car load failed', e));
     }
 
+    _setCircularAnimation(c_robot, p_centerX, p_centerY, p_radius, p_altitude = 0) {
+        if (!p_radius) return;
+
+        let c_y_deg = 0.0;
+        const maxTilt = 1.1;
+
+        const radiusFactor = Math.max(1, p_radius / 10);
+        const tiltStepBase = 0.01;
+        const angleStepBase = 0.01;
+        const c_y_deg_step_base = tiltStepBase / radiusFactor;
+        const angleStep = angleStepBase / radiusFactor;
+
+        let c_y_deg_step = c_y_deg_step_base;
+        let c_deg = Math.random() * Math.PI * 2;
+
+        c_robot.fn_setAnimate(() => {
+            c_y_deg += c_y_deg_step;
+            if (c_y_deg >= maxTilt) {
+                c_y_deg_step = -c_y_deg_step_base;
+                c_y_deg = maxTilt;
+            } else if (c_y_deg <= -maxTilt) {
+                c_y_deg_step = c_y_deg_step_base;
+                c_y_deg = -maxTilt;
+            }
+            const newX = p_radius * Math.cos(c_deg) + p_centerX;
+            const newY = p_radius * Math.sin(c_deg) + p_centerY;
+            c_robot.fn_setPosition(newX, newY, p_altitude);
+            c_deg = (c_deg + angleStep) % (2 * Math.PI);
+            const heading = Math.atan2(newY - p_centerY, newX - p_centerX) + PI_div_2;
+            c_robot.fn_setRotation(0, 0, -heading);
+        });
+    }
+
     _addBuildings(p_XZero, p_YZero) {
         const tag = `${p_XZero},${p_YZero}`;
-        const c_buildings = [
-            [-160, -80], [-106, -120], [-160, -160],
-            [160, 200], [160, 240], [160, 280]
-        ];
+        const minX = -160;
+        const maxX = 160;
+        const minY = -160;
+        const maxY = 280;
+
+        const c_buildings = [];
+        for (let i = 0; i < 6; i++) {
+            const x = minX + Math.random() * (maxX - minX);
+            const y = minY + Math.random() * (maxY - minY);
+            c_buildings.push([x, y]);
+        }
 
         for (const c_location of c_buildings) {
             Building.create(this.world, {
@@ -182,6 +225,28 @@ export class CBaseScene {
                 tag,
                 onLoaded: (obj) => this._registerObjects(obj, tag)
             });
+        }
+    }
+
+    _addPlanes(p_XZero, p_YZero) {
+        const minX = -120;
+        const maxX = 140;
+        const minY = -140;
+        const maxY = 260;
+        const minAlt = 20;
+        const maxAlt = 400;
+
+        const c_planes = [];
+        for (let i = 0; i < 6; i++) {
+            const x = minX + Math.random() * (maxX - minX);
+            const y = minY + Math.random() * (maxY - minY);
+            const alt = minAlt + Math.random() * (maxAlt - minAlt);
+            c_planes.push([x, y, alt]);
+        }
+
+        for (const c_location of c_planes) {
+            const planeId = 'plane' + uuidv4();
+            this._addPlane(planeId, p_XZero + c_location[0], p_YZero + c_location[1], c_location[2], 7);
         }
     }
 
@@ -205,6 +270,16 @@ export class CBaseScene {
             if (randomVehicles) {
                 this.droneId = 'car' + uuidv4();
                 this._addCar(this.droneId, x, y, 0);
+                //this._addPlane(this.droneId+ uuidv4(), x+30, y, 0, 7);
+            }
+        }
+
+
+
+        if (typeof this._addPlanes === 'function') {
+            const randomVehicles = getRandomVehiclesEnabledFlag();
+            if (randomVehicles) {
+                this._addPlanes(x, y);
             }
         }
         
