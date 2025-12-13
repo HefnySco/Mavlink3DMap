@@ -57,6 +57,16 @@
           <input type="checkbox" id="toggle_physics">
           <span>Enable physics (balls & collisions)</span>
         </label>
+        <label style="display:flex; align-items:center; gap:12px; margin-top:12px;">
+          <span style="font-weight:600; color:#1f3a68;">QUAD Type:</span>
+          <div style="position:relative; display:inline-flex; align-items:center;">
+            <select id="select_quad_type" style="padding:8px 40px 8px 16px; border-radius:999px; border:1px solid rgba(31,90,164,0.4); background:linear-gradient(135deg,#1d6deb,#3ab5ff); color:#fff; font-weight:600; letter-spacing:0.01em; box-shadow:0 6px 16px rgba(29,109,235,0.25); appearance:none; -webkit-appearance:none; -moz-appearance:none;">
+              <option value="normal" style="color:#0db816;">Normal</option>
+              <option value="tailsitter" style="color:#0db816;">TailSitter</option>
+            </select>
+            <span style="pointer-events:none; position:absolute; right:14px; color:#fff; font-size:0.75rem; transform:translateY(1px);">▼</span>
+          </div>
+        </label>
       </section>
 
       <section style="margin: 28px 0;">
@@ -103,7 +113,15 @@ npm run start:web   # preview built frontend</pre>
     </script>
     <script type="module">
       import { HELP_SHORTCUTS_HTML } from '/src/js/help_text.js';
-      import { getBuildingsPerTileFlag, getPhysicsEnabledFlag, setBoolInStorage } from '/src/js/js_storage.js';
+      import {
+        getBuildingsPerTileFlag,
+        getPhysicsEnabledFlag,
+        getRandomVehiclesEnabledFlag,
+        getQuadType,
+        getStringFromStorage,
+        setBoolInStorage,
+        setStringInStorage
+      } from '/src/js/js_storage.js';
 
       
       const toggleVehicles = document.getElementById('toggle_vehicles');
@@ -145,6 +163,20 @@ npm run start:web   # preview built frontend</pre>
         togglePhysics.addEventListener('change', () => {
           const checked = !!togglePhysics.checked;
           setBoolInStorage('PHYSICS_ENABLED', checked);
+        });
+      }
+
+      const quadTypeSelect = document.getElementById('select_quad_type');
+      if (quadTypeSelect) {
+        const stored = getQuadType();
+        if (stored) {
+          const normalized = stored.toLowerCase();
+          quadTypeSelect.value = normalized === 'tailsitter' ? 'tailsitter' : 'normal';
+        }
+
+        quadTypeSelect.addEventListener('change', () => {
+          const selected = quadTypeSelect.value || 'normal';
+          setStringInStorage('QUAD_TYPE', selected);
         });
       }
 
