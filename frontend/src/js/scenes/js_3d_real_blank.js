@@ -343,5 +343,10 @@ export class C3DMapScene extends CBaseScene {
         }
     }
 
+    
+
+    _addBuildings(p_XZero, p_YZero) {
+        // no buildings can be created in 3d maps because of hights are not adjusted yet.
+    }
 
 }

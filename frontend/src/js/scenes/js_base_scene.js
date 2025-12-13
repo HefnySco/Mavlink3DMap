@@ -79,8 +79,7 @@ export class CBaseScene {
         if (randomVehicles) {
             this.droneId = 'car' + uuidv4();
             this._addCar(this.droneId, vehicleX+10, vehicleY+20, 7);
-            this.droneId = 'drone' + uuidv4();
-            this._addPlane(this.droneId, vehicleX+10, vehicleY, 0, 7);
+
 
         }
         this._addLights();
@@ -218,7 +217,8 @@ export class CBaseScene {
         });
     }
 
-    _addBuildings(p_XZero, p_YZero) {
+    _addBuildings(p_XZero, p_YZero, totalBuildings = 6) {
+        console.log('Adding buildings at', p_XZero, p_YZero, totalBuildings);
         const tag = `${p_XZero},${p_YZero}`;
         const minX = -160;
         const maxX = 160;
@@ -226,7 +226,7 @@ export class CBaseScene {
         const maxY = 280;
 
         const c_buildings = [];
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < totalBuildings; i++) {
             const x = minX + Math.random() * (maxX - minX);
             const y = minY + Math.random() * (maxY - minY);
             c_buildings.push([x, y]);
@@ -246,7 +246,8 @@ export class CBaseScene {
         }
     }
 
-    _addPlanes(p_XZero, p_YZero) {
+    _addPlanes(p_XZero, p_YZero, totalPlanes = 6) {
+        console.log('Adding planes at', p_XZero, p_YZero, totalPlanes);
         const minX = -120;
         const maxX = 140;
         const minY = -140;
@@ -255,7 +256,7 @@ export class CBaseScene {
         const maxAlt = 400;
 
         const c_planes = [];
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < totalPlanes; i++) {
             const x = minX + Math.random() * (maxX - minX);
             const y = minY + Math.random() * (maxY - minY);
             const alt = minAlt + Math.random() * (maxAlt - minAlt);
@@ -288,7 +289,6 @@ export class CBaseScene {
             if (randomVehicles) {
                 this.droneId = 'car' + uuidv4();
                 this._addCar(this.droneId, x, y, 0);
-                //this._addPlane(this.droneId+ uuidv4(), x+30, y, 0, 7);
             }
         }
 

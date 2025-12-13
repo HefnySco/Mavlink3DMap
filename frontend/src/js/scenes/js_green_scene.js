@@ -135,4 +135,8 @@ export class CGrassScene extends CBaseScene {
             }
         );
     }
+
+    _addBuildings(p_XZero, p_YZero) {
+        CBaseScene.prototype._addBuildings.call(this, p_XZero, p_YZero, 2);
+    }
 }
