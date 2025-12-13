@@ -169,7 +169,7 @@ class C_View {
         if (needResize) {
             canvas.width = width;
             canvas.height = height;
-            this.renderer.setSize(width, height, false);
+            this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
             const container = canvas.parentNode;
             this.labelRenderer.setSize(container.clientWidth, container.clientHeight);
         }
@@ -334,19 +334,19 @@ class C_View {
         const canvas = this.m_canvas;
         const container = canvas.parentNode;
 
-        // Set viewport and scissor for WebGL
-        const width = canvas.clientWidth * window.devicePixelRatio;
-        const height = canvas.clientHeight * window.devicePixelRatio;
-        this.renderer.setViewport(0, 0, canvas.clientWidth, canvas.clientHeight);
-        this.renderer.setScissor(0, 0, canvas.clientWidth, canvas.clientHeight);
-        this.renderer.setScissorTest(true);
-
         // Resize if needed
         if (this.fn_resizeRendererToDisplaySize()) {
             this.m_view_selected_camera.aspect = canvas.clientWidth / canvas.clientHeight;
             this.m_view_selected_camera.updateProjectionMatrix();
             this.labelRenderer.setSize(container.clientWidth, container.clientHeight);
         }
+
+        // Set viewport and scissor for WebGL (use DPR-scaled pixel size)
+        const width = canvas.width;
+        const height = canvas.height;
+        this.renderer.setViewport(0, 0, width, height);
+        this.renderer.setScissor(0, 0, width, height);
+        this.renderer.setScissorTest(true);
 
         // Render WebGL scene
         if (this.m_activeControls && this.m_activeControls.update) {

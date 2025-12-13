@@ -47,7 +47,7 @@
       <section style="margin: 28px 0;">
         <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
           <input type="checkbox" id="toggle_buildings">
-          <span>Draw buildings</span>
+          <span>Create Buildings</span>
         </label>
         <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:8px;">
           <input type="checkbox" id="toggle_vehicles">
@@ -63,6 +63,18 @@
             <select id="select_quad_type" style="padding:8px 40px 8px 16px; border-radius:999px; border:1px solid rgba(31,90,164,0.4); background:linear-gradient(135deg,#1d6deb,#3ab5ff); color:#fff; font-weight:600; letter-spacing:0.01em; box-shadow:0 6px 16px rgba(29,109,235,0.25); appearance:none; -webkit-appearance:none; -moz-appearance:none;">
               <option value="normal" style="color:#0db816;">Normal</option>
               <option value="tailsitter" style="color:#0db816;">TailSitter</option>
+            </select>
+            <span style="pointer-events:none; position:absolute; right:14px; color:#fff; font-size:0.75rem; transform:translateY(1px);">▼</span>
+          </div>
+        </label>
+
+        <label style="display:flex; align-items:center; gap:12px; margin-top:12px;">
+          <span style="font-weight:600; color:#1f3a68;">Views:</span>
+          <div style="position:relative; display:inline-flex; align-items:center;">
+            <select id="select_view_count" style="padding:8px 40px 8px 16px; border-radius:999px; border:1px solid rgba(31,90,164,0.4); background:linear-gradient(135deg,#1d6deb,#3ab5ff); color:#fff; font-weight:600; letter-spacing:0.01em; box-shadow:0 6px 16px rgba(29,109,235,0.25); appearance:none; -webkit-appearance:none; -moz-appearance:none;">
+              <option value="1" style="color:#0db816;">1</option>
+              <option value="2" style="color:#0db816;">2</option>
+              <option value="4" style="color:#0db816;">4</option>
             </select>
             <span style="pointer-events:none; position:absolute; right:14px; color:#fff; font-size:0.75rem; transform:translateY(1px);">▼</span>
           </div>
@@ -177,6 +189,33 @@ npm run start:web   # preview built frontend</pre>
         quadTypeSelect.addEventListener('change', () => {
           const selected = quadTypeSelect.value || 'normal';
           setStringInStorage('QUAD_TYPE', selected);
+        });
+      }
+
+      const viewCountSelect = document.getElementById('select_view_count');
+      if (viewCountSelect) {
+        const applyDemoLinks = (value) => {
+          const v = String(value || '4');
+          document.querySelectorAll('.demo-links a').forEach((a) => {
+            if (!a.dataset.baseHref) {
+              a.dataset.baseHref = a.getAttribute('href') || '';
+            }
+            const baseHref = a.dataset.baseHref;
+            const u = new URL(baseHref, window.location.href);
+            u.searchParams.set('views', v);
+            a.setAttribute('href', u.pathname + u.search);
+          });
+        };
+
+        const stored = getStringFromStorage('VIEW_COUNT', '4');
+        const normalized = stored === '1' || stored === '2' || stored === '4' ? stored : '4';
+        viewCountSelect.value = normalized;
+        applyDemoLinks(normalized);
+
+        viewCountSelect.addEventListener('change', () => {
+          const selected = viewCountSelect.value || '4';
+          setStringInStorage('VIEW_COUNT', selected);
+          applyDemoLinks(selected);
         });
       }
 

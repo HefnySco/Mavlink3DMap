@@ -13,15 +13,68 @@ import { C3DMapScene } from './js/scenes/js_3d_real_blank.js';
 import {CFlatMapScene} from './js/scenes/js_map_box_scene.js';
 
 
+function getViewCount() {
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        const q = params.get('views');
+        const fromQuery = q ? String(q).trim() : '';
+        if (fromQuery === '1' || fromQuery === '2' || fromQuery === '4') return Number(fromQuery);
+    } catch (_) { }
+
+    try {
+        const stored = window.localStorage ? window.localStorage.getItem('VIEW_COUNT') : null;
+        if (stored === '1' || stored === '2' || stored === '4') return Number(stored);
+    } catch (_) { }
+
+    return 4;
+}
+
+function buildViews(viewCount) {
+    const mav = document.getElementById('mav3dmap');
+    if (!mav) {
+        console.error('Element #mav3dmap not found');
+        return;
+    }
+
+    let row = mav.querySelector('.row');
+    if (!row) {
+        row = document.createElement('div');
+        row.className = 'row';
+        mav.appendChild(row);
+    }
+
+    while (row.firstChild) row.removeChild(row.firstChild);
+
+    const columnClass = viewCount === 1 ? 'column1' : (viewCount === 2 ? 'column2' : 'column4');
+    for (let i = 1; i <= viewCount; i++) {
+        const col = document.createElement('div');
+        col.className = columnClass;
+        const canvas = document.createElement('canvas');
+        canvas.id = `map3D_${i}`;
+        col.appendChild(canvas);
+        row.appendChild(col);
+    }
+}
+
+
 
 async function initWorld() {
     const sceneType = window.sceneType;
     const c_world = new C_World(0, 0);
-    c_world.fn_initTHREE(document.documentElement.clientWidth / 2.1, document.documentElement.clientHeight / 2.1);
-    
-    // Ensure canvases are in containers
-    ['map3D_1', 'map3D_2', 'map3D_3', 'map3D_4'].forEach((id, index) => {
+    const viewCount = getViewCount();
+    const scaleFactor = viewCount >= 4 ? 2.1 : (viewCount === 2 ? 1.5 : 1);
+    c_world.fn_initTHREE(
+        document.documentElement.clientWidth / scaleFactor,
+        document.documentElement.clientHeight / scaleFactor
+    );
+
+    const ids = Array.from({ length: viewCount }, (_, i) => `map3D_${i + 1}`);
+    ids.forEach((id, index) => {
         const canvas = document.getElementById(id);
+        if (!canvas) {
+            console.warn(`Canvas element with ID ${id} not found.`);
+            return;
+        }
         let container = canvas.parentNode;
         if (!container.classList.contains('map3D_container')) {
             container = document.createElement('div');
@@ -30,7 +83,7 @@ async function initWorld() {
             canvas.parentNode.insertBefore(container, canvas);
             container.appendChild(canvas);
         }
-        c_world.fn_addCanvas(canvas, id === 'map3D_4'); // Only last is streamable
+        c_world.fn_addCanvas(canvas, index === (viewCount - 1)); // Only last is streamable
     });
 
     
@@ -66,9 +119,14 @@ function startSimulation(p_world) {
 }
 
 async function fn_on_ready() {
-    var canvas = $('canvas')[0];
-    canvas.width = document.documentElement.clientWidth;
-    canvas.height = document.documentElement.clientHeight;
+    const viewCount = getViewCount();
+    buildViews(viewCount);
+
+    const canvas = $('canvas')[0];
+    if (canvas) {
+        canvas.width = document.documentElement.clientWidth;
+        canvas.height = document.documentElement.clientHeight;
+    }
 
     // Ammo.js Initialization
     //await Ammo().then(() => {

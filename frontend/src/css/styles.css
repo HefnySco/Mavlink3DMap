@@ -23,6 +23,20 @@ body {
     height: 49vh; /* Full viewport height */
     width: 49vw; /* Full viewport width */
   }
+
+  .column2 {
+    float: left;
+    padding: 1px;
+    height: 100vh;
+    width: 49vw;
+  }
+
+  .column1 {
+    float: left;
+    padding: 1px;
+    height: 100vh;
+    width: 100vw;
+  }
   
   .column4 {
     background-color: #aaa; /* Default color */
