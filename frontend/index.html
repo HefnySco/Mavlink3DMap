@@ -5,106 +5,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mavlink 3D Map</title>
     <link rel="icon" href="/favicon.ico">
-    <style>
-        body { margin: 0; }
-        canvas { display: block; }
-        .top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
-        .left-col { text-align: left; flex: 1 1 auto; }
-        #app-logo { height: 160px; width: auto; display: block; }
-        /* Demo links styling */
-        .demo-links { list-style: none; padding-left: 0; margin: 0 0 28px 0; }
-        .demo-links li { margin: 8px 0; }
-        .demo-links a {
-            display: inline-block;
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 1rem;
-            color: #9ecde2ff;
-            text-decoration: none;
-            transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
-        .demo-links a:hover { background: #0a4e93; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.25); }
-        .demo-links a:active { transform: translateY(0); }
-    </style>
     <link rel="stylesheet" href="/src/css/styles.css">
 </head>
-  <body>
-    <main style="max-width: 900px; margin: 40px auto; padding: 0 16px; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; line-height: 1.5;">
-      <div class="top-row">
-        <div class="left-col">
-          <h1 style="margin: 0 0 12px;">Mavlink 3D Map</h1>
-          <p style="margin: 0 0 24px; color: #555;">Choose a demo layout:</p>
-          <ul class="demo-links">
-            <li><a href="./index_4w_map_box.html">4 views — Mapbox world</a></li>
-            <li><a href="./index_4w_real_map.html">4 views — Real map world</a></li>
-            <li><a href="./index_4w.html">4 views — Green/grass world</a></li>
-          </ul>
+  <body class="home-body">
+    <main class="home-page">
+      <section class="home-hero">
+        <div class="home-brand">
+          <h1 class="home-title">Mavlink 3D Map</h1>
+          <p class="home-subtitle">Launch a rich four-view 3D control room for your drone missions, or slim it down to a single view when you just need the essentials.</p>
+          <div class="home-hero-actions">
+            <ul class="home-demo-list">
+              <li>
+                <a href="./index_4w_map_box.html">
+                  <span class="home-demo-primary">Mapbox world</span>
+                  <span class="home-demo-meta">Real Flat World</span>
+                </a>
+              </li>
+              <li>
+                <a href="./index_4w_real_map.html">
+                  <span class="home-demo-primary">Real map world</span>
+                  <span class="home-demo-meta">3D map</span>
+                </a>
+              </li>
+              <li>
+                <a href="./index_4w.html">
+                  <span class="home-demo-primary">Green / grass world</span>
+                  <span class="home-demo-meta">artificial</span>
+                </a>
+              </li>
+            </ul>
+
+            <div class="home-select">
+              <span class="home-select-label">Views</span>
+              <div class="home-select-control">
+                <select id="select_view_count" class="home-select-input">
+                  <option value="1" class="home-option-input">1</option>
+                  <option value="2" class="home-option-input">2</option>
+                  <option value="4" class="home-option-input">4</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
-        <img id="app-logo" src="/app_logo.png" alt="App Logo" />
-      </div>
-
-      <section style="margin: 28px 0;">
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-          <input type="checkbox" id="toggle_buildings">
-          <span>Create Buildings</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:8px;">
-          <input type="checkbox" id="toggle_vehicles">
-          <span>Create vehicles</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:8px;">
-          <input type="checkbox" id="toggle_physics">
-          <span>Enable physics (balls & collisions)</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:12px; margin-top:12px;">
-          <span style="font-weight:600; color:#1f3a68;">QUAD Type:</span>
-          <div style="position:relative; display:inline-flex; align-items:center;">
-            <select id="select_quad_type" style="padding:8px 40px 8px 16px; border-radius:999px; border:1px solid rgba(31,90,164,0.4); background:linear-gradient(135deg,#1d6deb,#3ab5ff); color:#fff; font-weight:600; letter-spacing:0.01em; box-shadow:0 6px 16px rgba(29,109,235,0.25); appearance:none; -webkit-appearance:none; -moz-appearance:none;">
-              <option value="normal" style="color:#0db816;">Normal</option>
-              <option value="tailsitter" style="color:#0db816;">TailSitter</option>
-            </select>
-            <span style="pointer-events:none; position:absolute; right:14px; color:#fff; font-size:0.75rem; transform:translateY(1px);">▼</span>
+        <div class="home-visual">
+          <div class="home-visual-frame">
+            <img class="home-logo" src="/app_logo.png" alt="Mavlink 3D Map logo" />
           </div>
-        </label>
-
-        <label style="display:flex; align-items:center; gap:12px; margin-top:12px;">
-          <span style="font-weight:600; color:#1f3a68;">Views:</span>
-          <div style="position:relative; display:inline-flex; align-items:center;">
-            <select id="select_view_count" style="padding:8px 40px 8px 16px; border-radius:999px; border:1px solid rgba(31,90,164,0.4); background:linear-gradient(135deg,#1d6deb,#3ab5ff); color:#fff; font-weight:600; letter-spacing:0.01em; box-shadow:0 6px 16px rgba(29,109,235,0.25); appearance:none; -webkit-appearance:none; -moz-appearance:none;">
-              <option value="1" style="color:#0db816;">1</option>
-              <option value="2" style="color:#0db816;">2</option>
-              <option value="4" style="color:#0db816;">4</option>
-            </select>
-            <span style="pointer-events:none; position:absolute; right:14px; color:#fff; font-size:0.75rem; transform:translateY(1px);">▼</span>
-          </div>
-        </label>
-      </section>
-
-      <section style="margin: 28px 0;">
-        <h2 style="margin: 0 0 8px; font-size: 1.25rem;">How to run</h2>
-        <div>
-          <p style="margin: 0 0 6px;">Using the published package (no install):</p>
-          <pre style="background:#3881ca; padding:12px; border-radius:6px; overflow:auto; margin: 8px 0 0;">npx mavlink3dmap serve -p 8080
-npx mavlink3dmap udp2ws --udp-port 16450
-# Linux-only streaming
-npx mavlink3dmap stream
-# All-in-one
-npx mavlink3dmap up --port 8080 --udp-port 16450 --stream
-# Query Video Device Number
-npx mavlink3dmap video-number</pre>
-          <p style="margin: 16px 0 6px;">Monorepo development shortcuts:</p>
-          <pre style="background:#44d33f; padding:12px; border-radius:6px; overflow:auto; margin: 8px 0 0;">npm run dev         # backend UDP bridge + frontend dev server
-npm run devall      # adds camera streaming pipeline (Linux)
-npm run start:web   # preview built frontend</pre>
         </div>
       </section>
 
-      <section style="margin: 28px 0;">
-        <h2 style="margin: 0 0 8px; font-size: 1.25rem;">Keyboard shortcuts</h2>
+      <section class="home-controls">
         <div>
-          <div id="shortcuts_list" style="margin: 0 0 12px 20px;"></div>
+          <h2 class="home-section-title">Control Center</h2>
+          <p class="home-section-subtitle">Customize your scene before the telemetry starts flowing.</p>
         </div>
+
+        <div class="home-controls-grid">
+          <label class="home-toggle" for="toggle_buildings">
+            <input type="checkbox" id="toggle_buildings">
+            <span>Create buildings</span>
+          </label>
+
+          <label class="home-toggle" for="toggle_vehicles">
+            <input type="checkbox" id="toggle_vehicles">
+            <span>Create vehicles</span>
+          </label>
+
+          <label class="home-toggle" for="toggle_physics">
+            <input type="checkbox" id="toggle_physics">
+            <span>Enable physics (balls & collisions)</span>
+          </label>
+        </div>
+
+        <div class="home-select-group">
+          <div class="home-select">
+            <span class="home-select-label">Quad type</span>
+            <div class="home-select-control">
+              <select id="select_quad_type" class="home-select-input">
+                <option value="normal" class='home-option-input'>Normal</option>
+                <option value="tailsitter" class='home-option-input'>TailSitter</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="home-howto">
+        <div>
+          <h2 class="home-section-title">Documentation</h2>
+          <p class="home-section-subtitle">For setup guides and run commands, open the project README on GitHub.</p>
+        </div>
+
+        <a class="home-doc-link" href="https://github.com/HefnySco/Mavlink3DMap#readme" target="_blank" rel="noopener noreferrer">
+          <span class="home-doc-link-label">Open README</span>
+          <span class="home-doc-link-meta">github.com/HefnySco/Mavlink3DMap</span>
+        </a>
+      </section>
+
+      <section class="home-shortcuts-section">
+        <div>
+          <h2 class="home-section-title">Keyboard shortcuts</h2>
+          <p class="home-shortcuts-hint">Stay efficient as you command and monitor every view.</p>
+        </div>
+        <div id="shortcuts_list"></div>
       </section>
     </main>
     <script>

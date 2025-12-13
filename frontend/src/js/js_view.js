@@ -8,6 +8,9 @@ class C_View {
 
         this.m_world = p_world;
         this.m_canvas = p_canvas;
+        if (!this.m_canvas.hasAttribute('tabindex')) {
+            this.m_canvas.setAttribute('tabindex', '-1');
+        }
         this.v_droneIndex = 0;
         this.m_view_selected_camera = null;
         this.isStreamable = isStreamable;
@@ -85,7 +88,7 @@ class C_View {
         // Event listeners
         this.fn_onMouseDown = this.fn_onMouseDown.bind(this);
         this.fn_onMouseDoubleClick = this.fn_onMouseDoubleClick.bind(this);
-        this.m_canvas.addEventListener('click', this.fn_onMouseDown, false);
+        this.m_canvas.addEventListener('mousedown', this.fn_onMouseDown, false);
         this.m_canvas.addEventListener('dblclick', this.fn_onMouseDoubleClick, false);
 
         // If streamable, initialize WebSocket
@@ -134,14 +137,7 @@ class C_View {
 
     fn_onMouseDown(event) {
         event.preventDefault();
-        this.m_world.v_selectedView = this;
-
-        // New: Remove 'selected' class from all containers
-        const containers = document.querySelectorAll('.map3D_container');
-        containers.forEach(container => container.classList.remove('selected'));
-
-        // New: Add 'selected' class to the clicked container
-        event.currentTarget.parentNode.classList.add('selected');
+        this.m_world.fn_setActiveView(this);
     };
 
     fn_onMouseDoubleClick(event) {

@@ -441,8 +441,39 @@ class C_World {
     fn_addCanvas(p_canvas, isStreamable = false) {
         const c_view = new C_View(this, p_canvas, this.v_XZero, this.v_YZero, isStreamable);
         this.v_views.push(c_view);
-        this.v_selectedView = c_view;
+        if (!this.v_selectedView) {
+            this.fn_setActiveView(c_view, false);
+        } else {
+            this.fn_setActiveView(this.v_selectedView, false);
+        }
     };
+
+    fn_setActiveView(view, userInitiated = true) {
+        if (!view) return;
+        this.v_selectedView = view;
+
+        const containers = document.querySelectorAll('.map3D_container');
+        containers.forEach(container => {
+            container.classList.remove('view-active');
+            container.classList.remove('view-inactive');
+            container.classList.add('view-inactive');
+        });
+
+        try {
+            const canvas = view.m_canvas;
+            const container = canvas?.parentNode;
+            if (container && container.classList) {
+                container.classList.remove('view-inactive');
+                container.classList.add('view-active');
+            }
+        } catch (_) { }
+
+        if (userInitiated) {
+            try {
+                view.m_canvas.focus({ preventScroll: true });
+            } catch (_) { }
+        }
+    }
 
     // Remove a canvas/view and dispose its resources
     fn_removeCanvas(p_canvas) {
@@ -457,6 +488,15 @@ class C_World {
             this.v_views.splice(idx, 1);
             if (this.v_selectedView === view) {
                 this.v_selectedView = this.v_views.length > 0 ? this.v_views[0] : null;
+                if (this.v_selectedView) {
+                    this.fn_setActiveView(this.v_selectedView, false);
+                } else {
+                    const containers = document.querySelectorAll('.map3D_container');
+                    containers.forEach(container => {
+                        container.classList.remove('view-active');
+                        container.classList.remove('view-inactive');
+                    });
+                }
             }
         }
     };
