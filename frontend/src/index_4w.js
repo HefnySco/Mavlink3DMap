@@ -11,7 +11,7 @@ import './js/js_camera.js';
 import { CGrassScene } from './js/scenes/js_green_scene.js'; 
 import { C3DMapScene } from './js/scenes/js_3d_real_blank.js';
 import {CFlatMapScene} from './js/scenes/js_map_box_scene.js';
-
+import { getStoredViewCount } from './js/js_storage.js';
 
 function getViewCount() {
     try {
@@ -22,7 +22,7 @@ function getViewCount() {
     } catch (_) { }
 
     try {
-        const stored = window.localStorage ? window.localStorage.getItem('VIEW_COUNT') : null;
+        const stored = getStoredViewCount();
         if (stored === '1' || stored === '2' || stored === '4') return Number(stored);
     } catch (_) { }
 

@@ -64,4 +64,9 @@ export function getQuadType() {
   return getStringFromStorage('QUAD_TYPE', 'normal');
 }
 
+export function getStoredViewCount() {
+  // default is false: physics/ball throwing off unless explicitly enabled
+  return getStringFromStorage('VIEW_COUNT', '4');
+}
+
 
