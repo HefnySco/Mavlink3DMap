@@ -59,3 +59,9 @@ export function getPhysicsEnabledFlag() {
   // default is false: physics/ball throwing off unless explicitly enabled
   return getBoolFromStorage('PHYSICS_ENABLED', false);
 }
+export function getQuadType() {
+  // default is false: physics/ball throwing off unless explicitly enabled
+  return getStringFromStorage('QUAD_TYPE', 'normal');
+}
+
+

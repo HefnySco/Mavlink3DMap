@@ -13,6 +13,7 @@ import { getMetersPerDegreeLng, metersPerDegreeLat } from './js_globals.js';
 import { EVENTS as js_event } from './js_eventList.js'
 import { js_eventEmitter } from './js_eventEmitter.js';
 import { CSS2DObject} from 'three/examples/jsm/renderers/CSS2DRenderer.js';
+import { getQuadType } from './js_storage.js';
 
 const FRAME_TYPE_PLUS = 0;
 const FRAME_TYPE_PLANE = 1;
@@ -181,59 +182,28 @@ class c_ArduVehicles extends Vehicle {
     }
 
     #fn_createDroneX(p_attachCamera, p_callbackfunc) {
-        const c_loader = new THREE.ObjectLoader();
-        let Me = this;
-        c_loader.load('/models/vehicles/quadX.json', function (p_obj) {
-            /*
-            Adjust relative object position & orientation here if needed.
-            */
 
-            // extract object from Group
-
-            if (p_attachCamera === true) {
-                let v_cam_down = new CameraController(Me, true, 90);
-                v_cam_down.fn_setRotationIndependence(false, true,true);
-                // facing down with stabilizer
-                v_cam_down.fn_setCameraRelativePosition(0.0, 0.0, 0.0,
-                    -1.5708, -1.5708, 0);
-
-                let v_cam_front = new CameraController(Me, true, 90);
-                v_cam_front.fn_setRotationIndependence(false, true, true);
-                v_cam_front.fn_setCameraRelativePosition(0.3, 0.0, 0.0,
-                    0.0, 0.0, -1.5708);
-
-                let v_cam_follow_me = new CameraController(Me, false, 45, 'followme');
-                v_cam_follow_me.fn_setRotationIndependence(true);
-                v_cam_follow_me.fn_setOrbitMode(true);
-                v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
-                    , 0.0, -0.5, 0.0);
-
-                
-                Me.m_cameras.push(v_cam_down);  // drone cam
-                Me.m_cameras.push(v_cam_front);  // drone cam front
-                Me.m_cameras.push(v_cam_follow_me);  // follow-me
-                
-            }
-
-            // Set a default thrower: free fall from slight below center; velocity can be customized later via fn_setBallThrower
-            Me.fn_setBallThrower({
-                //offset: { x: 0, y: -0.1, z: 0 },
-                offset: { x: 0, y: 0.0, z: 0 },
-                velocity: { x: 0, y: 0, z: 0 },
-                radius: 0.2,
-                color: 0xff5533
-            });
-
-            Me.fn_createCustom(p_obj, function (p_mesh) {
-                p_callbackfunc(p_mesh);
-            });
-        });
+        const quad_type = getQuadType();
+        switch(quad_type)
+        {
+            case 'normal':
+                this.#fn_createDroneXDefault(p_attachCamera, p_callbackfunc);
+                break;
+            case 'tailsitter':
+                this.#fn_createDroneTailSitter(p_attachCamera, p_callbackfunc);
+                break;
+            default:
+                this.#fn_createDroneXDefault(p_attachCamera, p_callbackfunc);
+                break;
+        }
+        
+        
     }
 
     #fn_createDronePlus(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
         let Me = this;
-        c_loader.load('./models/vehicles/quadplus.json', function (p_obj) {
+        c_loader.load('./models/vehicles/quadplus.json', (p_obj) =>  {
             /*
             Adjust relative object position & orientation here if needed.
             */
@@ -267,7 +237,7 @@ class c_ArduVehicles extends Vehicle {
     #fn_createDrone4(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
         let Me = this;
-        c_loader.load('./models/vehicles/drone4/drone-4.json', function (p_obj) {
+        c_loader.load('./models/vehicles/drone4/drone-4.json', (p_obj) =>  {
             /*
             Adjust relative object position & orientation here if needed.
             */
@@ -312,7 +282,7 @@ class c_ArduVehicles extends Vehicle {
     #fn_createDronePlane(p_attachCamera, p_callbackfunc) {
         const c_loader = new THREE.ObjectLoader();
         let Me = this;
-        c_loader.load('./models/vehicles/plane_model1.json', function (p_obj) {
+        c_loader.load('./models/vehicles/plane_model1.json',  (p_obj) => {
             /*
             Adjust relative object position & orientation here if needed.
             */
@@ -354,7 +324,7 @@ class c_ArduVehicles extends Vehicle {
     #fn_createDroneVTOLPlane(p_attachCamera, p_callbackfunc, p_addtoscene) {
         const c_loader = new THREE.ObjectLoader();
         let Me = this;
-        c_loader.load('./models/vehicles/vtol3Motor/model.json', function (p_obj) {
+        c_loader.load('./models/vehicles/vtol3Motor/model.json', (p_obj) =>  {
 
             /*
             Adjust relative object position & orientation here if needed.
@@ -436,6 +406,102 @@ class c_ArduVehicles extends Vehicle {
         this.m_Mesh = new v_Object();
 
         if (p_callbackfunc != null) p_callbackfunc(this.m_Mesh);
+    }
+
+
+    #fn_createDroneXDefault(p_attachCamera, p_callbackfunc) {
+        const c_loader = new THREE.ObjectLoader();
+        let Me = this;
+        c_loader.load('/models/vehicles/quadX.json', (p_obj) =>  {
+            /*
+            Adjust relative object position & orientation here if needed.
+            */
+
+            // extract object from Group
+
+            if (p_attachCamera === true) {
+                let v_cam_down = new CameraController(Me, true, 90);
+                v_cam_down.fn_setRotationIndependence(false, true,true);
+                // facing down with stabilizer
+                v_cam_down.fn_setCameraRelativePosition(0.0, 0.0, 0.0,
+                    -1.5708, -1.5708, 0);
+
+                let v_cam_front = new CameraController(Me, true, 90);
+                v_cam_front.fn_setRotationIndependence(false, true, true);
+                v_cam_front.fn_setCameraRelativePosition(0.3, 0.0, 0.0,
+                    0.0, 0.0, -1.5708);
+
+                let v_cam_follow_me = new CameraController(Me, false, 45, 'followme');
+                v_cam_follow_me.fn_setRotationIndependence(true);
+                v_cam_follow_me.fn_setOrbitMode(true);
+                v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
+                    , 0.0, -0.5, 0.0);
+
+                
+                Me.m_cameras.push(v_cam_down);  // drone cam
+                Me.m_cameras.push(v_cam_front);  // drone cam front
+                Me.m_cameras.push(v_cam_follow_me);  // follow-me
+                
+            }
+
+            // Set a default thrower: free fall from slight below center; velocity can be customized later via fn_setBallThrower
+            Me.fn_setBallThrower({
+                //offset: { x: 0, y: -0.1, z: 0 },
+                offset: { x: 0, y: 0.0, z: 0 },
+                velocity: { x: 0, y: 0, z: 0 },
+                radius: 0.2,
+                color: 0xff5533
+            });
+
+            Me.fn_createCustom(p_obj, function (p_mesh) {
+                p_callbackfunc(p_mesh);
+            });
+        });
+    }
+
+    #fn_createDroneTailSitter(p_attachCamera, p_callbackfunc) {
+        const c_loader = new THREE.ObjectLoader();
+        let Me = this;
+        c_loader.load('/models/vehicles/tailsitter/tailsitter.json', (p_obj) =>  {
+            /*
+            Adjust relative object position & orientation here if needed.
+            */
+
+            // extract object from Group
+
+            if (p_attachCamera === true) {
+                let v_cam_down = new CameraController(Me, true, 90);
+                v_cam_down.fn_setRotationIndependence(false, true,true);
+                // facing down with stabilizer
+                v_cam_down.fn_setCameraRelativePosition(0.0, 0.0, 0.5,
+                    1.5708, 1.5708, 0);
+
+                let v_cam_follow_me = new CameraController(Me, false, 45, 'followme');
+                v_cam_follow_me.fn_setRotationIndependence(true);
+                v_cam_follow_me.fn_setOrbitMode(true);
+                v_cam_follow_me.fn_setCameraRelativePosition(-1.5, 0.0, 1.5
+                    , 0.0, -0.5, 0.0);
+
+                
+                Me.m_cameras.push(v_cam_down);  // drone cam
+                //Me.m_cameras.push(v_cam_front);  // drone cam front
+                Me.m_cameras.push(v_cam_follow_me);  // follow-me
+                
+            }
+
+            // Set a default thrower: free fall from slight below center; velocity can be customized later via fn_setBallThrower
+            Me.fn_setBallThrower({
+                //offset: { x: 0, y: -0.1, z: 0 },
+                offset: { x: 0, y: 0.0, z: 0 },
+                velocity: { x: 0, y: 0, z: 0 },
+                radius: 0.2,
+                color: 0xff5533
+            });
+
+            Me.fn_createCustom(p_obj, function (p_mesh) {
+                p_callbackfunc(p_mesh);
+            });
+        });
     }
 
     /**
