@@ -5,7 +5,7 @@ import { EVENTS as js_event } from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getMetersPerDegreeLng, metersPerDegreeLat, getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
 import { ImageCache } from '../js_image_cache.js'
-import { Vehicle } from '../physical_objects/js_vehicle.js';
+import { Vehicle } from '../physical_objects/js_physicalVehicle.js';
 import { Building } from '../physical_objects/js_building.js';
 import { CBaseScene } from './js_base_scene.js';
 

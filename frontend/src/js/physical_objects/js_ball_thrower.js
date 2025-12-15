@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { PhysicsBall } from './physical_objects/js_ball.js';
-import { getPhysicsEnabledFlag } from './js_storage.js';
+import { PhysicsBall } from './js_ball.js';
+import { getPhysicsEnabledFlag } from '../js_storage.js';
 
 /**
  * BallThrower attaches to a vehicle and spawns balls with configured

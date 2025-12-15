@@ -4,7 +4,7 @@ import SimObject from '../js_object.js';
 import { EVENTS as js_event } from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
-import { Vehicle } from '../physical_objects/js_vehicle.js';
+import { Vehicle } from '../physical_objects/js_physicalVehicle.js';
 import { Building } from '../physical_objects/js_building.js';
 import { getBuildingsPerTileFlag, getRandomVehiclesEnabledFlag } from '../js_storage.js';
 

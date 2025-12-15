@@ -9,7 +9,7 @@
 
 
 /*jshint esversion: 6 */
-import { BallThrower } from './js_ball_thrower.js';
+import { BallThrower } from './physical_objects/js_ball_thrower.js';
 
 class Trigger {
 
