@@ -254,18 +254,21 @@ export class CBaseScene {
         const maxY = 260;
         const minAlt = 20;
         const maxAlt = 400;
+        const maxRadius = 10;
+        const minRadius = 5;
 
         const c_planes = [];
         for (let i = 0; i < totalPlanes; i++) {
             const x = minX + Math.random() * (maxX - minX);
             const y = minY + Math.random() * (maxY - minY);
             const alt = minAlt + Math.random() * (maxAlt - minAlt);
-            c_planes.push([x, y, alt]);
+            const radius = minRadius + Math.random() * (maxRadius - minRadius);
+            c_planes.push([x, y, alt, radius]);
         }
 
         for (const c_location of c_planes) {
             const planeId = 'plane' + uuidv4();
-            this._addPlane(planeId, p_XZero + c_location[0], p_YZero + c_location[1], c_location[2], 7);
+            this._addPlane(planeId, p_XZero + c_location[0], p_YZero + c_location[1], c_location[2], c_location[3]);
         }
     }
 
