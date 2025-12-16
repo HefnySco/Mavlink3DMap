@@ -302,18 +302,19 @@ class C_World {
         // Global shortcuts: Save/Restore/Reset layout
         try {
             const key = (event.key || '').toLowerCase();
+            const code = (event.code || '');
             if (event.ctrlKey && !event.altKey && !event.metaKey) {
-                if (key === 's') { // Ctrl+S => Save layout
+                if (code === 'KeyS' || key === 's') { // Ctrl+S => Save layout
                     event.preventDefault();
                     this.fn_saveLayoutToLocalStorage();
                     return;
                 }
-                if (key === 'r' && !event.shiftKey) { // Ctrl+R => Restore layout
+                if ((code === 'KeyR' || key === 'r') && !event.shiftKey) { // Ctrl+R => Restore layout
                     event.preventDefault();
                     this.fn_restoreLayoutFromLocalStorage();
                     return;
                 }
-                if (key === 'r' && event.shiftKey) { // Ctrl+Shift+R => Reset layout
+                if ((code === 'KeyR' || key === 'r') && event.shiftKey) { // Ctrl+Shift+R => Reset layout
                     event.preventDefault();
                     this.fn_resetLayout();
                     return;
@@ -572,7 +573,7 @@ class C_World {
         this.renderer.shadowMap.enabled = false;
 
         this.fn_onKeyDown = this.fn_onKeyDown.bind(this);
-        document.addEventListener('keydown', this.fn_onKeyDown, false);
+        document.addEventListener('keydown', this.fn_onKeyDown, true);
 
         // Simple ground visual is handled by scene tiles; physics ground added in fn_initPhysics
     };
