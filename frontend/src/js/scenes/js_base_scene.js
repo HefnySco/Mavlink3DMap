@@ -246,7 +246,7 @@ export class CBaseScene {
         }
     }
 
-    _addPlanes(p_XZero, p_YZero, totalPlanes = 6) {
+    _addPlanes(p_XZero, p_YZero, totalPlanes = 16, maxRadius= 10, minRadius= 5) {
         console.log('Adding planes at', p_XZero, p_YZero, totalPlanes);
         const minX = -120;
         const maxX = 140;
@@ -254,8 +254,7 @@ export class CBaseScene {
         const maxY = 260;
         const minAlt = 20;
         const maxAlt = 400;
-        const maxRadius = 10;
-        const minRadius = 5;
+    
 
         const c_planes = [];
         for (let i = 0; i < totalPlanes; i++) {
@@ -269,6 +268,29 @@ export class CBaseScene {
         for (const c_location of c_planes) {
             const planeId = 'plane' + uuidv4();
             this._addPlane(planeId, p_XZero + c_location[0], p_YZero + c_location[1], c_location[2], c_location[3]);
+        }
+    }
+
+    _addCars(p_XZero, p_YZero, totalCars = 4, maxRadius = 10, minRadius = 0) {
+        console.log('Adding cars at', p_XZero, p_YZero, totalCars);
+        const minX = -120;
+        const maxX = 140;
+        const minY = -140;
+        const maxY = 260;
+        const maxRadiusValue = maxRadius;
+        const minRadiusValue = minRadius;
+
+        const c_cars = [];
+        for (let i = 0; i < totalCars; i++) {
+            const x = minX + Math.random() * (maxX - minX);
+            const y = minY + Math.random() * (maxY - minY);
+            const radius = minRadiusValue + Math.random() * (maxRadiusValue - minRadiusValue);
+            c_cars.push([x, y, radius]);
+        }
+
+        for (const c_location of c_cars) {
+            const carId = 'car' + uuidv4();
+            this._addCar(carId, p_XZero + c_location[0], p_YZero + c_location[1], c_location[2]);
         }
     }
 
@@ -287,11 +309,10 @@ export class CBaseScene {
         }
 
 
-        if (typeof this._addCar === 'function') {
+        if (typeof this._addCars === 'function') {
             const randomVehicles = getRandomVehiclesEnabledFlag();
             if (randomVehicles) {
-                this.droneId = 'car' + uuidv4();
-                this._addCar(this.droneId, x, y, 0);
+                this._addCars(x, y);
             }
         }
 
