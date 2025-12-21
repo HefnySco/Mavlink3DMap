@@ -31,6 +31,13 @@ export class CBaseScene {
         this.refLng = null;
         this.refAlt = null;
 
+        // Performance optimization: animation throttling
+        this.animationFrameCounter = 0;
+        this.animationUpdateFrequency = 3; // Update animations every 3rd frame
+        this.maxAnimatedObjects = 12; // Limit total animated objects
+        this.currentAnimatedObjects = 0;
+        this.lastProcessedFrame = -1; // Track last processed world frame
+
         js_eventEmitter.fn_subscribe(js_event.EVT_VEHICLE_POS_CHANGED, this, (p_me, vehicle) => {
             if (vehicle.sid != p_me.m_default_vehicle_sid) return;
             const { x, y, z } = vehicle.fn_translateXYZ();
@@ -91,6 +98,8 @@ export class CBaseScene {
         if (typeof this._adjustCameras === 'function') {
             this._adjustCameras(vehicleX, vehicleY);
         }
+
+        this._addPlanes(vehicleX, vehicleY,20);
     }
 
     _removeExistingVehicle() {
@@ -108,6 +117,9 @@ export class CBaseScene {
             this.world?.v_scene?.remove(tile);
         }
         this.tiles.clear();
+        // Reset animated object counter when clearing tiles
+        this.currentAnimatedObjects = 0;
+        console.log('[Performance] Cleared tiles, reset animated object counter');
     }
 
     _disposeNode(node) {
@@ -185,8 +197,9 @@ export class CBaseScene {
     }
 
     _setCircularAnimation(c_robot, p_centerX, p_centerY, p_radius, p_altitude = 0) {
-        if (!p_radius) return;
-
+        if (!p_radius || this.currentAnimatedObjects >= this.maxAnimatedObjects) return;
+        
+        this.currentAnimatedObjects++;
         let c_y_deg = 0.0;
         const maxTilt = 1.1;
 
@@ -198,8 +211,34 @@ export class CBaseScene {
 
         let c_y_deg_step = c_y_deg_step_base;
         let c_deg = Math.random() * Math.PI * 2;
+        
+        // Pre-calculate constants for performance
+        const TWO_PI = Math.PI * 2;
+        const LOD_DISTANCE_SQ = 10000; // 100 units squared for LOD cutoff
 
         c_robot.fn_setAnimate(() => {
+            // Multi-view optimization: only update once per world frame (PER OBJECT)
+            // NOTE: must be per robot; otherwise first robot would block all others.
+            const worldFrame = this.world?.currentFrame || 0;
+            const ud = c_robot.fn_getMesh ? c_robot.fn_getMesh().userData : (c_robot.userData || null);
+            if (ud) {
+                if (ud.lastProcessedFrame === worldFrame) return;
+                ud.lastProcessedFrame = worldFrame;
+            }
+
+            // Animation throttling: only update every Nth frame
+            this.animationFrameCounter++;
+            if (this.animationFrameCounter % this.animationUpdateFrequency !== 0) return;
+
+            // Distance-based LOD: skip animation if object is far from camera
+            if (this.world?.v_views?.[0]?.m_view_selected_camera) {
+                const camera = this.world.v_views[0].m_view_selected_camera;
+                const dx = camera.position.x - p_centerX;
+                const dz = camera.position.z - p_centerY;
+                const distanceSq = dx * dx + dz * dz;
+                if (distanceSq > LOD_DISTANCE_SQ) return;
+            }
+
             c_y_deg += c_y_deg_step;
             if (c_y_deg >= maxTilt) {
                 c_y_deg_step = -c_y_deg_step_base;
@@ -208,16 +247,17 @@ export class CBaseScene {
                 c_y_deg_step = c_y_deg_step_base;
                 c_y_deg = -maxTilt;
             }
+            
             const newX = p_radius * Math.cos(c_deg) + p_centerX;
             const newY = p_radius * Math.sin(c_deg) + p_centerY;
             c_robot.fn_setPosition(newX, newY, p_altitude);
-            c_deg = (c_deg + angleStep) % (2 * Math.PI);
+            c_deg = (c_deg + angleStep) % TWO_PI;
             const heading = Math.atan2(newY - p_centerY, newX - p_centerX) + PI_div_2;
             c_robot.fn_setRotation(0, 0, -heading);
         });
     }
 
-    _addBuildings(p_XZero, p_YZero, totalBuildings = 6) {
+    _addBuildings(p_XZero, p_YZero, totalBuildings = 3) {
         console.log('Adding buildings at', p_XZero, p_YZero, totalBuildings);
         const tag = `${p_XZero},${p_YZero}`;
         const minX = -160;
@@ -246,14 +286,14 @@ export class CBaseScene {
         }
     }
 
-    _addPlanes(p_XZero, p_YZero, totalPlanes = 16, maxRadius= 10, minRadius= 5) {
+    _addPlanes(p_XZero, p_YZero, totalPlanes = 3, maxRadius= 10, minRadius= 5) {
         console.log('Adding planes at', p_XZero, p_YZero, totalPlanes);
-        const minX = -120;
-        const maxX = 140;
-        const minY = -140;
-        const maxY = 260;
+        const minX = -10;
+        const maxX = 10;
+        const minY = -10;
+        const maxY = 10;
         const minAlt = 20;
-        const maxAlt = 400;
+        const maxAlt = 200;
     
 
         const c_planes = [];
@@ -271,7 +311,7 @@ export class CBaseScene {
         }
     }
 
-    _addCars(p_XZero, p_YZero, totalCars = 4, maxRadius = 10, minRadius = 0) {
+    _addCars(p_XZero, p_YZero, totalCars = 2, maxRadius = 40, minRadius = 0) {
         console.log('Adding cars at', p_XZero, p_YZero, totalCars);
         const minX = -120;
         const maxX = 140;
@@ -300,14 +340,14 @@ export class CBaseScene {
     }
 
     fn_onNewTileCreated(x, y) {
+        const startTime = performance.now();
+        
         if (typeof this._addBuildings === 'function') {
             const buildingsPerTile = getBuildingsPerTileFlag();
-
             if (buildingsPerTile) {
                 this._addBuildings(x, y);
             }
         }
-
 
         if (typeof this._addCars === 'function') {
             const randomVehicles = getRandomVehiclesEnabledFlag();
@@ -315,8 +355,6 @@ export class CBaseScene {
                 this._addCars(x, y);
             }
         }
-
-
 
         if (typeof this._addPlanes === 'function') {
             const randomVehicles = getRandomVehiclesEnabledFlag();

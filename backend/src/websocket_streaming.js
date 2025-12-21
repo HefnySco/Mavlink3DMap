@@ -7,18 +7,43 @@ if (process.platform !== 'linux') {
 //node ./websocket_streaming.js | ffmpeg -framerate 30 -f image2pipe -vcodec mjpeg -s 801x600 -i - -pix_fmt yuv420p -f v4l2 /dev/video1
 
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8081 });
+
+// Optimization: Disable perMessageDeflate since we are streaming pre-compressed JPEGs.
+// This saves significant CPU and reduces latency.
+const wss = new WebSocket.Server({ 
+    port: 8081,
+    perMessageDeflate: false
+});
+
+// Handle broken pipe (e.g., if ffmpeg stops) without crashing
+process.stdout.on('error', (err) => {
+    if (err.code === 'EPIPE') {
+        process.exit(0);
+    }
+    console.error('Stdout error:', err);
+});
 
 wss.on('connection', ws => {
-    console.log('Client connected!');
+    // Log to stderr so we don't corrupt the image stream on stdout
+    console.error('Client connected!');
+    let frameCount = 0;
+
     ws.on('message', message => {
-        // Here you would receive the binary data of each video frame.
-        // In this simple example, we'll just forward it to stdout.
-        process.stdout.write(message);
+        // frameCount++;
+        // if (frameCount % 30 === 0) {
+        //     console.error(`[Backend] Processed ${frameCount} frames`);
+        // }
+
+        // Directly write binary buffer to stdout
+        try {
+            process.stdout.write(message);
+        } catch (err) {
+            // Ignore write errors if pipe is closed, mostly handled by stdout 'error' event
+        }
     });
 
     ws.on('close', () => {
-        console.log('Client disconnected!');
+        console.error('Client disconnected!');
     });
 
     ws.on('error', error => {
@@ -26,4 +51,4 @@ wss.on('connection', ws => {
     });
 });
 
-console.log('WebSocket server started on port 8081');
+console.error('WebSocket server started on port 8081');

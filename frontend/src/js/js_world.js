@@ -82,6 +82,10 @@ class C_World {
         // Track last globally selected drone (via 1..9)
         this.v_selectedDroneId = null;
 
+        // Performance optimization: frame counter to prevent redundant calculations
+        this.currentFrame = 0;
+        this.lastAnimationTime = 0;
+
         // Replace jQuery with vanilla JavaScript
         const helpDlg = document.createElement('div');
         helpDlg.id = 'help_dlg';
@@ -601,23 +605,27 @@ class C_World {
      * Update & run simulator
      */
     fn_animate(time) {
+        // Increment frame counter for animation optimization
+        this.currentFrame++;
+        this.lastAnimationTime = time;
+
+        // === SHARED SCENE UPDATES (ONCE PER FRAME) ===
+        
+        // Update drone simulations
         let c_keys = Object.keys(this.v_drone);
         let c_key_length = c_keys.length;
         for (let i = 0; i < c_key_length; ++i) {
             this.v_drone[c_keys[i]].fn_updateSimulationStep();
         }
 
+        // Update robot animations (cars, planes, etc.) - ONCE per frame
         c_keys = Object.keys(this.#m_robots);
         c_key_length = c_keys.length;
-
         for (let i = 0; i < c_key_length; ++i) {
             this.#m_robots[c_keys[i]].fn_updateSimulationStep();
         }
 
-        this.v_views.forEach(view => {
-            view.fn_render();
-        });
-
+        // Update water animation
         if (this.v_water != null) this.v_water.material.uniforms['time'].value += 1.0 / 60.0;
 
         let deltaTime = this.v_clock.getDelta();
@@ -634,7 +642,14 @@ class C_World {
             this._lastDronePos[id] = { x, y, z };
         }
 
+        // Update physics simulation
         this.fn_updatePhysics(deltaTime);
+
+        // === VIEW-SPECIFIC RENDERING (PER VIEW) ===
+        // Use optimized rendering that skips redundant scene updates
+        this.v_views.forEach(view => {
+            view.fn_renderViewOnly();
+        });
 
         requestAnimationFrame(this.fn_animate);
     };

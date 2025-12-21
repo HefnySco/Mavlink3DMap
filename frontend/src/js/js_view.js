@@ -16,9 +16,19 @@ class C_View {
         this.isStreamable = isStreamable;
         this.streaming_wsocket = null;
 
-        this.m_skip = 0;
-        this.targetFps = targetFps; // Target streaming FPS
-        this.sendInterval = Math.ceil(60 / this.targetFps); // e.g., 2 for 30 FPS at 60Hz render
+        this.targetFps = Number(targetFps) || 10; // Default to 10 if invalid
+        if (this.targetFps <= 0) this.targetFps = 10;
+        this.minFrameTime = 1000 / this.targetFps; 
+        console.log(`[View] Configured streaming: TargetFPS=${this.targetFps}, MinFrameTime=${this.minFrameTime.toFixed(2)}ms`);
+        
+        this.lastFrameTime = 0;
+        this.isSending = false;
+        this.sentFrameCount = 0; // Track total sent frames
+
+        this.lastViewRenderTime = 0;
+        this.lastLabelRenderTime = 0;
+        this.inactiveViewMinFrameTime = 200; // ms (~5 FPS)
+        this.inactiveViewRenderScale = 0.6; // lower internal resolution for inactive views
 
         // Set canvas dimensions
         // IMPORTANT: Enforce EVEN pixel dimensions for the offscreen canvas.
@@ -113,15 +123,38 @@ class C_View {
 
             this.streaming_wsocket.onclose = () => {
                 console.log('Streaming WebSocket closed');
+                this.reconnectWebSocket();
             };
 
             this.streaming_wsocket.onerror = (error) => {
                 console.error('Streaming WebSocket error:', error);
+                this.streaming_wsocket.close(); // Ensure close triggers reconnect
+            };
+
+            this.streaming_wsocket.onmessage = (event) => {
+                // Log every 30 frames to confirm data flow without flooding logs
+                let frameCount = 0;
+                frameCount++;
+                if (frameCount % 30 === 0) {
+                    console.error(`[Backend] Received ${frameCount} frames`);
+                }
             };
         }
         catch (e) {
-            return;
+            this.reconnectWebSocket();
         }
+    }
+
+    reconnectWebSocket() {
+        if (this.reconnectTimer) return;
+        
+        console.log('Attempting to reconnect WebSocket in 2 seconds...');
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
+            if (this.isStreamable) {
+                this.initWebSocket();
+            }
+        }, 2000);
     }
 
 
@@ -154,6 +187,7 @@ class C_View {
             return false;
         }
         const canvas = this.m_canvas;
+        const isActiveView = (this.m_world && this.m_world.v_selectedView === this);
         const dpr = window.devicePixelRatio;
         const widthRaw = canvas.clientWidth * dpr;
         const heightRaw = canvas.clientHeight * dpr;
@@ -165,7 +199,11 @@ class C_View {
         if (needResize) {
             canvas.width = width;
             canvas.height = height;
-            this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+            // Shared renderer: only the ACTIVE view is allowed to drive renderer.setSize.
+            // Otherwise multiple views will thrash the WebGL backbuffer size.
+            if (isActiveView) {
+                this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+            }
             const container = canvas.parentNode;
             this.labelRenderer.setSize(container.clientWidth, container.clientHeight);
         }
@@ -327,6 +365,13 @@ class C_View {
             return;
         }
 
+        const nowPerf = performance.now();
+        const isActiveView = (this.m_world && this.m_world.v_selectedView === this);
+        if (!isActiveView) {
+            if (nowPerf - this.lastViewRenderTime < this.inactiveViewMinFrameTime) return;
+            this.lastViewRenderTime = nowPerf;
+        }
+
         const canvas = this.m_canvas;
         const container = canvas.parentNode;
 
@@ -338,10 +383,13 @@ class C_View {
         }
 
         // Set viewport and scissor for WebGL (use DPR-scaled pixel size)
-        const width = canvas.width;
-        const height = canvas.height;
-        this.renderer.setViewport(0, 0, width, height);
-        this.renderer.setScissor(0, 0, width, height);
+        // IMPORTANT: shared renderer backbuffer must be fully rendered.
+        // If we render only a partial viewport, drawImage(renderer.domElement) will copy
+        // stale pixels from the previous view and cause split/corrupt frames.
+        const rbw = this.renderer.domElement.width;
+        const rbh = this.renderer.domElement.height;
+        this.renderer.setViewport(0, 0, rbw, rbh);
+        this.renderer.setScissor(0, 0, rbw, rbh);
         this.renderer.setScissorTest(true);
 
         // Render WebGL scene
@@ -382,23 +430,19 @@ class C_View {
         }
         this.renderer.render(this.m_world.v_scene, this.m_view_selected_camera);
 
-        // Render CSS2D labels
-        this.labelRenderer.render(this.m_world.v_scene, this.m_view_selected_camera);
+        // Render CSS2D labels (throttle for inactive views)
+        if (isActiveView || (nowPerf - this.lastLabelRenderTime > 250)) {
+            this.lastLabelRenderTime = nowPerf;
+            this.labelRenderer.render(this.m_world.v_scene, this.m_view_selected_camera);
+        }
 
         this.v_context.drawImage(this.renderer.domElement, 0, 0);
 
         this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, this.m_world.m_global_camera_helper);
 
-        // Stream if enabled
-        this.m_skip++;
-        if (this.m_skip % this.sendInterval === 0 && this.isStreamable && this.streaming_wsocket?.readyState === WebSocket.OPEN) {
-            this.v_context.canvas.toBlob((blob) => {
-                if (blob) {
-                    const reader = new FileReader();
-                    reader.onload = () => this.streaming_wsocket.send(reader.result);
-                    reader.readAsArrayBuffer(blob);
-                }
-            }, 'image/jpeg', 0.8);
+        // Stream if enabled (only from active view)
+        if (this.isStreamable && isActiveView) {
+            this.handleStreaming();
         }
 
         // Update streaming status overlay (HTML-only, not part of the canvas)
@@ -406,7 +450,7 @@ class C_View {
             if (this.streamingStatusEl) {
                 const isOpen = !!(this.streaming_wsocket && this.streaming_wsocket.readyState === WebSocket.OPEN);
                 if (this.isStreamable && isOpen) {
-                    this.streamingStatusEl.textContent = 'STREAMING';
+                    this.streamingStatusEl.textContent = `STREAMING (${this.sentFrameCount})`;
                     this.streamingStatusEl.className = 'view-stream-status view-stream-status-on';
                 } else if (this.isStreamable && !isOpen) {
                     this.streamingStatusEl.textContent = 'STREAM-OFF';
@@ -419,6 +463,158 @@ class C_View {
         } catch (_) { }
 
         this.renderer.setScissorTest(false);
+    }
+
+    // Lightweight rendering method for multi-view optimization
+    // Only handles view-specific rendering without scene updates
+    fn_renderViewOnly() {
+        if (!this.renderer) {
+            console.error('Renderer is undefined in C_View.fn_renderViewOnly');
+            return;
+        }
+
+        const nowPerf = performance.now();
+        const isActiveView = (this.m_world && this.m_world.v_selectedView === this);
+        if (!isActiveView) {
+            if (nowPerf - this.lastViewRenderTime < this.inactiveViewMinFrameTime) return;
+            this.lastViewRenderTime = nowPerf;
+        }
+
+        const canvas = this.m_canvas;
+        const container = canvas.parentNode;
+
+        // Resize if needed
+        if (this.fn_resizeRendererToDisplaySize()) {
+            this.m_view_selected_camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            this.m_view_selected_camera.updateProjectionMatrix();
+            this.labelRenderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Set viewport and scissor for WebGL (use DPR-scaled pixel size)
+        // IMPORTANT: shared renderer backbuffer must be fully rendered.
+        // If we render only a partial viewport, drawImage(renderer.domElement) will copy
+        // stale pixels from the previous view and cause split/corrupt frames.
+        const rbw = this.renderer.domElement.width;
+        const rbh = this.renderer.domElement.height;
+        this.renderer.setViewport(0, 0, rbw, rbh);
+        this.renderer.setScissor(0, 0, rbw, rbh);
+        this.renderer.setScissorTest(true);
+
+        // Camera controls update (view-specific)
+        if (this.m_activeControls && this.m_activeControls.update) {
+            // If follow-me attached camera is selected, keep orbit center locked to the drone
+            const cam = this.m_view_selected_camera;
+            if (cam && cam.userData && cam.userData.m_ownerObject) {
+                const controller = cam.userData.m_ownerObject;
+                const isFollowMe = controller && controller.m_camera_tag === 'followme';
+                const owner = controller && controller.m_ownerObject;
+                if (isFollowMe && owner && this.m_activeControls.target) {
+                    // 1) Preserve offset BEFORE changing the target
+                    let preservedOffset = null;
+                    try {
+                        const prevTarget = this.m_activeControls.target;
+                        preservedOffset = new THREE.Vector3().subVectors(cam.position, prevTarget);
+                        this.followOffset = preservedOffset.clone();
+                    } catch (_) { }
+
+                    // 2) Move target to the drone, and place camera once using preserved offset
+                    const { x, y, z } = owner.fn_translateXYZ();
+                    this.m_activeControls.target.set(x, y, z);
+                    try {
+                        if (preservedOffset) {
+                            cam.position.set(x + preservedOffset.x, y + preservedOffset.y, z + preservedOffset.z);
+                        }
+                    } catch (_) { }
+                }
+            }
+            // 3) Apply user input (rotate/zoom) once
+            this.m_activeControls.update();
+            // 4) Refresh stored offset for next frame
+            try {
+                if (this.m_activeControls && this.m_activeControls.target) {
+                    this.followOffset = new THREE.Vector3().subVectors(this.m_view_selected_camera.position, this.m_activeControls.target);
+                }
+            } catch (_) { }
+        }
+
+        // Render scene with this view's camera
+        this.renderer.clear(true, true, true);
+        this.renderer.render(this.m_world.v_scene, this.m_view_selected_camera);
+
+        // Render CSS2D labels (throttle for inactive views)
+        if (isActiveView || (nowPerf - this.lastLabelRenderTime > 250)) {
+            this.lastLabelRenderTime = nowPerf;
+            this.labelRenderer.render(this.m_world.v_scene, this.m_view_selected_camera);
+        }
+
+        this.v_context.drawImage(this.renderer.domElement, 0, 0);
+
+        this.m_world.fn_setCameraHelperEnabled(this.v_droneIndex, this.m_world.m_global_camera_helper);
+
+        // Streaming (only for active view)
+        if (this.isStreamable && isActiveView) {
+            this.handleStreaming();
+        }
+
+        // Update streaming status overlay (HTML-only, not part of the canvas)
+        try {
+            if (this.streamingStatusEl) {
+                const isOpen = !!(this.streaming_wsocket && this.streaming_wsocket.readyState === WebSocket.OPEN);
+                if (this.isStreamable && isOpen) {
+                    this.streamingStatusEl.textContent = `STREAMING (${this.sentFrameCount})`;
+                    this.streamingStatusEl.className = 'view-stream-status view-stream-status-on';
+                } else if (this.isStreamable && !isOpen) {
+                    this.streamingStatusEl.textContent = 'STREAM-OFF';
+                    this.streamingStatusEl.className = 'view-stream-status view-stream-status-off';
+                } else {
+                    this.streamingStatusEl.textContent = '';
+                    this.streamingStatusEl.className = 'view-stream-status view-stream-status-hidden';
+                }
+            }
+        } catch (_) { }
+
+        this.renderer.setScissorTest(false);
+    }
+
+    // Extract streaming logic into separate method for reuse
+    handleStreaming() {
+        const now = performance.now();
+        
+        // Safety reset if isSending gets stuck (e.g. toBlob callback never fires)
+        if (this.isSending && (now - this.lastFrameTime > 2000)) {
+            console.warn('Streaming stuck, resetting isSending flag');
+            this.isSending = false;
+        }
+
+        if (this.streaming_wsocket?.readyState === WebSocket.OPEN) {
+            if (this.isSending) {
+                console.debug('Skipping frame: Sending in progress');
+            } else if (now - this.lastFrameTime < this.minFrameTime) {
+                // Throttling - verbose, maybe keep commented or use debug
+            } else {
+                // Time to send!
+                this.isSending = true;
+                this.lastFrameTime = now;
+                console.debug('Starting frame capture...');
+
+                this.v_context.canvas.toBlob((blob) => {
+                    this.isSending = false;
+                    if (blob) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            if (this.streaming_wsocket?.readyState === WebSocket.OPEN) {
+                                console.debug(`Sending frame size: ${blob.size}`);
+                                this.streaming_wsocket.send(reader.result);
+                                this.sentFrameCount++;
+                            }
+                        };
+                        reader.readAsArrayBuffer(blob);
+                    } else {
+                        console.warn('toBlob returned null');
+                    }
+                }, 'image/jpeg', 0.8);
+            }
+        }
     }
 }
 
