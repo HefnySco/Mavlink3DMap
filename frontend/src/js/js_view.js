@@ -450,8 +450,13 @@ class C_View {
             if (this.streamingStatusEl) {
                 const isOpen = !!(this.streaming_wsocket && this.streaming_wsocket.readyState === WebSocket.OPEN);
                 if (this.isStreamable && isOpen) {
-                    this.streamingStatusEl.textContent = `STREAMING (${this.sentFrameCount})`;
-                    this.streamingStatusEl.className = 'view-stream-status view-stream-status-on';
+                    if (isActiveView) {
+                        this.streamingStatusEl.textContent = `STREAMING (${this.sentFrameCount})`;
+                        this.streamingStatusEl.className = 'view-stream-status view-stream-status-on';
+                    } else {
+                        this.streamingStatusEl.textContent = `STREAMING (${this.sentFrameCount}) - slow`;
+                        this.streamingStatusEl.className = 'view-stream-status view-stream-status-on view-stream-status-slow';
+                    }
                 } else if (this.isStreamable && !isOpen) {
                     this.streamingStatusEl.textContent = 'STREAM-OFF';
                     this.streamingStatusEl.className = 'view-stream-status view-stream-status-off';
@@ -561,8 +566,13 @@ class C_View {
             if (this.streamingStatusEl) {
                 const isOpen = !!(this.streaming_wsocket && this.streaming_wsocket.readyState === WebSocket.OPEN);
                 if (this.isStreamable && isOpen) {
-                    this.streamingStatusEl.textContent = `STREAMING (${this.sentFrameCount})`;
-                    this.streamingStatusEl.className = 'view-stream-status view-stream-status-on';
+                    if (isActiveView) {
+                        this.streamingStatusEl.textContent = `STREAMING (${this.sentFrameCount})`;
+                        this.streamingStatusEl.className = 'view-stream-status view-stream-status-on';
+                    } else {
+                        this.streamingStatusEl.textContent = `STREAMING (${this.sentFrameCount}) - slow`;
+                        this.streamingStatusEl.className = 'view-stream-status view-stream-status-on view-stream-status-slow';
+                    }
                 } else if (this.isStreamable && !isOpen) {
                     this.streamingStatusEl.textContent = 'STREAM-OFF';
                     this.streamingStatusEl.className = 'view-stream-status view-stream-status-off';
