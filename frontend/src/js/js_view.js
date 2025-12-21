@@ -5,7 +5,7 @@ import { targetFps } from './js_config.js';
 
 class C_View {
     constructor(p_world, p_canvas, p_XZero, p_YZero, isStreamable = false) {
-
+        this.m_active = false;
         this.m_world = p_world;
         this.m_canvas = p_canvas;
         if (!this.m_canvas.hasAttribute('tabindex')) {
@@ -158,6 +158,10 @@ class C_View {
     }
 
 
+    fn_setActive(active) {
+        this.m_active = active;
+    }
+
     // Stub for downloadImage function (used in onMouseDoubleClick)
     downloadImage(dataURL, filename) {
         console.warn(`downloadImage not implemented: would save ${filename} from ${dataURL}`);
@@ -187,7 +191,7 @@ class C_View {
             return false;
         }
         const canvas = this.m_canvas;
-        const isActiveView = (this.m_world && this.m_world.v_selectedView === this);
+        const isActiveView = this.m_active;
         const dpr = window.devicePixelRatio;
         const widthRaw = canvas.clientWidth * dpr;
         const heightRaw = canvas.clientHeight * dpr;
@@ -366,7 +370,7 @@ class C_View {
         }
 
         const nowPerf = performance.now();
-        const isActiveView = (this.m_world && this.m_world.v_selectedView === this);
+        const isActiveView = this.m_active;
         if (!isActiveView) {
             if (nowPerf - this.lastViewRenderTime < this.inactiveViewMinFrameTime) return;
             this.lastViewRenderTime = nowPerf;
@@ -479,7 +483,7 @@ class C_View {
         }
 
         const nowPerf = performance.now();
-        const isActiveView = (this.m_world && this.m_world.v_selectedView === this);
+        const isActiveView = this.m_active;
         if (!isActiveView) {
             if (nowPerf - this.lastViewRenderTime < this.inactiveViewMinFrameTime) return;
             this.lastViewRenderTime = nowPerf;

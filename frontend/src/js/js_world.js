@@ -455,7 +455,11 @@ class C_World {
 
     fn_setActiveView(view, userInitiated = true) {
         if (!view) return;
+        if (this.v_selectedView != null) {
+            this.v_selectedView.fn_setActive(false);
+        }
         this.v_selectedView = view;
+        this.v_selectedView.fn_setActive(true);
 
         const containers = document.querySelectorAll('.map3D_container');
         containers.forEach(container => {
