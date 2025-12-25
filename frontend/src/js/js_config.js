@@ -1,1 +1,1 @@
-export const targetFps = 15; // Target streaming FPS
+export const targetFps = 30; // Target streaming FPS

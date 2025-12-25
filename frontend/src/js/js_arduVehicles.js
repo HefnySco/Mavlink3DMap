@@ -471,7 +471,8 @@ class c_ArduVehicles extends Vehicle {
 
             if (p_attachCamera === true) {
                 let v_cam_down = new CameraController(Me, true, 90);
-                v_cam_down.fn_setRotationIndependence(false, true,true);
+                //v_cam_down.fn_setRotationIndependence(false, true,true);
+                v_cam_down.fn_setRotationIndependence(false, false,false);
                 // facing down with stabilizer
                 v_cam_down.fn_setCameraRelativePosition(0.0, 0.0, 0.5,
                     1.5708, 1.5708, 0);
