@@ -164,7 +164,7 @@ export class CBaseScene {
         Vehicle.create_car(0, 0, 0).then((obj) => {
             const c_robot = new SimObject(p_id, this.homeLat, this.homeLng);
             c_robot.fn_createCustom(obj);
-            c_robot.fn_setPosition(p_x, p_y, 10);
+            c_robot.fn_setPosition(p_x, p_y, 0.1);
             c_robot.fn_castShadow(false);
 
             if (p_radius !== 0) {
