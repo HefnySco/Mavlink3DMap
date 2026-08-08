@@ -27,6 +27,8 @@ class CMavlinkMessageHandler {
                 c_world.fn_registerCamerasOfObject(v_vehicle_new);
                 v_droneInProgress.delete(src);
 
+                js_eventEmitter.fn_dispatch(js_event.EVT_VEHICLE_ADDED, v_vehicle_new);
+
                 v_vehicle_new.fn_switchTriggerOn = () => {
                     v_vehicle_new.m_trigger.fn_trigger(null, (v_threeObj, v_physicsObj) => {
                         if (c_world.v_physicsWorld && v_physicsObj) {

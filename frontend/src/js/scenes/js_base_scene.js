@@ -6,7 +6,7 @@ import { js_eventEmitter } from '../js_eventEmitter.js';
 import { getInitialDisplacement, _map_lat, _map_lng } from '../js_globals.js';
 import { Vehicle } from '../physical_objects/js_physicalVehicle.js';
 import { Building } from '../physical_objects/js_building.js';
-import { getBuildingsPerTileFlag, getRandomVehiclesEnabledFlag } from '../js_storage.js';
+import { getBuildingsPerTileFlag, getCarsEnabledFlag, getPlansEnabledFlag, getAirportsEnabledFlag } from '../js_storage.js';
 
 const PI_div_2 = Math.PI / 2;
 
@@ -82,8 +82,8 @@ export class CBaseScene {
         if (typeof this.onBeforeReload === 'function') this.onBeforeReload();
 
         // Reinitialize scene with new car, buildings, and lights
-        const randomVehicles = getRandomVehiclesEnabledFlag();
-        if (randomVehicles) {
+        const randomCars = getCarsEnabledFlag();
+        if (randomCars) {
             this.droneId = 'car' + uuidv4();
             this._addCar(this.droneId, vehicleX+10, vehicleY+20, 7);
 
@@ -286,13 +286,13 @@ export class CBaseScene {
         }
     }
 
-    _addPlanes(p_XZero, p_YZero, totalPlanes = 3, maxRadius= 10, minRadius= 5) {
+    _addPlanes(p_XZero, p_YZero, totalPlanes = 3, maxRadius= 60, minRadius= 15) {
         console.log('Adding planes at', p_XZero, p_YZero, totalPlanes);
         const minX = -10;
         const maxX = 10;
         const minY = -10;
         const maxY = 10;
-        const minAlt = 20;
+        const minAlt = 0;  // Include ground level
         const maxAlt = 200;
     
 
@@ -308,6 +308,51 @@ export class CBaseScene {
         for (const c_location of c_planes) {
             const planeId = 'plane' + uuidv4();
             this._addPlane(planeId, p_XZero + c_location[0], p_YZero + c_location[1], c_location[2], c_location[3]);
+        }
+    }
+
+    _addAirport(p_XZero, p_YZero, totalAirports = 1) {
+        console.log('Adding airports at', p_XZero, p_YZero, totalAirports);
+        const minX = -120;
+        const maxX = 140;
+        const minY = -140;
+        const maxY = 260;
+
+        const c_airports = [];
+        for (let i = 0; i < totalAirports; i++) {
+            const x = minX + Math.random() * (maxX - minX);
+            const y = minY + Math.random() * (maxY - minY);
+            c_airports.push([x, y]);
+        }
+
+        for (const c_location of c_airports) {
+            const airportId = 'airport' + uuidv4();
+            this._addAirportObject(airportId, p_XZero + c_location[0], p_YZero + c_location[1]);
+        }
+    }
+
+    _addAirportObject(p_id, p_x, p_y) {
+        Vehicle.create_airport(0, 0, 0).then((obj) => {
+            
+            // Spawn group of planes on ground around this airport
+            this._addPlanesOnGround(p_x, p_y, 6);  // 3 planes per airport
+        }).catch((e) => console.error('Airport load failed', e));
+    }
+
+    _addPlanesOnGround(p_centerX, p_centerY, totalPlanes = 3) {
+        console.log('Adding planes on ground at', p_centerX, p_centerY, totalPlanes);
+        
+        // Spawn planes in a pattern around the airport center
+        const radius = 30;  // Spread planes around airport
+        const groundLevel = 0.1;  // Ground level altitude
+
+        for (let i = 0; i < totalPlanes; i++) {
+            const angle = (i / totalPlanes) * Math.PI * 2;  // Evenly distribute in circle
+            const offsetX = Math.cos(angle) * radius;
+            const offsetY = Math.sin(angle) * radius;
+            
+            const planeId = 'groundPlane' + uuidv4();
+            this._addPlane(planeId, p_centerX + offsetX, p_centerY + offsetY, groundLevel, 0);  // No circular animation
         }
     }
 
@@ -350,16 +395,23 @@ export class CBaseScene {
         }
 
         if (typeof this._addCars === 'function') {
-            const randomVehicles = getRandomVehiclesEnabledFlag();
-            if (randomVehicles) {
+            const randomCars = getCarsEnabledFlag();
+            if (randomCars) {
                 this._addCars(x, y);
             }
         }
 
         if (typeof this._addPlanes === 'function') {
-            const randomVehicles = getRandomVehiclesEnabledFlag();
-            if (randomVehicles) {
+            const randomPlans = getPlansEnabledFlag();
+            if (randomPlans) {
                 this._addPlanes(x, y);
+            }
+        }
+
+        if (typeof this._addAirport === 'function') {
+            const randomAirports = getAirportsEnabledFlag();
+            if (randomAirports) {
+                this._addAirport(x, y);
             }
         }
         

@@ -393,17 +393,13 @@ class c_ArduVehicles extends Vehicle {
 
 
     #fn_createUnknown(p_attachCamera, p_callbackfunc) {
-        var v_Object = function () { // Run the Group constructor with the given arguments
-            THREE.Group.apply(this, arguments);
+        this.m_Mesh = new THREE.Group();
 
-            let p1 = fn_drawDronePropeller(0xf80008, 0.0, 0.0, 0.0, 0.3);
-            p1.m_tag = this;
-            this.add(p1);
-        };
-
-        v_Object.prototype = Object.create(THREE.Group.prototype);
-        v_Object.prototype.constructor = v_Object;
-        this.m_Mesh = new v_Object();
+        const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+        const material = new THREE.MeshBasicMaterial({ color: 0xf80008 });
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.m_tag = this.m_Mesh;
+        this.m_Mesh.add(sphere);
 
         if (p_callbackfunc != null) p_callbackfunc(this.m_Mesh);
     }

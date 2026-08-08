@@ -66,9 +66,19 @@
             <span>Create buildings</span>
           </label>
 
-          <label class="home-toggle" for="toggle_vehicles">
-            <input type="checkbox" id="toggle_vehicles">
-            <span>Create vehicles</span>
+          <label class="home-toggle" for="toggle_cars">
+            <input type="checkbox" id="toggle_cars">
+            <span>Create Cars</span>
+          </label>
+
+          <label class="home-toggle" for="toggle_plans">
+            <input type="checkbox" id="toggle_plans">
+            <span>Create Plans</span>
+          </label>
+
+          <label class="home-toggle" for="toggle_airports">
+            <input type="checkbox" id="toggle_airports">
+            <span>Create Airports</span>
           </label>
 
           <label class="home-toggle" for="toggle_physics">
@@ -130,26 +140,47 @@
       import { HELP_SHORTCUTS_HTML } from '/src/js/help_text.js';
       import {
         getBuildingsPerTileFlag,
+        setBuildingsPerTileFlag,
         getPhysicsEnabledFlag,
-        getRandomVehiclesEnabledFlag,
+        setPhysicsEnabledFlag,
+        getCarsEnabledFlag,
+        setCarsEnabledFlag,
+        getPlansEnabledFlag,
+        setPlansEnabledFlag,
+        getAirportsEnabledFlag,
+        setAirportsEnabledFlag,
         getQuadType,
+        setQuadType,
         getStringFromStorage,
-        setBoolInStorage,
         setStringInStorage
       } from '/src/js/js_storage.js';
 
       
-      const toggleVehicles = document.getElementById('toggle_vehicles');
-      if (toggleVehicles) {
+      const toggleCars = document.getElementById('toggle_cars');
+      if (toggleCars) {
         try {
-          toggleVehicles.checked = getRandomVehiclesEnabledFlag();
+          toggleCars.checked = getCarsEnabledFlag();
         } catch (e) {
-          toggleVehicles.checked = true;
+          toggleCars.checked = true;
         }
 
-        toggleVehicles.addEventListener('change', () => {
-          const checked = !!toggleVehicles.checked;
-          setBoolInStorage('RANDOM_VEHICLES_ENABLED', checked);
+        toggleCars.addEventListener('change', () => {
+          const checked = !!toggleCars.checked;
+          setCarsEnabledFlag(checked);
+        });
+      }
+
+      const togglePlans = document.getElementById('toggle_plans');
+      if (togglePlans) {
+        try {
+          togglePlans.checked = getPlansEnabledFlag();
+        } catch (e) {
+          togglePlans.checked = true;
+        }
+
+        togglePlans.addEventListener('change', () => {
+          const checked = !!togglePlans.checked;
+          setPlansEnabledFlag(checked);
         });
       }
 
@@ -163,7 +194,21 @@
 
         toggleBuildings.addEventListener('change', () => {
           const checked = !!toggleBuildings.checked;
-          setBoolInStorage('BUILDINGS_PER_TILE', checked);
+          setBuildingsPerTileFlag(checked);
+        });
+      }
+
+      const toggleAirports = document.getElementById('toggle_airports');
+      if (toggleAirports) {
+        try {
+          toggleAirports.checked = getAirportsEnabledFlag();
+        } catch (e) {
+          toggleAirports.checked = false;
+        }
+
+        toggleAirports.addEventListener('change', () => {
+          const checked = !!toggleAirports.checked;
+          setAirportsEnabledFlag(checked);
         });
       }
 
@@ -177,7 +222,7 @@
 
         togglePhysics.addEventListener('change', () => {
           const checked = !!togglePhysics.checked;
-          setBoolInStorage('PHYSICS_ENABLED', checked);
+          setPhysicsEnabledFlag(checked);
         });
       }
 

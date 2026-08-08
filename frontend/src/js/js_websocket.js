@@ -7,6 +7,7 @@
 *********************************************************************************** */
 import { mavlink20, MAVLink20Processor } from './js_mavlink_v2.js';
 import { js_mavlinkHandler } from './js_mavlinkHandler.js';
+import { js_statusOverlay } from './js_statusOverlay.js';
 
 
 /* jshint esversion: 6 */
@@ -21,6 +22,11 @@ class c_WebSocketComm {
         this.fn_onWebSocketError = () => { };
         this.fn_onError = () => { };
         this.fn_onPacketReceived = () => { };
+
+        this.m_reconnectTimer = null;
+        this.m_reconnectDelayMs = 3000;
+        this.m_shouldReconnect = false;
+        this.m_initCallback = null;
     }
 
     fn_init(callback) {
@@ -28,12 +34,21 @@ class c_WebSocketComm {
             this.m_WebSocket.close();
         }
 
+        this.m_shouldReconnect = true;
+        this.m_initCallback = callback;
+        this.#fn_connect();
+    }
+
+    #fn_connect() {
         this.m_WebSocket = new WebSocket(this.m_targetURL);
         this.m_WebSocket.binaryType = 'arraybuffer';
 
         this.m_WebSocket.onopen = (p_data) => {
             this.m_isConnected = true;
-            callback();
+            if (this.m_initCallback) {
+                this.m_initCallback();
+                this.m_initCallback = null;
+            }
             this.fn_onWebSocketOpened(p_data);
         };
 
@@ -42,16 +57,38 @@ class c_WebSocketComm {
         };
 
         this.m_WebSocket.onclose = (err) => {
-            console.log("Connection is closed...");
             this.m_isConnected = false;
             this.fn_onWebSocketError(err);
+            this.#fn_scheduleReconnect();
         };
 
         this.m_WebSocket.onerror = (err) => {
-            console.error("WebSocket Error:", err);
             this.m_isConnected = false;
             this.fn_onWebSocketError(err);
         };
+    }
+
+    #fn_scheduleReconnect() {
+        if (!this.m_shouldReconnect) return;
+        if (this.m_reconnectTimer !== null) return;
+        this.m_reconnectTimer = setTimeout(() => {
+            this.m_reconnectTimer = null;
+            if (this.m_shouldReconnect) {
+                this.#fn_connect();
+            }
+        }, this.m_reconnectDelayMs);
+    }
+
+    fn_disconnect() {
+        this.m_shouldReconnect = false;
+        if (this.m_reconnectTimer !== null) {
+            clearTimeout(this.m_reconnectTimer);
+            this.m_reconnectTimer = null;
+        }
+        if (this.m_WebSocket) {
+            this.m_WebSocket.close();
+            this.m_WebSocket = null;
+        }
     }
 
     fn_send(p_data, p_isbinary) {
@@ -81,31 +118,51 @@ class c_CommandParser extends c_WebSocketComm {
 
         this.fn_onWebSocketOpened = () => {
             console.log("Socket Connected");
+            js_statusOverlay.fn_setConnected();
         };
 
         this.fn_init(() => {
             console.log("WebSocket connection established.");
+            js_statusOverlay.fn_setConnected();
         });
 
+        this.fn_onWebSocketError = (err) => {
+            // Reconnect handled by base class; suppress noise
+            js_statusOverlay.fn_setError();
+        };
+
         this.fn_onPacketReceived = (data) => {
-            
+
             if (!c_world || !(data instanceof ArrayBuffer)) return;
+            js_statusOverlay.fn_onPacket();
 
             const messages = this.mavlinkProcessor.parseBuffer(new Int8Array(data));
             for (const c_mavlinkMessage of messages) {
                 if (c_mavlinkMessage.id === -1) {
-                    // Assuming js_common.fn_console_log is defined elsewhere
                     console.log("BAD MAVLINK");
                     continue;
                 }
 
                 const srcSystem = c_mavlinkMessage.header.srcSystem;
-                const v_vehicle = c_world.v_drone[srcSystem];
+                let v_vehicle = c_world.v_drone[srcSystem];
+
+                // Auto-create vehicle on first message from unknown srcSystem.
+                // The Andruav system intercepts MAVLink heartbeats and sends Andruav ID
+                // messages instead, so the 3D map may never see a MAVLINK_MSG_ID_HEARTBEAT.
+                // Treat the first message from any new srcSystem as a heartbeat.
+                // Use FRAME_TYPE_X (2) as default for non-heartbeat messages, since
+                // c_mavlinkMessage.type is only present on HEARTBEAT messages.
+                if (!v_vehicle && !v_droneInProgress.has(srcSystem)) {
+                    const fakeHeartbeat = c_mavlinkMessage.header.msgId === mavlink20.MAVLINK_MSG_ID_HEARTBEAT
+                        ? c_mavlinkMessage
+                        : { type: 2 }; // FRAME_TYPE_X (quadcopter)
+                    js_mavlinkHandler.handleHeartbeatNewID(srcSystem, v_droneInProgress, c_world, fakeHeartbeat);
+                    v_vehicle = c_world.v_drone[srcSystem];
+                }
 
                 switch (c_mavlinkMessage.header.msgId) {
                     case mavlink20.MAVLINK_MSG_ID_HEARTBEAT:
-                        if (v_vehicle || v_droneInProgress.has(srcSystem)) return;
-                        js_mavlinkHandler.handleHeartbeatNewID(srcSystem, v_droneInProgress, c_world, c_mavlinkMessage);
+                        // Vehicle already auto-created above if needed
                         break;
                     case mavlink20.MAVLINK_MSG_ID_RC_CHANNELS:
                         if (v_vehicle) js_mavlinkHandler.handleRCChannels(v_vehicle, c_mavlinkMessage);

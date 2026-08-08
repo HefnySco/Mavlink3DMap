@@ -85,4 +85,14 @@ export class Vehicle {
       size: { length: 4.5, width: 1.8, height: 1.4 }
     });
   }
+
+  static create_airport (p_x, p_y, p_z)
+  {
+    return Vehicle.load({
+      url: '../../models/grass_plan.json',
+      position: { x: p_x, y: p_y, z: p_z },
+      rotationZ: 0,
+      size: { length: 100, width: 100, height: 1 }
+    });
+  }
 }

@@ -5,3 +5,4 @@ checks.json
 build/
 TODO
 publish.txt
+backend/public/assets/

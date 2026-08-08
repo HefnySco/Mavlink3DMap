@@ -1,9 +1,26 @@
 #!/bin/bash
 
-# Find the first virtual video device
-FIRST_VIDEO_DEVICE=$(ls /sys/devices/virtual/video4linux/ | head -n 1)
+# Find camera named DE-SIM1
+FIRST_VIDEO_DEVICE=""
+for syspath in /sys/devices/virtual/video4linux/video*; do
+    if [ -d "$syspath" ]; then
+        # Get the device node name (e.g., video1)
+        dev_node=$(basename "$syspath")
+        # Read the label assigned to this virtual device
+        label=$(cat "$syspath/name")
+        
+        printf "/dev/%-8s : %s\n" "$dev_node" "$label"
+        
+        # Check if this is the DE-SIM1 camera
+        if [ "$label" = "DE-SIM1" ]; then
+            FIRST_VIDEO_DEVICE="$dev_node"
+            break
+        fi
+    fi
+done
+
 if [ -z "$FIRST_VIDEO_DEVICE" ]; then
-  echo "Error: No virtual video devices found in /sys/devices/virtual/video4linux/"
+  echo "Error: No camera named SIM-1 found in /sys/devices/virtual/video4linux/"
   exit 1
 fi
 VIDEO_DEVICE="/dev/$FIRST_VIDEO_DEVICE"

@@ -1,17 +1,18 @@
 import $ from 'jquery';
 import { C_World } from './js/js_world.js';
-import { c_CommandParser } from './js/js_websocket.js'; 
+import { c_CommandParser } from './js/js_websocket.js';
 import './js/js_globals.js';
-import './js/js_helpers.js'; 
-import './js/js_utilities.js'; 
-import './js/js_triggerObject.js'; 
+import './js/js_helpers.js';
+import './js/js_utilities.js';
+import './js/js_triggerObject.js';
 import './js/js_object.js';
 import './js/js_vehicle.js';
 import './js/js_camera.js';
-import { CGrassScene } from './js/scenes/js_green_scene.js'; 
+import { CGrassScene } from './js/scenes/js_green_scene.js';
 import { C3DMapScene } from './js/scenes/js_3d_real_blank.js';
 import {CFlatMapScene} from './js/scenes/js_map_box_scene.js';
 import { getStoredViewCount } from './js/js_storage.js';
+import { js_statusOverlay } from './js/js_statusOverlay.js';
 
 function getViewCount() {
     try {
@@ -113,12 +114,18 @@ async function initWorld() {
 function startSimulation(p_world) {
     p_world.fn_animate();
 
+    // Signal connecting before the WS attempt.
+    js_statusOverlay.fn_setConnecting();
+
     // Initialize WebSocket and command parser
     const c_WebSocketComm = new c_CommandParser();
     c_WebSocketComm.fn_initWebsocket(p_world);
 }
 
 async function fn_on_ready() {
+    // Mount the status overlay early so the user sees feedback immediately.
+    js_statusOverlay.fn_mount();
+
     const viewCount = getViewCount();
     buildViews(viewCount);
 

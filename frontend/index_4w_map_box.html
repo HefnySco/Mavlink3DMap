@@ -14,6 +14,14 @@
     <div id='mav3dmap'>
         <div class="row"></div>
     </div>
+
+    <!-- Pre-React loading splash: visible at t=0 before the JS module chain
+         finishes. Removed by js_statusOverlay.fn_mount() once JS runs. -->
+    <div id="mav3d_pre_splash" class="mav3d_status_overlay mav3d_status_loading">
+        <span class="mav3d_status_dot"></span>
+        <span class="mav3d_status_text">Mavlink3D loading...</span>
+    </div>
+
     <script>
         window.sceneType = 'map_box';
     </script>

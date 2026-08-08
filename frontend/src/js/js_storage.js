@@ -41,7 +41,7 @@ export function getBoolFromStorage(key, defaultValue = false) {
   return v === 'true' || v === '1';
 }
 
-export function setBoolInStorage(key, value) {
+function setBoolInStorage(key, value) {
   setStringInStorage(key, value ? 'true' : 'false');
 }
 
@@ -50,23 +50,62 @@ export function getBuildingsPerTileFlag() {
   return getBoolFromStorage('BUILDINGS_PER_TILE', true);
 }
 
-
-export function getRandomVehiclesEnabledFlag() {
-  // default is false (keep existing behavior)
-  return getBoolFromStorage('RANDOM_VEHICLES_ENABLED', false);
+export function setBuildingsPerTileFlag(value) {
+  setBoolInStorage('BUILDINGS_PER_TILE', value);
 }
+
+export function getCarsEnabledFlag() {
+  // default is false (keep existing behavior)
+  return getBoolFromStorage('CARS_ENABLED', false);
+}
+
+export function setCarsEnabledFlag(value) {
+  setBoolInStorage('CARS_ENABLED', value);
+}
+
+export function getPlansEnabledFlag() {
+  // default is false (keep existing behavior)
+  return getBoolFromStorage('PLANS_ENABLED', false);
+}
+
+export function setPlansEnabledFlag(value) {
+  setBoolInStorage('PLANS_ENABLED', value);
+}
+
 export function getPhysicsEnabledFlag() {
   // default is false: physics/ball throwing off unless explicitly enabled
   return getBoolFromStorage('PHYSICS_ENABLED', false);
 }
+
+export function setPhysicsEnabledFlag(value) {
+  setBoolInStorage('PHYSICS_ENABLED', value);
+}
+
 export function getQuadType() {
-  // default is false: physics/ball throwing off unless explicitly enabled
+  // default is normal
   return getStringFromStorage('QUAD_TYPE', 'normal');
 }
 
+export function setQuadType(value) {
+  setStringInStorage('QUAD_TYPE', value);
+}
+
 export function getStoredViewCount() {
-  // default is false: physics/ball throwing off unless explicitly enabled
+  // default is 4
   return getStringFromStorage('VIEW_COUNT', '4');
+}
+
+export function setStoredViewCount(value) {
+  setStringInStorage('VIEW_COUNT', value);
+}
+
+export function getAirportsEnabledFlag() {
+  // default is false (keep existing behavior)
+  return getBoolFromStorage('AIRPORTS_ENABLED', false);
+}
+
+export function setAirportsEnabledFlag(value) {
+  setBoolInStorage('AIRPORTS_ENABLED', value);
 }
 
 

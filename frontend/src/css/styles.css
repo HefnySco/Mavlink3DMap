@@ -532,3 +532,56 @@ body.home-body {
         padding: 20px;
     }
 }
+
+/* =========================================================================
+   Status Overlay - floating top-left connection status indicator.
+   Shows live WS/MAVLink-traffic status; auto-hides when a vehicle is added.
+   Used by js_statusOverlay.js and the inline pre-React splash in the HTML.
+   ========================================================================= */
+.mav3d_status_overlay {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 2147483646;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: Monospace;
+    font-size: 12px;
+    letter-spacing: .3px;
+    color: #fff;
+    background: rgba(0, 0, 0, .6);
+    pointer-events: none;
+    user-select: none;
+    max-width: 90vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mav3d_status_dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: mav3d_status_blink 1s steps(2, start) infinite;
+}
+
+.mav3d_status_text {
+    opacity: 1;
+}
+
+@keyframes mav3d_status_blink {
+    50% { opacity: .25; }
+}
+
+/* Phase colors */
+.mav3d_status_loading    .mav3d_status_dot { background: #0af; }
+.mav3d_status_connecting .mav3d_status_dot { background: #ff0; }
+.mav3d_status_waiting    .mav3d_status_dot { background: #ff0; }
+.mav3d_status_ready      .mav3d_status_dot { background: #0f0; }
+.mav3d_status_ready      { background: rgba(0, 80, 0, .55); }
+.mav3d_status_error      .mav3d_status_dot { background: #f33; }
+.mav3d_status_error      { background: rgba(80, 0, 0, .6); }

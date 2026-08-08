@@ -146,7 +146,7 @@ program
       console.log(`[mav3d] Virtual device ${videoDevice} ready.`);
     }
 
-    const cmd = `GREEN=\x1b[1;32m; YELLOW=\x1b[1;33m; RESET=\x1b[0m; VIDEO_DEVICE="${videoDevice}"; echo "======="; echo -e "$GREEN[mav3d] WebSocket streaming on ws://localhost:8081 -> $VIDEO_DEVICE$RESET"; echo -e "$YELLOW[mav3d] View with: ffplay $VIDEO_DEVICE$RESET"; echo "======="; node ./src/websocket_streaming.js | ffmpeg -framerate 30 -f image2pipe -vcodec mjpeg -s ${size} -i - -pix_fmt yuv420p -f v4l2 "$VIDEO_DEVICE"`;
+    const cmd = `VIDEO_DEVICE="${videoDevice}"; echo "======="; printf '\\033[1;32m[mav3d] WebSocket streaming on ws://localhost:8081 -> %s\\033[0m\\n' "$VIDEO_DEVICE"; printf '\\033[1;33m[mav3d] View with: ffplay %s\\033[0m\\n' "$VIDEO_DEVICE"; echo "======="; node ./src/websocket_streaming.js | ffmpeg -framerate 30 -f image2pipe -vcodec mjpeg -s ${size} -i - -pix_fmt yuv420p -f v4l2 "$VIDEO_DEVICE"`;
 
     spawn("sh", ["-c", cmd], { stdio: "inherit", cwd: path.resolve(__dirname, "..") });
   });
