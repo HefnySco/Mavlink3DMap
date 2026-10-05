@@ -24,7 +24,7 @@ if (process.platform !== 'linux') {
 }
 
 const fs = require('fs');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const { program } = require('commander');
 const WebSocket = require('ws');
 
@@ -66,11 +66,30 @@ function unpackHeader(buf) {
     };
 }
 
+function blackJpeg(w, h) {
+    // one solid-black mjpeg frame, rendered by ffmpeg itself - primed
+    // into each device so exclusive_caps loopbacks advertise CAPTURE
+    // before the world stream (and its first real frame) exists.
+    const r = spawnSync(options.ffmpeg, [
+        '-loglevel', 'error',
+        '-f', 'lavfi', '-i', `color=c=black:s=${w}x${h}`,
+        '-frames:v', '1',
+        '-f', 'image2pipe', '-vcodec', 'mjpeg', 'pipe:1',
+    ], { encoding: 'buffer', maxBuffer: 1 << 20 });
+    if (r.status !== 0 || !r.stdout.length) {
+        console.error(`black frame generation failed (${r.status})`);
+        return null;
+    }
+    return r.stdout;
+}
+
 function spawnFfmpeg(unit, header) {
     // dims come from the first frame header - the render rig's truth,
     // not the map's hint. mjpeg image2pipe -> yuv420p v4l2.
     const w = header ? header.width : (unit.width || 640);
     const h = header ? header.height : (unit.height || 480);
+    unit.feedW = w;
+    unit.feedH = h;
     const args = [
         '-loglevel', 'error',
         '-f', 'image2pipe', '-vcodec', 'mjpeg',
@@ -90,6 +109,28 @@ function spawnFfmpeg(unit, header) {
     return proc;
 }
 
+// exclusive_caps v4l2loopbacks only advertise CAPTURE while a producer
+// is attached. Consumers (de_yolo_ai's VideoCapture.open) come up long
+// before the world stream delivers a first frame - prime each device
+// with black frames until real stream_id-0 frames arrive.
+if (!options.dryRun) {
+    for (const unit of units.values()) {
+        unit.gotColor = false;
+        unit.primer = blackJpeg(unit.width || 640, unit.height || 480);
+        if (unit.primer) {
+            unit.ffmpeg = spawnFfmpeg(unit, null);
+        }
+    }
+    const primers = setInterval(() => {
+        for (const unit of units.values()) {
+            if (unit.gotColor || !unit.primer) continue;
+            if (!unit.ffmpeg) unit.ffmpeg = spawnFfmpeg(unit, null);
+            try { unit.ffmpeg.stdin.write(unit.primer); } catch (e) { /* EPIPE */ }
+        }
+    }, 100);
+    primers.unref?.();
+}
+
 const wss = new WebSocket.Server({ port: wsPort, perMessageDeflate: false });
 wss.on('connection', (ws) => {
     console.error('render client connected');
@@ -102,7 +143,14 @@ wss.on('connection', (ws) => {
                                       FRAME_HEADER_BYTES + h.jpeg_len);
         if (h.stream_id !== STREAM_COLOR) { unit.frames++; return; }
         unit.frames++;
+        unit.gotColor = true;
         if (options.dryRun) return;
+        // a real frame at different dims than the primed feed means the
+        // running ffmpeg has the wrong output format - restart it
+        if (unit.ffmpeg && (unit.feedW !== h.width || unit.feedH !== h.height)) {
+            unit.ffmpeg.kill('SIGKILL');
+            unit.ffmpeg = null;
+        }
         if (!unit.ffmpeg) unit.ffmpeg = spawnFfmpeg(unit, h);
         try { unit.ffmpeg.stdin.write(jpeg); } catch (e) { /* EPIPE: respawn next frame */ }
     });
