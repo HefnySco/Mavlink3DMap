@@ -585,3 +585,48 @@ body.home-body {
 .mav3d_status_ready      { background: rgba(0, 80, 0, .55); }
 .mav3d_status_error      .mav3d_status_dot { background: #f33; }
 .mav3d_status_error      { background: rgba(80, 0, 0, .6); }
+/* DroneEngage world scene HUD (?world= viewer) */
+.de-world-hud {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 40;
+    min-width: 180px;
+    max-width: 260px;
+    background: rgba(8, 14, 26, 0.78);
+    border: 1px solid rgba(90, 140, 190, 0.35);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #dfe9f5;
+    pointer-events: none;
+}
+.de-world-hud-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid rgba(90, 140, 190, 0.25);
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+}
+.de-world-hud-title { color: #8fc1ff; font-weight: bold; }
+.de-world-hud-status[data-v="on"] { color: #56e08a; }
+.de-world-hud-status[data-v="off"] { color: #e06a6a; }
+.de-world-hud-clock { color: #c8d8ec; }
+.de-world-hud-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 1px 0;
+}
+.de-world-hud-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #666; flex: none;
+}
+.de-world-hud-row[data-state="seen"] .de-world-hud-dot { background: #33cc66; }
+.de-world-hud-row[data-state="miss"] .de-world-hud-dot { background: #ddaa33; }
+.de-world-hud-row[data-state="occluded"] .de-world-hud-dot { background: #dd4444; }
+.de-world-hud-id { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.de-world-hud-cls { color: #8fa8c8; }
+.de-world-hud-state { color: #b8c8de; }

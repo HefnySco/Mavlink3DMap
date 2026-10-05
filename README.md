@@ -154,6 +154,29 @@ npx mavlink3dmap serve -p 8080
 
 # Run only the UDP→WebSocket bridge (WS on 8811)
 npx mavlink3dmap udp2ws --udp-port 16450
+
+# Bridge on a different WebSocket telemetry port
+npx mavlink3dmap udp2ws --udp-port 16450 --ws-port 8899
+```
+
+### DroneEngage world viewer
+
+`?world=ws://127.0.0.1:<stream_port>` on any page (e.g.
+`http://127.0.0.1:8080/?world=ws://127.0.0.1:61185`) selects the
+DroneEngage world scene (`js_de_world_scene.js`): it connects to the
+droneengage_simulation_land `de.worldstream/1` feed and draws the
+scenario's obstacles, truth entities (seen/miss/occluded), bot
+world-model targets, detections and ground clutter in the harness
+reference frame (`hello.origin`, `M_PER_DEG_LAT = 111320` flat earth),
+alongside the MAVLink vehicles. `&mavlink=ws://127.0.0.1:<port>`
+overrides the default 8811 telemetry socket. Fully offline — no
+tiles or CDN fetches. The simulation harness launches the bridge and
+this page automatically for `render.mode: viewer` sims. Without the
+`world` param the app behaves exactly as before.
+
+```bash
+cd frontend && npm run dev        # serves the page on :5173
+cd frontend && npm test           # node --test (de_geo converter gate)
 ```
 
 ### Install globally

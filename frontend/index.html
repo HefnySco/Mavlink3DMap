@@ -6,6 +6,16 @@
     <title>Mavlink 3D Map</title>
     <link rel="icon" href="/favicon.ico">
     <link rel="stylesheet" href="/src/css/styles.css">
+    <script>
+        // DroneEngage world viewer: ?world= (or ?mavlink=) belongs to
+        // the 4-window scene page - forward the full query string
+        (function () {
+            var q = new URLSearchParams(window.location.search || '');
+            if (q.get('world') || q.get('mavlink')) {
+                window.location.replace('index_4w.html' + window.location.search);
+            }
+        })();
+    </script>
 </head>
   <body class="home-body">
     <main class="home-page">

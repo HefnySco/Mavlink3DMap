@@ -11,8 +11,18 @@ import './js/js_camera.js';
 import { CGrassScene } from './js/scenes/js_green_scene.js';
 import { C3DMapScene } from './js/scenes/js_3d_real_blank.js';
 import {CFlatMapScene} from './js/scenes/js_map_box_scene.js';
+import { CDeWorldScene } from './js/scenes/js_de_world_scene.js';
 import { getStoredViewCount } from './js/js_storage.js';
 import { js_statusOverlay } from './js/js_statusOverlay.js';
+
+function getQueryParam(name) {
+    try {
+        const params = new URLSearchParams(window.location.search || '');
+        const v = params.get(name);
+        return v ? String(v).trim() : null;
+    } catch (_) { }
+    return null;
+}
 
 function getViewCount() {
     try {
@@ -89,8 +99,13 @@ async function initWorld() {
 
     
     let scene;
-    // Select scene based on sceneType
-    if (sceneType === 'realmap') {
+    // ?world=ws://127.0.0.1:<port> selects the DroneEngage world
+    // viewer (harness de.worldstream/1 feed); without it the sceneType
+    // logic below is unchanged
+    const worldStreamUrl = getQueryParam('world');
+    if (worldStreamUrl) {
+        scene = new CDeWorldScene(c_world, worldStreamUrl);
+    } else if (sceneType === 'realmap') {
         scene = new C3DMapScene(c_world);
     } else if (sceneType === 'greengrass') {
         scene = new CGrassScene(c_world);
@@ -117,8 +132,9 @@ function startSimulation(p_world) {
     // Signal connecting before the WS attempt.
     js_statusOverlay.fn_setConnecting();
 
-    // Initialize WebSocket and command parser
-    const c_WebSocketComm = new c_CommandParser();
+    // Initialize WebSocket and command parser; ?mavlink= overrides the
+    // default ws://127.0.0.1:8811 telemetry endpoint
+    const c_WebSocketComm = new c_CommandParser(getQueryParam('mavlink') || undefined);
     c_WebSocketComm.fn_initWebsocket(p_world);
 }
 

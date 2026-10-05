@@ -23,6 +23,7 @@ var m_MAVLinkProcessor = new MAVLink20Processor();
 program
   .version(pjson.version)
   .option('-p --udp_target_port <port number>', 'Mission Planner UDP Port', 16450)
+  .option('-w --ws_port <port number>', 'WebSocket telemetry port', 8811)
   .parse(process.argv);
 
 // Use program.opts() to reliably access the parsed options.
@@ -31,7 +32,7 @@ const options = program.opts();
 console.log('Welcome to Mavlink3DMap Telemetry version ' + pjson.version);
 console.log('Listen to MAVlink at :' + options.udp_target_port);
 udp.startServer("0.0.0.0", options.udp_target_port);
-webSocket.connect("127.0.0.1", 8811);
+webSocket.connect("127.0.0.1", parseInt(options.ws_port, 10) || 8811);
 
 webSocket.onMessageReceived = function (message) {
   udp.sendMessage(message);

@@ -94,10 +94,12 @@ program
 
 program
   .command("udp2ws")
-  .description("Run the UDP to WebSocket bridge (port 8811)")
+  .description("Run the UDP to WebSocket bridge (default ws port 8811)")
   .option("--udp-port <port>", "MAVLink UDP target port", "16450")
+  .option("--ws-port <port>", "WebSocket telemetry port", "8811")
   .action((opts) => {
-    const args = ["./src/udp2websocket.js", "-p", String(opts.udpPort || opts.udpport || opts["udp-port"])];
+    const args = ["./src/udp2websocket.js", "-p", String(opts.udpPort || opts.udpport || opts["udp-port"]),
+      "-w", String(opts.wsPort || opts.wsport || opts["ws-port"])];
     spawn(process.execPath, args, { stdio: "inherit", cwd: path.resolve(__dirname, "..") });
   });
 
@@ -182,6 +184,7 @@ program
   .description("Start web UI and UDP bridge together. Add --stream on Linux to include streaming.")
   .option("-p, --port <port>", "Web server port", "8080")
   .option("--udp-port <port>", "MAVLink UDP target port", "16450")
+  .option("--ws-port <port>", "WebSocket telemetry port", "8811")
   .option("--stream", "Enable Linux-only streaming pipeline")
   .action((opts) => {
     // Start server
@@ -189,7 +192,8 @@ program
     startServer({ port });
 
     // Start udp bridge
-    const udpArgs = ["./src/udp2websocket.js", "-p", String(opts.udpPort || opts.udpport || opts["udp-port"])];
+    const udpArgs = ["./src/udp2websocket.js", "-p", String(opts.udpPort || opts.udpport || opts["udp-port"]),
+      "-w", String(opts.wsPort || opts.wsport || opts["ws-port"])];
     spawn(process.execPath, udpArgs, { stdio: "inherit", cwd: path.resolve(__dirname, "..") });
 
     if (opts.stream) {
