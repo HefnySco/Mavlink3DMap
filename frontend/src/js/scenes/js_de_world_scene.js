@@ -17,6 +17,7 @@ import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { CBaseScene } from './js_base_scene.js';
 import SimObject from '../js_object.js';
 import { DeWorldClient } from '../world/de_world_client.js';
+import { DeRenderCameras } from '../world/de_render_cameras.js';
 import { fn_makeWorldConverter } from '../world/de_geo.js';
 import { EVENTS as js_event } from '../js_eventList.js';
 import { js_eventEmitter } from '../js_eventEmitter.js';
@@ -34,9 +35,14 @@ const CLS_COLORS = {
 };
 
 export class CDeWorldScene extends CBaseScene {
-    constructor(worldInstance, streamUrl) {
+    constructor(worldInstance, streamUrl, renderMode, sinkUrl) {
         super(worldInstance, { tileRange: 0 });
         this.m_client = new DeWorldClient(streamUrl);
+        // P5-15: 'cameras' turns this scene into the headless render
+        // farm (frames to the v4l2 sink) instead of a viewer
+        this.m_renderMode = renderMode || null;
+        this.m_sinkUrl = sinkUrl || null;
+        this.m_renderFarm = null;
         this.m_converter = null;          // built on hello.origin
         this.m_hello = null;
         this.m_entities = new Map();      // id -> visual record
@@ -126,6 +132,14 @@ export class CDeWorldScene extends CBaseScene {
         this._buildAreas(msg.areas || {});
         for (const e of (msg.entities || [])) {
             this._hudAddEntity(e.id, e.cls);
+        }
+        // 'cameras' is headless-farm only; 'full' renders the cameras
+        // AND keeps the viewer chrome on
+        if ((this.m_renderMode === 'cameras' || this.m_renderMode === 'full')
+                && !this.m_renderFarm) {
+            this.m_renderFarm = new DeRenderCameras(
+                this.world, this, this.m_client, this.m_sinkUrl);
+            this.m_renderFarm.fn_start(msg);
         }
         this._frameCameraOnWorld();
         this._hudUpdateStatus();

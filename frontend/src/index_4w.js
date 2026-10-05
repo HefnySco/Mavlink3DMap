@@ -100,11 +100,15 @@ async function initWorld() {
     
     let scene;
     // ?world=ws://127.0.0.1:<port> selects the DroneEngage world
-    // viewer (harness de.worldstream/1 feed); without it the sceneType
-    // logic below is unchanged
+    // viewer (harness de.worldstream/1 feed); &render=cameras makes it
+    // the headless render farm feeding v4l2 sinks (P5-15); &sink=
+    // overrides the frame socket. Without `world` the sceneType logic
+    // below is unchanged
     const worldStreamUrl = getQueryParam('world');
     if (worldStreamUrl) {
-        scene = new CDeWorldScene(c_world, worldStreamUrl);
+        scene = new CDeWorldScene(c_world, worldStreamUrl,
+                                  getQueryParam('render'),
+                                  getQueryParam('sink'));
     } else if (sceneType === 'realmap') {
         scene = new C3DMapScene(c_world);
     } else if (sceneType === 'greengrass') {
