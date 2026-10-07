@@ -1,9 +1,13 @@
 "use strict";
 
-var WebSocketServer = require('ws').Server;
+var WebSocket = require('ws');
+var WebSocketServer = WebSocket.Server;
 
 var wsS;
 var Me = this;
+
+// every browser tab currently connected; telemetry is broadcast to all of them
+var connectedClients = new Set();
 
 exports.connect = function (host, port) {
     wsS = new WebSocketServer(
@@ -21,36 +25,37 @@ exports.connect = function (host, port) {
 exports.onMessageReceived = undefined;
 
 
-exports.sendMessageBinary = function (message) {
-    if (Me.ws != null) {
+var _sendToAllClients = function (message, binary) {
+    connectedClients.forEach(function (client) {
+
+        // drop sockets that already went away without a clean close
+        if (client.readyState !== WebSocket.OPEN) {
+            connectedClients.delete(client);
+            return;
+        }
         try {
 
-            Me.ws.send(message, { binary: true });
+            client.send(message, { binary: binary });
         }
         catch (e) {
-            Me.ws = undefined;
+            connectedClients.delete(client);
         }
-    }
+    });
 
+}
+
+exports.sendMessageBinary = function (message) {
+    _sendToAllClients(message, true);
 }
 
 exports.sendMessage = function (message) {
-    if (Me.ws != null) {
-        try {
-
-            Me.ws.send(message, { binary: false });
-        }
-        catch (e) {
-            Me.ws = undefined;
-        }
-    }
-
+    _sendToAllClients(message, false);
 }
 
 function onConnect_Handler(ws) {
-    Me.ws = ws;
+    connectedClients.add(ws);
 
-    console.log("WebSocket Listener Active");
+    console.log("WebSocket Listener Active (" + connectedClients.size + " client(s))");
     function onWsMessage(message, flags) {
 
         if (Me.onMessageReceived != undefined) {
@@ -61,11 +66,13 @@ function onConnect_Handler(ws) {
     function onWsClose(code) {
         console.log("closing %s", code);
 
-        ws = undefined;
+        connectedClients.delete(ws);
     }
 
-    function onWsError(ws, err) {
-        console.error('onWsError: Client #%d error: %s', ws.id, JSON.stringify(err));
+    function onWsError(err) {
+        console.error('onWsError: client error: %s', JSON.stringify(err));
+
+        connectedClients.delete(ws);
     }
 
 
