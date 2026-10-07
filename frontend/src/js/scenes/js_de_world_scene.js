@@ -111,9 +111,12 @@ export class CDeWorldScene extends CBaseScene {
     /* Vehicle frame hook: c_ArduVehicles delegates its lat/lng -> xyz
        conversion here when the world scene is active, so vehicles use
        the harness formula and hello.origin - cm-level parity (D2).
-       Before hello, vehicles hold at the scene origin (gated). */
+       Before hello, returns null - the caller falls back to the
+       vehicle's own home-relative frame, so a stream that never comes
+       (a bare sim URL without a world feed, or a page opened early)
+       still shows movement instead of pinning the drone at 0,0,0. */
     fn_vehicleLocalXYZ(lat, lng, altAbsM, fallbackAltM) {
-        if (!this.m_converter) return { x: 0, y: 0, z: 0 };
+        if (!this.m_converter) return null;
         const { x, z } = this.m_converter.fn_latLngToXZ(lat, lng);
         const refAltM = (this.refAlt !== null && this.refAlt !== undefined)
             ? this.refAlt / 1000.0 : (fallbackAltM || 0);

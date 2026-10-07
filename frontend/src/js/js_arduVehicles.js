@@ -122,12 +122,15 @@ class c_ArduVehicles extends Vehicle {
 
     fn_getLocalPositionFromLatLng() {
         // DroneEngage world scene (?world=): the scene owns the shared
-        // reference frame (hello.origin + harness flat-earth formula)
+        // reference frame (hello.origin + harness flat-earth formula).
+        // null = frame not ready yet (no hello) - fall through to the
+        // home-relative path so the drone still tracks its GPS.
         const sceneEnv = this.world && this.world.m_scene_env;
         if (sceneEnv && typeof sceneEnv.fn_vehicleLocalXYZ === 'function') {
-            return sceneEnv.fn_vehicleLocalXYZ(
+            const pos = sceneEnv.fn_vehicleLocalXYZ(
                 this.mGpsLocation.lat, this.mGpsLocation.lng,
                 this.mGpsLocation.alt_abs, this.m_homeAlt);
+            if (pos) return pos;
         }
 
         if (this.m_homeLat === 0.0 && this.m_homeLng === 0.0) {
