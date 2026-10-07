@@ -93,6 +93,13 @@ class C_World {
         document.getElementById('mav3dmap').appendChild(helpDlg);
         helpDlg.style.display = 'none'; // Initially hidden
 
+        // F2 map key - the scene fills it via fn_getMapKeyHtml() on open
+        const keyDlg = document.createElement('div');
+        keyDlg.id = 'map_key_dlg';
+        keyDlg.className = 'de-world-key';
+        document.getElementById('mav3dmap').appendChild(keyDlg);
+        keyDlg.style.display = 'none';
+
         this.fn_animate = this.fn_animate.bind(this);
 
     }

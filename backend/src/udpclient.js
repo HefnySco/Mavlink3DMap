@@ -46,21 +46,12 @@ var _udp_server = function (host, port) {
 
 var _udp_client = function (msg) {
 
-    if (Listener === True) {
-        if (remoteSocket != null) {
-            server.send(msg, 0, msg.length, remoteSocket.port, remoteSocket.address, function (err, bytes) {
-                //if (err) throw err;
-                //console.log('UDP message sent to ' + '0.0.0.0' +':'+ BroadcastPort);
-            });
-        }
-    }
-    else {
-        server.setBroadcast(true);
-        server.send(msg, 0, msg.length, BroadcastPort, Target_IP, function (err, bytes) {
-            //if (err) throw err;
-            //console.log('UDP message sent to ' + '0.0.0.0' +':'+ BroadcastPort);
-        });
-    }
+    // reply to the last UDP peer heard; nothing to send to before that
+    if (server === undefined || remoteSocket == null) return;
+    server.send(msg, 0, msg.length, remoteSocket.port, remoteSocket.address, function (err, bytes) {
+        //if (err) throw err;
+        //console.log('UDP message sent to ' + '0.0.0.0' +':'+ BroadcastPort);
+    });
 }
 
 

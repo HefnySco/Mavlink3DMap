@@ -630,3 +630,45 @@ body.home-body {
 .de-world-hud-id { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .de-world-hud-cls { color: #8fa8c8; }
 .de-world-hud-state { color: #b8c8de; }
+
+/* F2 map key - filled by the scene (fn_getMapKeyHtml) */
+#map_key_dlg {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 40;
+    min-width: 200px;
+    max-width: 320px;
+    background: rgba(8, 14, 26, 0.78);
+    border: 1px solid rgba(90, 140, 190, 0.35);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #dfe9f5;
+    pointer-events: none;
+}
+.de-world-key-title {
+    color: #8fc1ff;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(90, 140, 190, 0.25);
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+}
+.de-world-key-sec { color: #b8c8de; margin-top: 6px; }
+.de-world-key-empty { color: #8fa8c8; }
+.de-world-key-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 1px 0;
+}
+.de-world-key-swatch {
+    width: 10px; height: 10px; flex: none; border-radius: 2px;
+}
+.de-world-key-swatch.ring {
+    border-radius: 50%;
+    background: transparent !important;
+    border: 2px solid;
+    box-sizing: border-box;
+}

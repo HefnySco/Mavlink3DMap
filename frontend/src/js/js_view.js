@@ -359,6 +359,26 @@ class C_View {
                 helpDlg.style.display = helpDlg.style.display === 'none' ? 'block' : 'none';
                 event.preventDefault();
                 break;
+
+            case 113: /*F2*/
+                {
+                    // map key - content is rebuilt on each open so it
+                    // always reflects what the scene is showing now
+                    const keyDlg = document.getElementById('map_key_dlg');
+                    if (keyDlg == null) break;
+                    if (keyDlg.style.display === 'none') {
+                        const scene = this.m_world && this.m_world.m_scene_env;
+                        keyDlg.innerHTML = (scene && scene.fn_getMapKeyHtml)
+                            ? scene.fn_getMapKeyHtml()
+                            : '<div class="de-world-key-empty">' +
+                              'no map key for this scene</div>';
+                        keyDlg.style.display = 'block';
+                    } else {
+                        keyDlg.style.display = 'none';
+                    }
+                    event.preventDefault();
+                }
+                break;
         }
     };
 

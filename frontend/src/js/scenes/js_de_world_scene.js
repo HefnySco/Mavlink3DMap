@@ -34,6 +34,11 @@ const CLS_COLORS = {
     clutter: 0x888888,
 };
 
+// entity state ring colors (also the F2 map key swatches)
+const STATE_RING_COLORS = {
+    unseen: 0x666666, seen: 0x33cc66, miss: 0xddaa33, occluded: 0xdd4444,
+};
+
 export class CDeWorldScene extends CBaseScene {
     constructor(worldInstance, streamUrl, renderMode, sinkUrl) {
         super(worldInstance, { tileRange: 0 });
@@ -263,7 +268,16 @@ export class CDeWorldScene extends CBaseScene {
         const minZ = Math.min(...zs), maxZ = Math.max(...zs);
         const area = (maxX - minX) * (maxZ - minZ);
         const count = Math.min(60, Math.max(6, Math.floor(area / 400)));
-        const coneGeo = new THREE.ConeGeometry(1.2, 4.0, 5);
+        // a tree per scatter point: trunk rooted on the ground, crown
+        // cone filling the canopy band [base_m, height_m]
+        const baseM = obs.base_m || 0;
+        const topM = obs.height_m || 10;
+        const crownH = Math.max(1.0, topM - baseM);
+        const trunkH = Math.max(0.5, baseM + crownH * 0.2);
+        const trunkGeo = new THREE.CylinderGeometry(0.12, 0.22, trunkH, 5);
+        const crownGeo = new THREE.ConeGeometry(
+            Math.max(1.2, crownH * 0.35), crownH, 6);
+        const trunkMat = new THREE.MeshLambertMaterial({ color: 0x5a4632 });
         const treeMat = new THREE.MeshLambertMaterial({ color: 0x3f5d33 });
         let placed = 0;
         for (let i = 0; placed < count && i < count * 20; ++i) {
@@ -273,9 +287,14 @@ export class CDeWorldScene extends CBaseScene {
             const px = minX + rx * (maxX - minX);
             const pz = minZ + rz * (maxZ - minZ);
             if (!_pointInPolyXZ(px, pz, pts)) continue;
-            const cone = new THREE.Mesh(coneGeo, treeMat);
-            cone.position.set(px, (obs.height_m || 10) - 2.0, pz);
-            group.add(cone);
+            const tree = new THREE.Group();
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = trunkH / 2;
+            const crown = new THREE.Mesh(crownGeo, treeMat);
+            crown.position.y = baseM + crownH / 2;
+            tree.add(trunk, crown);
+            tree.position.set(px, 0, pz);
+            group.add(tree);
             placed++;
         }
     }
@@ -405,10 +424,8 @@ export class CDeWorldScene extends CBaseScene {
             rec.solidMat.transparent = state === 'occluded';
             rec.solidMat.opacity = state === 'occluded' ? 0.35 : 1.0;
             rec.solidMat.needsUpdate = true;
-            rec.ring.material.color.set({
-                seen: 0x33cc66, miss: 0xddaa33,
-                occluded: 0xdd4444, unseen: 0x666666
-            }[state] || 0x666666);
+            rec.ring.material.color.set(
+                STATE_RING_COLORS[state] || STATE_RING_COLORS.unseen);
         }
     }
 
@@ -511,6 +528,74 @@ export class CDeWorldScene extends CBaseScene {
             m.visible = true;
             m.position.set(x, (d.alt_m || 0) + 0.6, z);
         }
+    }
+
+    /* F2 map key - rebuilt on every open (js_view) so it lists only
+       what this scenario actually shows: the entity classes and
+       obstacle kinds in hello, clutter once a point has spawned, the
+       overlay rows once a target or detection has landed. */
+    fn_getMapKeyHtml() {
+        const hex = (c) => '#' + c.toString(16).padStart(6, '0');
+        const sw = (color, ring) =>
+            `<span class="de-world-key-swatch${ring ? ' ring' : ''}" ` +
+            `style="${ring ? 'border-color' : 'background'}:${color}"></span>`;
+        const row = (icon, text) =>
+            `<div class="de-world-key-row">${icon}<span>${text}</span></div>`;
+        const hello = this.m_hello;
+        const title = '<div class="de-world-key-title">map key - ' +
+            `${(hello && hello.sim) || 'world'}</div>`;
+        if (!hello) {
+            return title + '<div class="de-world-key-empty">' +
+                'waiting for world stream</div>';
+        }
+        const rows = [];
+        if ((hello.units || []).length) {
+            rows.push(row(sw('#8fc1ff'), 'live vehicle - mavlink feed'));
+        }
+        const clss = [...new Set(
+            (hello.entities || []).map(e => e.cls || 'object'))];
+        for (const cls of clss) {
+            rows.push(row(sw(hex(CLS_COLORS[cls] ?? 0xccbbaa)),
+                `${cls} - truth entity (white id label)`));
+        }
+        if (clss.length) {
+            rows.push(row(
+                sw(hex(STATE_RING_COLORS.unseen), 1) +
+                sw(hex(STATE_RING_COLORS.seen), 1) +
+                sw(hex(STATE_RING_COLORS.miss), 1) +
+                sw(hex(STATE_RING_COLORS.occluded), 1),
+                'state ring - unseen / seen / miss / occluded'));
+            rows.push(row(sw('#ff4444', 1),
+                'occluded entity - red outline shell'));
+        }
+        const kinds = new Set((hello.obstacles || []).map(o => o.kind));
+        if (kinds.has('building')) {
+            rows.push(row(sw('#6b655e'), 'building - opaque prism'));
+        }
+        if (kinds.has('canopy')) {
+            rows.push(row(sw('rgba(46,107,46,0.6)'),
+                'canopy - translucent crown band'));
+            rows.push(row(sw('#3f5d33'), 'tree - trunk + crown'));
+        }
+        if (Object.keys(hello.areas || {}).length) {
+            rows.push(row(sw('#34e0ff', 1), 'area - named polygon'));
+        }
+        if (this.m_clutterMeshes.size) {
+            rows.push(row(sw('#888888'), 'clutter - seeded ground point'));
+        }
+        if (this.m_targetMarkers.size ||
+                this.m_detectionMarkers.some(m => m.visible)) {
+            rows.push('<div class="de-world-key-sec">overlay</div>');
+            if (this.m_targetMarkers.size) {
+                rows.push(row(sw('#ffe14d'),
+                    'target pin + 5 m ring - cls:tid label'));
+            }
+            if (this.m_detectionMarkers.some(m => m.visible)) {
+                rows.push(row(sw('#4dff9e'),
+                    'detection - reported position'));
+            }
+        }
+        return title + rows.join('');
     }
 
     // ----------------------------------------------------------- HUD

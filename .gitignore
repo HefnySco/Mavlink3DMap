@@ -6,3 +6,4 @@ build/
 TODO
 publish.txt
 backend/public/assets/
+*.tgz

@@ -3,6 +3,7 @@
 export const HELP_SHORTCUTS_HTML = `
     <ul>
         <li><code>F1</code> Help Toggle</li>
+        <li><code>F2</code> Map Key / Legend (world scene)</li>
         <li><code>1-9</code> Goto Drone by Index</li>
         <li><code>O</code> next / <code>P</code> previous camera (selected drone)</li>
         <li><code>W A S D Q E</code> Change Camera View for Vehicles</li>
